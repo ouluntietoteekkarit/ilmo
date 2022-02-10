@@ -5,7 +5,7 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
-from .event import Event
+from .forms_util.event import Event
 
 
 class KyselyArvontaJuttuForm(FlaskForm):

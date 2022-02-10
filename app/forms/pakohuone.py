@@ -6,8 +6,8 @@ from datetime import datetime
 import os
 import json
 from app import db, sqlite_to_csv
-from .forms import RequiredIfValue
-from .event import Event
+from .forms_util.forms import RequiredIfValue
+from .forms_util.event import Event
 
 
 def get_escape_games():

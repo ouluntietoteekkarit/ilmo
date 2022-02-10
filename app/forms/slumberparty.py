@@ -5,24 +5,37 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
-from .event import Event
+from .forms_util.guilds import *
+from .forms_util.event import Event
+
+
+def get_guilds():
+    return [
+        Guild(GUILD_OTIT),
+        Guild(GUILD_SIK),
+        Guild(GUILD_YMP),
+        Guild(GUILD_KONE),
+        Guild(GUILD_PROSE),
+        Guild(GUILD_OPTIEM),
+        Guild(GUILD_ARK)
+    ]
+
+
+def get_guild_choices():
+    choices = []
+    for guild in get_guilds():
+        choices.append((guild.get_name(), guild.get_name()))
+    return choices
 
 class SlumberpartyForm(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-
-    kilta = SelectField('Kilta *',
-                        choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-                                 ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']))
-
+    kilta = SelectField('Kilta *', choices=get_guild_choices())
     consent0 = BooleanField('Sallin nimeni julkaisemisen osallistujalistassa')
-    consent1 = BooleanField(
-        'Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *',
-        validators=[DataRequired()])
+    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
     consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
-
     submit = SubmitField('Ilmoittaudu')
 
 
@@ -32,9 +45,7 @@ class SlumberpartyModel(db.Model):
     sukunimi = db.Column(db.String(64))
     phone = db.Column(db.String(32))
     email = db.Column(db.String(128))
-
     kilta = db.Column(db.String(16))
-
     consent0 = db.Column(db.Boolean())
     consent1 = db.Column(db.Boolean())
     consent2 = db.Column(db.Boolean())
