@@ -6,19 +6,17 @@ from config import Config
 from flask_wtf.csrf import CSRFProtect, CSRFError
 
 csrf = CSRFProtect()
+server = Flask(__name__)
+Bootstrap(server)
+server.config.from_object(Config)
 
-app = Flask(__name__)
-Bootstrap(app)
-app.config.from_object(Config)
+db = SQLAlchemy(server)
+migrate = Migrate(server, db)
 
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-
-
-from app import routes, models
+from . import routes, config
 
 db.create_all()
 db.session.commit()
 
 if __name__ == "__main__":
-    app.run(debug = True)
+    server.run(debug = True)
