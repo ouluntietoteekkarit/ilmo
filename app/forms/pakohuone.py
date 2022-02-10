@@ -96,28 +96,32 @@ class PakohuoneModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
+def get_event():
+    return Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20)
+
+
 def pakohuone_handler(request):
     form = PakohuoneForm()
-    event = Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20)
+    event = get_event()
     nowtime = datetime.now()
-    entrys = PakohuoneModel.query.all()
-    count = PakohuoneModel.query.count()
+    entries = PakohuoneModel.query.all()
+    count = len(entries)
 
     varatut = []
-    for entry in entrys:
+    for entry in entries:
         varatut.append((entry.aika, entry.huone1800, entry.huone1930))
 
-    for entry in entrys:
+    for entry in entries:
         if (entry.etunimi0 == form.etunimi0.data and entry.sukunimi0 == form.sukunimi0.data) or entry.email0 == form.email0.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_form(entrys, count, event, nowtime, form, varatut)
+            return _render_form(entries, count, event, nowtime, form, varatut)
 
-    for entry in entrys:
+    for entry in entries:
         if entry.aika == form.aika.data:
             if (entry.aika == "18:00" and entry.huone1800 == form.huone1800.data) or (entry.aika == "19:30" and entry.huone1930 == form.huone1930.data):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-                return render_form(entrys, count, event, nowtime, form, varatut)
+                return _render_form(entries, count, event, nowtime, form, varatut)
 
     validate = False
     submitted = False
@@ -127,27 +131,7 @@ def pakohuone_handler(request):
 
     if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
-        sub = PakohuoneModel(
-            aika=form.aika.data,
-            huone1800=form.huone1800.data,
-            huone1930=form.huone1930.data,
-            etunimi0=form.etunimi0.data,
-            sukunimi0=form.sukunimi0.data,
-            phone0=form.phone0.data,
-            email0=form.email0.data,
-            etunimi1=form.etunimi1.data,
-            sukunimi1=form.sukunimi1.data,
-            etunimi2=form.etunimi2.data,
-            sukunimi2=form.sukunimi2.data,
-            etunimi3=form.etunimi3.data,
-            sukunimi3=form.sukunimi3.data,
-            etunimi4=form.etunimi4.data,
-            sukunimi4=form.sukunimi4.data,
-            etunimi5=form.etunimi5.data,
-            sukunimi5=form.sukunimi5.data,
-            consent0=form.consent0.data,
-            datetime=nowtime
-        )
+        sub = _form_to_model(form, nowtime)
         db.session.add(sub)
         db.session.commit()
 
@@ -156,13 +140,13 @@ def pakohuone_handler(request):
     elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
-    elif (not validate) and submitted:
+    elif not validate and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_form(entrys, count, event, nowtime, form, varatut)
+    return _render_form(entries, count, event, nowtime, form, varatut)
 
 
-def render_form(entrys, count, event, nowtime, form, varatut):
+def _render_form(entrys, count, event, nowtime, form, varatut):
     return render_template('pakohuone/pakohuone.html',
                            title='pakohuone ilmoittautuminen',
                            entrys=entrys,
@@ -175,11 +159,35 @@ def render_form(entrys, count, event, nowtime, form, varatut):
                            varatut=json.dumps(varatut),
                            page="pakohuone")
 
-def pakohuone_data():
-    limit = 20
-    entries = PakohuoneModel.query.all()
-    count = PakohuoneModel.query.count()
 
+def _form_to_model(form, nowtime):
+    return PakohuoneModel(
+        aika=form.aika.data,
+        huone1800=form.huone1800.data,
+        huone1930=form.huone1930.data,
+        etunimi0=form.etunimi0.data,
+        sukunimi0=form.sukunimi0.data,
+        phone0=form.phone0.data,
+        email0=form.email0.data,
+        etunimi1=form.etunimi1.data,
+        sukunimi1=form.sukunimi1.data,
+        etunimi2=form.etunimi2.data,
+        sukunimi2=form.sukunimi2.data,
+        etunimi3=form.etunimi3.data,
+        sukunimi3=form.sukunimi3.data,
+        etunimi4=form.etunimi4.data,
+        sukunimi4=form.sukunimi4.data,
+        etunimi5=form.etunimi5.data,
+        sukunimi5=form.sukunimi5.data,
+        consent0=form.consent0.data,
+        datetime=nowtime
+    )
+
+def pakohuone_data():
+    event = get_event()
+    limit = event.get_participant_limit()
+    entries = PakohuoneModel.query.all()
+    count = len(entries)
     return render_template('pakohuone/pakohuone_data.html',
                            title='pakohuone data',
                            entries=entries,
@@ -189,7 +197,7 @@ def pakohuone_data():
 
 def pakohuone_csv():
     os.system('mkdir csv')
-    sqlite_to_csv.exportToCSV('pakohuone_model')
+    sqlite_to_csv.export_to_csv('pakohuone_model')
     dir = os.path.join(os.getcwd(), 'csv/')
 
     try:
