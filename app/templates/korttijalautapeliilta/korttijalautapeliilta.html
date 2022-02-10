@@ -1,6 +1,5 @@
-{% import "bootstrap/wtf.html" as wtf %}
-
 {% extends "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
 
@@ -8,17 +7,15 @@
 
     <h1>Kortti- ja lautapeli-ilta</h1>
 
-    <p><strong>Mikäli olet sairas etkä pääsekään paikalle,
-            ole yhteydessä Riikka Haatajaan 0442828255 (Whatsapp, Telegram tai tekstiviesti)
-        </strong></p>
+    <p><strong>Mikäli olet sairas etkä pääsekään paikalle, ole yhteydessä Riikka Haatajaan 0442828255 (Whatsapp, Telegram tai tekstiviesti)</strong></p>
 
     {% block ilmo %}
     <div class="container p-3">
         <div>
             <h4>{{ title }}</h4>
             <h6>* merkityt kohdat pakollisia</h6>
-            <h6><a
-                    href="{{ url_for('static',filename='tietosuojaseloste_korttijalautapeliilta.pdf') }}">Tietosuojaseloste</a>
+            <h6>
+                <a href="{{ url_for('static',filename='tietosuojaseloste_korttijalautapeliilta.pdf') }}">Tietosuojaseloste</a>
             </h6>
 
         </div>
@@ -30,6 +27,7 @@
             {% for e in form.etunimi.errors %}
             <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}<p>
             {% endfor %}
+
             {{ wtf.form_field(form.sukunimi) }}
             {% for e in form.sukunimi.errors %}
             <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}<p>
@@ -39,6 +37,7 @@
             {% for e in form.phone.errors %}
             <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}<p>
             {% endfor %}
+
             {{ wtf.form_field(form.email) }}
             {% for e in form.email.errors %}
             <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}<p>
@@ -53,10 +52,12 @@
             {% for e in form.consent0.errors %}
             <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}<p>
             {% endfor %}
+
             {{ wtf.form_field(form.consent1) }}
             {% for e in form.consent1.errors %}
             <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}<p>
             {% endfor %}
+
             {{ wtf.form_field(form.consent2) }}
             {% for e in form.consent2.errors %}
             <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}<p>
@@ -76,18 +77,15 @@
         <p>Ilmoittautuminen on päättynyt</p>
         {% endif %}
 
-
         <h3>Osallistujat: {{ count }}/{{ limit }}</h3>
         {% for entry in entrys%}
         {% if entry.consent0 %}
         <p>{{ entry.etunimi }} {{ entry.sukunimi }}
             {% if loop.index > limit %}
             (Varasijalla)
-            {% endif %}
-        </p>
+            {% endif %}</p>
         {% endif %}
         {% endfor %}
-
 
     </div>
     {% endblock %}

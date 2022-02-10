@@ -1,6 +1,5 @@
-{% import "bootstrap/wtf.html" as wtf %}
-
 {% extends "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
 <div class="container p-3">
@@ -34,7 +33,6 @@
                     <td>{{ entry.email }}</td>
                     <td>{{ entry.consent1 }}</td>
                     <td>{{ entry.datetime }}</td>
-
                 </tr>
                 {% endfor %}
             </tbody>
