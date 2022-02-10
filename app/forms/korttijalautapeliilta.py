@@ -5,6 +5,27 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
+from .guilds import *
+from .event import Event
+
+
+def get_guilds():
+    return [
+        Guild(GUILD_OTIT),
+        Guild(GUILD_SIK),
+        Guild(GUILD_YMP),
+        Guild(GUILD_KONE),
+        Guild(GUILD_PROSE),
+        Guild(GUILD_OPTIEM),
+        Guild(GUILD_ARK)
+    ]
+
+
+def get_guild_choices():
+    choices = []
+    for guild in get_guilds():
+        choices.append((guild.get_name(), guild.get_name()))
+    return choices
 
 
 class KorttijalautapeliiltaForm(FlaskForm):
@@ -12,17 +33,10 @@ class KorttijalautapeliiltaForm(FlaskForm):
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-
-    kilta = SelectField('Kilta *',
-                        choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-                                 ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']))
-
+    kilta = SelectField('Kilta *', choices=get_guild_choices())
     consent0 = BooleanField('Sallin nimeni julkaisemisen osallistujalistassa')
-    consent1 = BooleanField(
-        'Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *',
-        validators=[DataRequired()])
+    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
     consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
-
     submit = SubmitField('Ilmoittaudu')
 
 
@@ -32,23 +46,21 @@ class KorttijalautapeliiltaModel(db.Model):
     sukunimi = db.Column(db.String(64))
     phone = db.Column(db.String(32))
     email = db.Column(db.String(128))
-
     kilta = db.Column(db.String(16))
-
     consent0 = db.Column(db.Boolean())
     consent1 = db.Column(db.Boolean())
     consent2 = db.Column(db.Boolean())
-
     datetime = db.Column(db.DateTime())
+
+
+class KorttiJaLautapeliIltaController:
+    pass
 
 
 def korttijalautapeliilta_handler(request):
     form = KorttijalautapeliiltaForm()
-    starttime = datetime(2020, 10, 7, 12, 00, 00)
-    endtime = datetime(2020, 10, 13, 23, 59, 59)
+    event = Event('korttijalautapeliilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 50)
     nowtime = datetime.now()
-    limit = 50
-    maxlimit = 50
     entrys = KorttijalautapeliiltaModel.query.all()
     count = KorttijalautapeliiltaModel.query.count()
 
@@ -56,16 +68,7 @@ def korttijalautapeliilta_handler(request):
         if entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('korttijalautapeliilta/korttijalautapeliilta.html',
-                                   title='korttijalautapeliilta ilmoittautuminen',
-                                   entrys=entrys,
-                                   count=count,
-                                   starttime=starttime,
-                                   endtime=endtime,
-                                   nowtime=nowtime,
-                                   limit=limit,
-                                   form=form,
-                                   page="korttijalautapeliilta")
+            return render_form(entrys, count, event, nowtime, form)
 
     validate = False
     submitted = False
@@ -73,7 +76,7 @@ def korttijalautapeliilta_handler(request):
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
 
-    if validate and submitted and count <= maxlimit:
+    if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
         sub = KorttijalautapeliiltaModel(
             etunimi=form.etunimi.data,
@@ -92,20 +95,24 @@ def korttijalautapeliilta_handler(request):
 
         return redirect(url_for('route_korttijalautapeliilta'))
 
-    elif submitted and count > maxlimit:
+    elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
+    return render_form(entrys, count, event, nowtime, form)
+
+
+def render_form(entrys, count, event, nowtime, form):
     return render_template('korttijalautapeliilta/korttijalautapeliilta.html',
                            title='korttijalautapeliilta ilmoittautuminen',
                            entrys=entrys,
                            count=count,
-                           starttime=starttime,
-                           endtime=endtime,
+                           starttime=event.get_start_time(),
+                           endtime=event.get_end_time(),
                            nowtime=nowtime,
-                           limit=limit,
+                           limit=event.get_participant_limit(),
                            form=form,
                            page="korttijalautapeliilta")
 

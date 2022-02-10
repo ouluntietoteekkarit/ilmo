@@ -5,16 +5,14 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
+from .event import Event
 
 
 class KyselyArvontaJuttuForm(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-
-    consent0 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön *',
-                            validators=[DataRequired()])
-
+    consent0 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön *', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
 
@@ -29,11 +27,8 @@ class KyselyArvontaJuttuModel(db.Model):
 
 def kysely_arvonta_juttu_handler(request):
     form = KyselyArvontaJuttuForm()
-    starttime = datetime(2020, 11, 2, 12, 00, 00)
-    endtime = datetime(2020, 11, 23, 23, 59, 59)
+    event = Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000)
     nowtime = datetime.now()
-    limit = 4000
-    maxlimit = 4000
     entrys = KyselyArvontaJuttuModel.query.all()
     count = KyselyArvontaJuttuModel.query.count()
 
@@ -41,16 +36,7 @@ def kysely_arvonta_juttu_handler(request):
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data) or entry.email == form.email.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html',
-                                   title='kysely_arvonta_juttu ilmoittautuminen',
-                                   entrys=entrys,
-                                   count=count,
-                                   starttime=starttime,
-                                   endtime=endtime,
-                                   nowtime=nowtime,
-                                   limit=limit,
-                                   form=form,
-                                   page="kysely_arvonta_juttu")
+            return render_form(entrys, count, event, nowtime, form)
 
     validate = False
     submitted = False
@@ -58,7 +44,7 @@ def kysely_arvonta_juttu_handler(request):
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
 
-    if validate and submitted and count <= maxlimit:
+    if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
         sub = KyselyArvontaJuttuModel(
             etunimi=form.etunimi.data,
@@ -73,20 +59,24 @@ def kysely_arvonta_juttu_handler(request):
         # return redirect(url_for('kysely_arvonta_juttu'))
         return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
 
-    elif submitted and count > maxlimit:
+    elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
+    return render_form(entrys, count, event, nowtime, form)
+
+
+def render_form(entrys, count, event, nowtime, form):
     return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html',
                            title='kysely_arvonta_juttu ilmoittautuminen',
                            entrys=entrys,
                            count=count,
-                           starttime=starttime,
-                           endtime=endtime,
+                           starttime=event.get_start_time(),
+                           endtime=event.get_end_time(),
                            nowtime=nowtime,
-                           limit=limit,
+                           limit=event.get_participant_limit(),
                            form=form,
                            page="kysely_arvonta_juttu")
 

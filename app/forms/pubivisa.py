@@ -5,6 +5,27 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
+from .guilds import *
+from .event import Event
+
+
+def get_guilds():
+    return [
+        Guild(GUILD_OTIT),
+        Guild(GUILD_SIK),
+        Guild(GUILD_YMP),
+        Guild(GUILD_KONE),
+        Guild(GUILD_PROSE),
+        Guild(GUILD_OPTIEM),
+        Guild(GUILD_ARK)
+    ]
+
+
+def get_guild_choices():
+    choices = []
+    for guild in get_guilds():
+        choices.append((guild.get_name(), guild.get_name()))
+    return choices
 
 
 class PubivisaForm(FlaskForm):
@@ -14,36 +35,28 @@ class PubivisaForm(FlaskForm):
     sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email0 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta0 = SelectField('Kilta *', choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-                                             ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']),
-                         validators=[DataRequired()])
+    kilta0 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi1 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone1 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email1 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta1 = SelectField('Kilta *', choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-                                             ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']),
-                         validators=[DataRequired()])
+    kilta1 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
 
     etunimi2 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi2 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone2 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email2 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta2 = SelectField('Kilta *', choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-                                             ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']),
-                         validators=[DataRequired()])
+    kilta2 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
 
     etunimi3 = StringField('Etunimi', validators=[length(max=50)])
     sukunimi3 = StringField('Sukunimi', validators=[length(max=50)])
     phone3 = StringField('Puhelinnumero', validators=[length(max=20)])
     email3 = StringField('Sähköposti', validators=[length(max=100)])
-    kilta3 = SelectField('Kilta', choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-                                           ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']))
+    kilta3 = SelectField('Kilta', choices=get_guild_choices())
 
     consent0 = BooleanField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *',
-                            validators=[DataRequired()])
+    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
     consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
 
     submit = SubmitField('Ilmoittaudu')
@@ -88,13 +101,8 @@ class PubivisaModel(db.Model):
 
 def pubivisa_handler(request):
     form = PubivisaForm()
-
-    starttime = datetime(2020, 10, 7, 12, 00, 00)
-    endtime = datetime(2020, 10, 10, 23, 59, 59)
+    event = Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50)
     nowtime = datetime.now()
-
-    limit = 50
-    maxlimit = 50
     entrys = PubivisaModel.query.all()
     count = 0
     totalcount = 0
@@ -105,25 +113,12 @@ def pubivisa_handler(request):
         if entry.teamname == form.teamname.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('pubivisa/pubivisa.html',
-                                   title='pubivisa ilmoittautuminen',
-                                   entrys=entrys,
-                                   totalcount=totalcount,
-                                   starttime=starttime,
-                                   endtime=endtime,
-                                   nowtime=nowtime,
-                                   limit=limit,
-                                   form=form,
-                                   page="pubivisa")
+            return render_form(entrys, totalcount, event, nowtime, form)
 
-    if form.etunimi0.data and form.sukunimi0.data:
-        count += 1
-    if form.etunimi1.data and form.sukunimi1.data:
-        count += 1
-    if form.etunimi2.data and form.sukunimi2.data:
-        count += 1
-    if form.etunimi3.data and form.sukunimi3.data:
-        count += 1
+    count += int(form.etunimi0.data and form.sukunimi0.data)
+    count += int(form.etunimi1.data and form.sukunimi1.data)
+    count += int(form.etunimi2.data and form.sukunimi2.data)
+    count += int(form.etunimi3.data and form.sukunimi3.data)
 
     totalcount += count
 
@@ -133,7 +128,7 @@ def pubivisa_handler(request):
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
 
-    if validate and submitted and totalcount <= maxlimit:
+    if validate and submitted and totalcount <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
         sub = PubivisaModel(
             teamname=form.teamname.data,
@@ -168,24 +163,27 @@ def pubivisa_handler(request):
 
         return redirect(url_for('route_pubivisa'))
 
-    elif submitted and totalcount > maxlimit:
+    elif submitted and totalcount > event.get_participant_limit():
         totalcount -= count
         flash('Ilmoittautuminen on jo täynnä')
 
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
+    return render_form(entrys, totalcount, event, nowtime, form)
+
+
+def render_form(entrys, totalcount, event, nowtime, form):
     return render_template('pubivisa/pubivisa.html',
                            title='pubivisa ilmoittautuminen',
                            entrys=entrys,
                            totalcount=totalcount,
-                           starttime=starttime,
-                           endtime=endtime,
+                           starttime=event.get_start_time(),
+                           endtime=event.get_end_time(),
                            nowtime=nowtime,
-                           limit=limit,
+                           limit=event.get_participant_limit(),
                            form=form,
                            page="pubivisa")
-
 
 def pubivisa_data():
     limit = 50

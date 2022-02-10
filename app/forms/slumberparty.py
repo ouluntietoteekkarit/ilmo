@@ -5,7 +5,7 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
-
+from .event import Event
 
 class SlumberpartyForm(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
@@ -44,28 +44,15 @@ class SlumberpartyModel(db.Model):
 
 def slumberparty_handler(request):
     form = SlumberpartyForm()
-    starttime = datetime(2020, 10, 21, 12, 00, 00)
-    endtime = datetime(2020, 10, 27, 23, 59, 59)
+    event = Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50)
     nowtime = datetime.now()
-    limit = 50
-    maxlimit = 50
     entrys = SlumberpartyModel.query.all()
     count = SlumberpartyModel.query.count()
 
     for entry in entrys:
         if entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data:
             flash('Olet jo ilmoittautunut')
-
-            return render_template('slumberparty/slumberparty.html',
-                                   title='slumberparty ilmoittautuminen',
-                                   entrys=entrys,
-                                   count=count,
-                                   starttime=starttime,
-                                   endtime=endtime,
-                                   nowtime=nowtime,
-                                   limit=limit,
-                                   form=form,
-                                   page="slumberparty")
+            return render_form(entrys, count, event, nowtime, form)
 
     validate = False
     submitted = False
@@ -73,7 +60,7 @@ def slumberparty_handler(request):
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
 
-    if validate and submitted and count <= maxlimit:
+    if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
         sub = SlumberpartyModel(
             etunimi=form.etunimi.data,
@@ -84,7 +71,6 @@ def slumberparty_handler(request):
             consent0=form.consent0.data,
             consent1=form.consent1.data,
             consent2=form.consent2.data,
-
             datetime=nowtime
         )
         db.session.add(sub)
@@ -92,19 +78,24 @@ def slumberparty_handler(request):
 
         return redirect(url_for('route_slumberparty'))
 
-    elif submitted and count > maxlimit:
+    elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('slumberparty/slumberparty.html', title='slumberparty ilmoittautuminen',
+    return render_form(entrys, count, event, nowtime, form)
+
+
+def render_form(entrys, count, event, nowtime, form):
+    return render_template('slumberparty/slumberparty.html',
+                           title='slumberparty ilmoittautuminen',
                            entrys=entrys,
                            count=count,
-                           starttime=starttime,
-                           endtime=endtime,
+                           starttime=event.get_start_time(),
+                           endtime=event.get_end_time(),
                            nowtime=nowtime,
-                           limit=limit,
+                           limit=event.get_participant_limit(),
                            form=form,
                            page="slumberparty")
 
@@ -114,7 +105,8 @@ def slumberparty_data():
     entries = SlumberpartyModel.query.all()
     count = SlumberpartyModel.query.count()
 
-    return render_template('slumberparty/slumberparty_data.html', title='slumberparty data',
+    return render_template('slumberparty/slumberparty_data.html',
+                           title='slumberparty data',
                            entries=entries,
                            count=count,
                            limit=limit)

@@ -7,38 +7,35 @@ import os
 import json
 from app import db, sqlite_to_csv
 from .forms import RequiredIfValue
+from .event import Event
+
+
+def get_escape_games():
+    return [
+       'Pommi (Uusikatu)',
+       'Kuolleen miehen saari (Uusikatu)',
+       'Temppelin kirous (Uusikatu)',
+       'Velhon perintö (Uusikatu)',
+       'Murhamysteeri (Kajaaninkatu)',
+       'Vankilapako (Kajaaninkatu)',
+       'Professorin arvoitus (Kajaaninkatu)',
+       'The SAW (Kirkkokatu)',
+       'Alcatraz (Kirkkokatu)',
+       'Matka maailman ympäri (Kirkkokatu)',
+    ]
+
+
+def get_game_choices():
+    choices = []
+    for game in get_escape_games():
+        choices.append((game, game))
+    return choices
 
 
 class PakohuoneForm(FlaskForm):
-    aika = RadioField('Aika *',
-                      choices=[('18:00', '18:00'), ('19:30', '19:30')],
-                      validators=[DataRequired()])
-
-    huone1800 = RadioField('Huone (18:00) *',
-                           choices=[('Pommi (Uusikatu)', 'Pommi (Uusikatu)'),
-                                    ('Kuolleen miehen saari (Uusikatu)', 'Kuolleen miehen saari (Uusikatu)'),
-                                    ('Temppelin kirous (Uusikatu)', 'Temppelin kirous (Uusikatu)'),
-                                    ('Velhon perintö (Uusikatu)', 'Velhon perintö (Uusikatu)'),
-                                    ('Murhamysteeri (Kajaaninkatu)', 'Murhamysteeri (Kajaaninkatu)'),
-                                    ('Vankilapako (Kajaaninkatu)', 'Vankilapako (Kajaaninkatu)'),
-                                    ('Professorin arvoitus (Kajaaninkatu)', 'Professorin arvoitus (Kajaaninkatu)'),
-                                    ('The SAW (Kirkkokatu)', 'The SAW (Kirkkokatu)'),
-                                    ('Alcatraz (Kirkkokatu)', 'Alcatraz (Kirkkokatu)'),
-                                    ('Matka maailman ympäri (Kirkkokatu)', 'Matka maailman ympäri (Kirkkokatu)')],
-                           validators=[RequiredIfValue(other_field_name='aika', value='18:00')])
-
-    huone1930 = RadioField('Huone (19:30) *',
-                           choices=[('Pommi (Uusikatu)', 'Pommi (Uusikatu)'),
-                                    ('Kuolleen miehen saari (Uusikatu)', 'Kuolleen miehen saari (Uusikatu)'),
-                                    ('Temppelin kirous (Uusikatu)', 'Temppelin kirous (Uusikatu)'),
-                                    ('Velhon perintö (Uusikatu)', 'Velhon perintö (Uusikatu)'),
-                                    ('Murhamysteeri (Kajaaninkatu)', 'Murhamysteeri (Kajaaninkatu)'),
-                                    ('Vankilapako (Kajaaninkatu)', 'Vankilapako (Kajaaninkatu)'),
-                                    ('Professorin arvoitus (Kajaaninkatu)', 'Professorin arvoitus (Kajaaninkatu)'),
-                                    ('The SAW (Kirkkokatu)', 'The SAW (Kirkkokatu)'),
-                                    ('Alcatraz (Kirkkokatu)', 'Alcatraz (Kirkkokatu)'),
-                                    ('Matka maailman ympäri (Kirkkokatu)', 'Matka maailman ympäri (Kirkkokatu)')],
-                           validators=[RequiredIfValue(other_field_name='aika', value='19:30')])
+    aika = RadioField('Aika *', choices=[('18:00', '18:00'), ('19:30', '19:30')], validators=[DataRequired()])
+    huone1800 = RadioField('Huone (18:00) *', choices=get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value='18:00')])
+    huone1930 = RadioField('Huone (19:30) *', choices=get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value='19:30')])
 
     etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
@@ -100,11 +97,9 @@ class PakohuoneModel(db.Model):
 
 
 def pakohuone_handler(request):
-    starttime = datetime(2020, 11, 5, 12, 00, 00)
-    endtime = datetime(2024, 11, 9, 23, 59, 59)
+    form = PakohuoneForm()
+    event = Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20)
     nowtime = datetime.now()
-    limit = 20
-    maxlimit = 20
     entrys = PakohuoneModel.query.all()
     count = PakohuoneModel.query.count()
 
@@ -112,55 +107,17 @@ def pakohuone_handler(request):
     for entry in entrys:
         varatut.append((entry.aika, entry.huone1800, entry.huone1930))
 
-    form = PakohuoneForm()
-
     for entry in entrys:
         if (entry.etunimi0 == form.etunimi0.data and entry.sukunimi0 == form.sukunimi0.data) or entry.email0 == form.email0.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
-                                   entrys=entrys,
-                                   count=count,
-                                   starttime=starttime,
-                                   endtime=endtime,
-                                   nowtime=nowtime,
-                                   limit=limit,
-                                   form=form,
-                                   varatut=json.dumps(varatut),
-                                   page="pakohuone")
+            return render_form(entrys, count, event, nowtime, form, varatut)
 
     for entry in entrys:
         if entry.aika == form.aika.data:
-            if entry.aika == "18:00":
-                if entry.huone1800 == form.huone1800.data:
-                    flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-
-                    return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
-                                           entrys=entrys,
-                                           count=count,
-                                           starttime=starttime,
-                                           endtime=endtime,
-                                           nowtime=nowtime,
-                                           limit=limit,
-                                           form=form,
-                                           varatut=json.dumps(varatut),
-                                           page="pakohuone")
-
-            elif entry.aika == "19:30":
-                if entry.huone1930 == form.huone1930.data:
-                    flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-
-                    return render_template('pakohuone/pakohuone.html',
-                                           title='pakohuone ilmoittautuminen',
-                                           entrys=entrys,
-                                           count=count,
-                                           starttime=starttime,
-                                           endtime=endtime,
-                                           nowtime=nowtime,
-                                           limit=limit,
-                                           form=form,
-                                           varatut=json.dumps(varatut),
-                                           page="pakohuone")
+            if (entry.aika == "18:00" and entry.huone1800 == form.huone1800.data) or (entry.aika == "19:30" and entry.huone1930 == form.huone1930.data):
+                flash('Valisemasi huone on jo varattu valitsemanasi aikana')
+                return render_form(entrys, count, event, nowtime, form, varatut)
 
     validate = False
     submitted = False
@@ -168,7 +125,7 @@ def pakohuone_handler(request):
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
 
-    if validate and submitted and count <= maxlimit:
+    if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
         sub = PakohuoneModel(
             aika=form.aika.data,
@@ -196,31 +153,35 @@ def pakohuone_handler(request):
 
         return redirect(url_for('route_pakohuone'))
 
-    elif submitted and count > maxlimit:
+    elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
+    return render_form(entrys, count, event, nowtime, form, varatut)
+
+
+def render_form(entrys, count, event, nowtime, form, varatut):
     return render_template('pakohuone/pakohuone.html',
                            title='pakohuone ilmoittautuminen',
                            entrys=entrys,
                            count=count,
-                           starttime=starttime,
-                           endtime=endtime,
+                           starttime=event.get_start_time(),
+                           endtime=event.get_end_time(),
                            nowtime=nowtime,
-                           limit=limit,
+                           limit=event.get_participant_limit(),
                            form=form,
                            varatut=json.dumps(varatut),
                            page="pakohuone")
-
 
 def pakohuone_data():
     limit = 20
     entries = PakohuoneModel.query.all()
     count = PakohuoneModel.query.count()
 
-    return render_template('pakohuone/pakohuone_data.html', title='pakohuone data',
+    return render_template('pakohuone/pakohuone_data.html',
+                           title='pakohuone data',
                            entries=entries,
                            count=count,
                            limit=limit)

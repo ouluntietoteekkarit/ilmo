@@ -5,17 +5,16 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
+from .event import Event
 
 
 class FuksilauluiltaForm(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-
     consent1 = BooleanField(
         'Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *',
         validators=[DataRequired()])
-
     submit = SubmitField('Ilmoittaudu')
 
 
@@ -30,28 +29,16 @@ class FuksilauluiltaModel(db.Model):
 
 def fuksilauluilta_handler(request):
     form = FuksilauluiltaForm()
-    starttime = datetime(2020, 10, 7, 12, 00, 00)
-    endtime = datetime(2020, 10, 13, 23, 59, 59)
+    event = Event('Fuksilauluilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2024, 10, 13, 23, 59, 59), 70)
+
     nowtime = datetime.now()
-    limit = 70
-    maxlimit = 70
     entrys = FuksilauluiltaModel.query.all()
     count = FuksilauluiltaModel.query.count()
 
     for entry in entrys:
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
             flash('Olet jo ilmoittautunut')
-
-            return render_template('fuksilauluilta/fuksilauluilta.html',
-                                   title='fuksilauluilta ilmoittautuminen',
-                                   entrys=entrys,
-                                   count=count,
-                                   starttime=starttime,
-                                   endtime=endtime,
-                                   nowtime=nowtime,
-                                   limit=limit,
-                                   form=form,
-                                   page="fuksilauluilta")
+            return render_form(entrys, count, event, nowtime, form)
 
     validate = False
     submitted = False
@@ -59,7 +46,7 @@ def fuksilauluilta_handler(request):
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
 
-    if validate and submitted and count <= maxlimit:
+    if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
         sub = FuksilauluiltaModel(
             etunimi=form.etunimi.data,
@@ -73,23 +60,26 @@ def fuksilauluilta_handler(request):
 
         return redirect(url_for('route_fuksilauluilta'))
 
-    elif submitted and count > maxlimit:
+    elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
+    return render_form(entrys, count, event, nowtime, form)
+
+
+def render_form(entrys, count, event, nowtime, form):
     return render_template('fuksilauluilta/fuksilauluilta.html',
                            title='fuksilauluilta ilmoittautuminen',
                            entrys=entrys,
                            count=count,
-                           starttime=starttime,
-                           endtime=endtime,
+                           starttime=event.get_start_time(),
+                           endtime=event.get_end_time(),
                            nowtime=nowtime,
-                           limit=limit,
+                           limit=event.get_participant_limit(),
                            form=form,
                            page="fuksilauluilta")
-
 
 def fuksilauluilta_data():
     limit = 70
