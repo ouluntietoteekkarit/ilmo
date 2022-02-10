@@ -11,38 +11,34 @@ from .forms import RequiredIfValue
 
 class PakohuoneForm(FlaskForm):
     aika = RadioField('Aika *',
-                      choices=(['18:00', '18:00'], ['19:30', '19:30']),
+                      choices=[('18:00', '18:00'), ('19:30', '19:30')],
                       validators=[DataRequired()])
 
     huone1800 = RadioField('Huone (18:00) *',
-                           choices=(['Pommi (Uusikatu)', ''],
-                                    ['Kuolleen miehen saari (Uusikatu)', ''],
-                                    ['Temppelin kirous (Uusikatu)', ''],
-                                    ['Velhon perintö (Uusikatu)', ''],
-                                    ['Murhamysteeri (Kajaaninkatu)', ''],
-                                    ['Vankilapako (Kajaaninkatu)', ''],
-                                    ['Professorin arvoitus (Kajaaninkatu)', ''],
-                                    ['The SAW (Kirkkokatu)', ''],
-                                    ['Alcatraz (Kirkkokatu)', ''],
-                                    ['Matka maailman ympäri (Kirkkokatu)', ''],
-                                    ['', '']),
-                           validators=[RequiredIfValue(other_field_name='aika', value='18:00')],
-                           default=(['', '']))
+                           choices=[('Pommi (Uusikatu)', 'Pommi (Uusikatu)'),
+                                    ('Kuolleen miehen saari (Uusikatu)', 'Kuolleen miehen saari (Uusikatu)'),
+                                    ('Temppelin kirous (Uusikatu)', 'Temppelin kirous (Uusikatu)'),
+                                    ('Velhon perintö (Uusikatu)', 'Velhon perintö (Uusikatu)'),
+                                    ('Murhamysteeri (Kajaaninkatu)', 'Murhamysteeri (Kajaaninkatu)'),
+                                    ('Vankilapako (Kajaaninkatu)', 'Vankilapako (Kajaaninkatu)'),
+                                    ('Professorin arvoitus (Kajaaninkatu)', 'Professorin arvoitus (Kajaaninkatu)'),
+                                    ('The SAW (Kirkkokatu)', 'The SAW (Kirkkokatu)'),
+                                    ('Alcatraz (Kirkkokatu)', 'Alcatraz (Kirkkokatu)'),
+                                    ('Matka maailman ympäri (Kirkkokatu)', 'Matka maailman ympäri (Kirkkokatu)')],
+                           validators=[RequiredIfValue(other_field_name='aika', value='18:00')])
 
     huone1930 = RadioField('Huone (19:30) *',
-                           choices=(['Pommi (Uusikatu)', ''],
-                                    ['Kuolleen miehen saari (Uusikatu)', ''],
-                                    ['Temppelin kirous (Uusikatu)', ''],
-                                    ['Velhon perintö (Uusikatu)', ''],
-                                    ['Murhamysteeri (Kajaaninkatu)', ''],
-                                    ['Vankilapako (Kajaaninkatu)', ''],
-                                    ['Professorin arvoitus (Kajaaninkatu)', ''],
-                                    ['The SAW (Kirkkokatu)', ''],
-                                    ['Alcatraz (Kirkkokatu)', ''],
-                                    ['Matka maailman ympäri (Kirkkokatu)', ''],
-                                    ['', '']),
-                           validators=[RequiredIfValue(other_field_name='aika', value='19:30')],
-                           default=(['', '']))
+                           choices=[('Pommi (Uusikatu)', 'Pommi (Uusikatu)'),
+                                    ('Kuolleen miehen saari (Uusikatu)', 'Kuolleen miehen saari (Uusikatu)'),
+                                    ('Temppelin kirous (Uusikatu)', 'Temppelin kirous (Uusikatu)'),
+                                    ('Velhon perintö (Uusikatu)', 'Velhon perintö (Uusikatu)'),
+                                    ('Murhamysteeri (Kajaaninkatu)', 'Murhamysteeri (Kajaaninkatu)'),
+                                    ('Vankilapako (Kajaaninkatu)', 'Vankilapako (Kajaaninkatu)'),
+                                    ('Professorin arvoitus (Kajaaninkatu)', 'Professorin arvoitus (Kajaaninkatu)'),
+                                    ('The SAW (Kirkkokatu)', 'The SAW (Kirkkokatu)'),
+                                    ('Alcatraz (Kirkkokatu)', 'Alcatraz (Kirkkokatu)'),
+                                    ('Matka maailman ympäri (Kirkkokatu)', 'Matka maailman ympäri (Kirkkokatu)')],
+                           validators=[RequiredIfValue(other_field_name='aika', value='19:30')])
 
     etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
@@ -105,7 +101,7 @@ class PakohuoneModel(db.Model):
 
 def pakohuone_handler(request):
     starttime = datetime(2020, 11, 5, 12, 00, 00)
-    endtime = datetime(2020, 11, 9, 23, 59, 59)
+    endtime = datetime(2024, 11, 9, 23, 59, 59)
     nowtime = datetime.now()
     limit = 20
     maxlimit = 20
