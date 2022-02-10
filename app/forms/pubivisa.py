@@ -1,45 +1,59 @@
 from flask_wtf import FlaskForm
-from flask import Flask, render_template, url_for, redirect, request, flash, send_from_directory, session, abort
-from wtforms import StringField, BooleanField, SubmitField, RadioField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Email, Optional, length, Required, InputRequired, Optional
+from flask import render_template, url_for, redirect, flash, send_from_directory, abort
+from wtforms import StringField, BooleanField, SubmitField, SelectField
+from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
+from .guilds import *
+from .event import Event
 
 
-class pubivisaForm(FlaskForm):
+def get_guilds():
+    return [
+        Guild(GUILD_OTIT),
+        Guild(GUILD_SIK),
+        Guild(GUILD_YMP),
+        Guild(GUILD_KONE),
+        Guild(GUILD_PROSE),
+        Guild(GUILD_OPTIEM),
+        Guild(GUILD_ARK)
+    ]
+
+
+def get_guild_choices():
+    choices = []
+    for guild in get_guilds():
+        choices.append((guild.get_name(), guild.get_name()))
+    return choices
+
+
+class PubivisaForm(FlaskForm):
     teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
 
     etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email0 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta0 = SelectField('Kilta *', choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-        ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']),
-        validators=[DataRequired()])
+    kilta0 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi1 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone1 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email1 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta1 = SelectField('Kilta *', choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-        ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']),
-        validators=[DataRequired()])
+    kilta1 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
 
     etunimi2 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi2 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone2 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email2 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta2 = SelectField('Kilta *', choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-        ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']),
-        validators=[DataRequired()])
+    kilta2 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
 
     etunimi3 = StringField('Etunimi', validators=[length(max=50)])
     sukunimi3 = StringField('Sukunimi', validators=[length(max=50)])
     phone3 = StringField('Puhelinnumero', validators=[length(max=20)])
     email3 = StringField('Sähköposti', validators=[length(max=100)])
-    kilta3 = SelectField('Kilta', choices=(['OTiT', 'OTiT'], ['SIK', 'SIK'], ['YMP', 'YMP'], ['KONE', 'KONE'],
-        ['PROSE', 'PROSE'], ['OPTIEM', 'OPTIEM'], ['ARK', 'ARK']))
+    kilta3 = SelectField('Kilta', choices=get_guild_choices())
 
     consent0 = BooleanField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
     consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
@@ -48,7 +62,7 @@ class pubivisaForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class pubivisaModel(db.Model):
+class PubivisaModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     teamname = db.Column(db.String(128))
 
@@ -85,56 +99,38 @@ class pubivisaModel(db.Model):
     personcount = db.Column(db.Integer())
 
 
-def pubivisa_handler(KAPSI):
-    form = pubivisaForm()
-
-    starttime = datetime(2020, 10, 7, 12, 00, 00)
-    endtime = datetime(2020, 10, 10, 23, 59, 59)
+def pubivisa_handler(request):
+    form = PubivisaForm()
+    event = Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50)
     nowtime = datetime.now()
-
-    limit = 50
-    maxlimit = 50
-    entrys = pubivisaModel.query.all()
+    entrys = PubivisaModel.query.all()
     count = 0
     totalcount = 0
     for entry in entrys:
         totalcount += entry.personcount
 
     for entry in entrys:
-        if (entry.teamname == form.teamname.data):
+        if entry.teamname == form.teamname.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('pubivisa.html', title='pubivisa ilmoittautuminen',
-                                   entrys=entrys,
-                                   totalcount=totalcount,
-                                   starttime=starttime,
-                                   endtime=endtime,
-                                   nowtime=nowtime,
-                                   limit=limit,
-                                   form=form,
-                                   page="pubivisa")
+            return render_form(entrys, totalcount, event, nowtime, form)
 
-    if form.etunimi0.data and form.sukunimi0.data:
-        count += 1
-    if form.etunimi1.data and form.sukunimi1.data:
-        count += 1
-    if form.etunimi2.data and form.sukunimi2.data:
-        count += 1
-    if form.etunimi3.data and form.sukunimi3.data:
-        count += 1
+    count += int(form.etunimi0.data and form.sukunimi0.data)
+    count += int(form.etunimi1.data and form.sukunimi1.data)
+    count += int(form.etunimi2.data and form.sukunimi2.data)
+    count += int(form.etunimi3.data and form.sukunimi3.data)
 
     totalcount += count
 
+    validate = False
+    submitted = False
     if request.method == 'POST':
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
-    else:
-        validate = False
-        submitted = False
 
-    if validate and submitted and totalcount <= maxlimit:
+    if validate and submitted and totalcount <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
-        sub = pubivisaModel(
+        sub = PubivisaModel(
             teamname=form.teamname.data,
             etunimi0=form.etunimi0.data,
             sukunimi0=form.sukunimi0.data,
@@ -159,101 +155,46 @@ def pubivisa_handler(KAPSI):
             consent0=form.consent0.data,
             consent1=form.consent1.data,
             consent2=form.consent2.data,
-
             personcount=count,
-
             datetime=nowtime
         )
         db.session.add(sub)
         db.session.commit()
 
-        if KAPSI:
-            msg = ["echo \"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
-                   "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                   "\n'Joukkueen nimi: ", str(form.teamname.data),
-                   "\n'Osallistujien nimet:\n", str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                   str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                   str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                   str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pubivisa ilmoittautuminen' ", str(form.email0.data)]
+        return redirect(url_for('route_pubivisa'))
 
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-            msg = ["echo \"Hei", str(form.etunimi1.data), str(form.sukunimi1.data),
-                   "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                   "\n'Joukkueen nimi: ", str(form.teamname.data),
-                   "\n'Osallistujien nimet:\n", str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                   str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                   str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                   str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pubivisa ilmoittautuminen' ", str(form.email1.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-            msg = ["echo \"Hei", str(form.etunimi2.data), str(form.sukunimi2.data),
-                   "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                   "\n'Joukkueen nimi: ", str(form.teamname.data),
-                   "\n'Osallistujien nimet:\n", str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                   str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                   str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                   str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pubivisa ilmoittautuminen' ", str(form.email2.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-            msg = ["echo \"Hei", str(form.etunimi3.data), str(form.sukunimi3.data),
-                   "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                   "\n'Joukkueen nimi: ", str(form.teamname.data),
-                   "\n'Osallistujien nimet:\n", str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                   str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                   str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                   str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pubivisa ilmoittautuminen' ", str(form.email3.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-        if KAPSI:
-            return redirect('https://ilmo.oty.fi/pubivisa')
-        else:
-            return redirect(url_for('route_pubivisa'))
-
-    elif submitted and totalcount > maxlimit:
+    elif submitted and totalcount > event.get_participant_limit():
         totalcount -= count
         flash('Ilmoittautuminen on jo täynnä')
 
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('pubivisa.html', title='pubivisa ilmoittautuminen',
+    return render_form(entrys, totalcount, event, nowtime, form)
+
+
+def render_form(entrys, totalcount, event, nowtime, form):
+    return render_template('pubivisa/pubivisa.html',
+                           title='pubivisa ilmoittautuminen',
                            entrys=entrys,
                            totalcount=totalcount,
-                           starttime=starttime,
-                           endtime=endtime,
+                           starttime=event.get_start_time(),
+                           endtime=event.get_end_time(),
                            nowtime=nowtime,
-                           limit=limit,
+                           limit=event.get_participant_limit(),
                            form=form,
                            page="pubivisa")
 
 def pubivisa_data():
     limit = 50
-    entries = pubivisaModel.query.all()
-    count = pubivisaModel.query.count()
-    return render_template('pubivisa_data.html', title='pubivisa data',
+    entries = PubivisaModel.query.all()
+    count = PubivisaModel.query.count()
+    return render_template('pubivisa/pubivisa_data.html',
+                           title='pubivisa data',
                            entries=entries,
                            count=count,
                            limit=limit)
+
 
 def pubivisa_csv():
     os.system('mkdir csv')

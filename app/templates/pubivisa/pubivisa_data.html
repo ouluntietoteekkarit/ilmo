@@ -1,0 +1,83 @@
+{% extends "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+
+<div class="container p-3">
+    <h1>{{ title }}</h1>
+
+    <a href="{{ url_for('route_pubivisa_csv') }}">
+        <button class="btn btn-info">Lataa CSV</button>
+    </a>
+    <div>
+        <h2>Osallistujat</h2>
+        <h3>{{ count }}/{{ limit }}</h3>
+        <table class="table" rules="all">
+            <thead>
+                <tr>
+                    <td>N</td>
+                    <td>etunimi0</td>
+                    <td>sukunimi0</td>
+                    <td>phone0</td>
+                    <td>email0</td>
+                    <td>kilta0</td>
+                    <td>etunimi1</td>
+                    <td>sukunimi1</td>
+                    <td>phone1</td>
+                    <td>email1</td>
+                    <td>kilta1</td>
+                    <td>etunimi2</td>
+                    <td>sukunimi2</td>
+                    <td>phone2</td>
+                    <td>email2</td>
+                    <td>kilta2</td>
+                    <td>etunimi3</td>
+                    <td>sukunimi3</td>
+                    <td>phone3</td>
+                    <td>email3</td>
+                    <td>kilta3</td>
+                    <td>hyväksyn nimen julkaisemisen</td>
+                    <td>hyväksyn tietosuojaselosteen</td>
+                    <td>ymmärrän että ilmoittautuminen on sitova</td>
+                    <td>datetime</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td>{{ loop.index }}.
+                        {% if loop.index > limit %}
+                        (Vara)
+                        {% endif %}</td>
+                    <td>{{ entry.etunimi0 }}</td>
+                    <td>{{ entry.sukunimi0 }}</td>
+                    <td>{{ entry.phone0 }}</td>
+                    <td>{{ entry.email0 }}</td>
+                    <td>{{ entry.kilta0 }}</td>
+                    <td>{{ entry.etunimi1 }}</td>
+                    <td>{{ entry.sukunimi1 }}</td>
+                    <td>{{ entry.phone1 }}</td>
+                    <td>{{ entry.email1 }}</td>
+                    <td>{{ entry.kilta1 }}</td>
+                    <td>{{ entry.etunimi2 }}</td>
+                    <td>{{ entry.sukunimi2 }}</td>
+                    <td>{{ entry.phone2 }}</td>
+                    <td>{{ entry.email2 }}</td>
+                    <td>{{ entry.kilta2 }}</td>
+                    <td>{{ entry.etunimi3 }}</td>
+                    <td>{{ entry.sukunimi3 }}</td>
+                    <td>{{ entry.phone3 }}</td>
+                    <td>{{ entry.email3 }}</td>
+                    <td>{{ entry.kilta3 }}</td>
+                    <td>{{ entry.consent0 }}</td>
+                    <td>{{ entry.consent1 }}</td>
+                    <td>{{ entry.consent2 }}</td>
+                    <td>{{ entry.datetime }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

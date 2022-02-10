@@ -1,20 +1,12 @@
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, render_template, url_for, redirect, request, flash, send_from_directory, session, abort
-from flask_httpauth import HTTPBasicAuth
-from app import server, db
-from app.forms.pubivisa import pubivisa_handler, pubivisa_data, pubivisa_csv
-from app.forms.korttijalautapeliilta import korttijalautapeliilta_handler, korttijalautapeliilta_data, korttijalautapeliilta_csv
-from app.forms.fuksilauluilta import fuksilauluilta_handler, fuksilauluilta_data, fuksilauluilta_csv
-from app.forms.slumberparty import slumberparty_handler, slumberparty_data, slumberparty_csv
-from app.forms.pakohuone import pakohuone_handler, pakohuone_data, pakohuone_csv
-from app.forms.kyselyarvontajuttu import kysely_arvonta_juttu_handler, kysely_arvonta_juttu_data, kysely_arvonta_juttu_csv
-from flask_wtf.csrf import CSRFProtect, CSRFError
-from .config import load_route_conf, load_auth_config
-
-auth = HTTPBasicAuth()
-csrf = CSRFProtect()
-(users, roles) = load_auth_config()
-KAPSI = load_route_conf()
+from werkzeug.security import check_password_hash
+from flask import render_template, request
+from . import server, auth, users, roles
+from .forms.pubivisa import pubivisa_handler, pubivisa_data, pubivisa_csv
+from .forms.korttijalautapeliilta import korttijalautapeliilta_handler, korttijalautapeliilta_data, korttijalautapeliilta_csv
+from .forms.fuksilauluilta import fuksilauluilta_handler, fuksilauluilta_data, fuksilauluilta_csv
+from .forms.slumberparty import slumberparty_handler, slumberparty_data, slumberparty_csv
+from .forms.pakohuone import pakohuone_handler, pakohuone_data, pakohuone_csv
+from .forms.kyselyarvontajuttu import kysely_arvonta_juttu_handler, kysely_arvonta_juttu_data, kysely_arvonta_juttu_csv
 
 
 @auth.verify_password
@@ -35,7 +27,7 @@ def route_index():
 
 @server.route('/pubivisa', methods=['GET', 'POST'])
 def route_pubivisa():
-    return pubivisa_handler(KAPSI)
+    return pubivisa_handler(request)
 
 
 @server.route('/pubivisa_data', methods=['GET'])
@@ -49,9 +41,10 @@ def route_pubivisa_data():
 def route_pubivisa_csv():
     return pubivisa_csv()
 
+
 @server.route('/korttijalautapeliilta', methods=['GET', 'POST'])
 def route_korttijalautapeliilta():
-    return korttijalautapeliilta_handler(KAPSI)
+    return korttijalautapeliilta_handler(request)
 
 
 @server.route('/korttijalautapeliilta_data', methods=['GET'])
@@ -68,7 +61,7 @@ def route_korttijalautapeliilta_csv():
 
 @server.route('/fuksilauluilta', methods=['GET', 'POST'])
 def route_fuksilauluilta():
-    return fuksilauluilta_handler(KAPSI)
+    return fuksilauluilta_handler(request)
 
 
 @server.route('/fuksilauluilta_data', methods=['GET'])
@@ -85,7 +78,7 @@ def route_fuksilauluilta_csv():
 
 @server.route('/slumberparty', methods=['GET', 'POST'])
 def route_slumberparty():
-   return slumberparty_handler(KAPSI)
+    return slumberparty_handler(request)
 
 
 @server.route('/slumberparty_data', methods=['GET'])
@@ -97,38 +90,38 @@ def route_slumberparty_data():
 @server.route('/slumberparty_data/slumberparty_model_data.csv')
 @auth.login_required(role=['admin', 'slumberparty'])
 def route_slumberparty_csv():
-   return slumberparty_csv()
+    return slumberparty_csv()
 
 
 @server.route('/pakohuone', methods=['GET', 'POST'])
 def route_pakohuone():
-    return pakohuone_handler(KAPSI)
+    return pakohuone_handler(request)
 
 
 @server.route('/pakohuone_data', methods=['GET'])
 @auth.login_required(role=['admin', 'pakohuone'])
 def route_pakohuone_data():
-    pakohuone_data()
+    return pakohuone_data()
 
 
 @server.route('/pakohuone_data/pakohuone_model_data.csv')
 @auth.login_required(role=['admin', 'pakohuone'])
 def route_pakohuone_csv():
-    pakohuone_csv()
+    return pakohuone_csv()
 
 
 @server.route('/kysely_arvonta_juttu', methods=['GET', 'POST'])
 def route_kysely_arvonta_juttu():
-    kysely_arvonta_juttu_handler(KAPSI)
+    return kysely_arvonta_juttu_handler(request)
 
 
 @server.route('/kysely_arvonta_juttu_data', methods=['GET'])
 @auth.login_required(role=['admin', 'kysely_arvonta_juttu'])
 def route_kysely_arvonta_juttu_data():
-    kysely_arvonta_juttu_data()
+    return kysely_arvonta_juttu_data()
 
 
 @server.route('/kysely_arvonta_juttu_data/kysely_arvonta_juttu_model_data.csv')
 @auth.login_required(role=['admin', 'kysely_arvonta_juttu'])
 def route_kysely_arvonta_juttu_csv():
-    kysely_arvonta_juttu_csv()
+    return kysely_arvonta_juttu_csv()

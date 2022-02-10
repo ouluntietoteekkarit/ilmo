@@ -1,5 +1,5 @@
-# oty_ilmo
-Event registration forms for Oulun Teekkariyhdistys ry
+# otit_ilmo
+Event registration forms for Oulun Tietoteekkarit ry
 
 ## run development server
 ```shell
@@ -10,22 +10,7 @@ export FLASK_APP=app.py
 flask run
 ```
 
-## kapsi deployment
-
-.htaccess
-```apache
-# http -> https
-RewriteEngine On
-RewriteCond %{ENV:HTTPS} !on
-RewriteRule (.*) https://%{SERVER_NAME}%{REQUEST_URI} [R=301,L]
-
-
-RewriteEngine On
-RewriteRule ^$ http://lakka.n.kapsi.fi:62733/ [P]
-RewriteRule ^(index\.html)$ http://lakka.n.kapsi.fi:62733/ [P]
-RewriteRule ^(.*)$ http://lakka.n.kapsi.fi:62733/$1 [P]
-```
-starting gunicorn
+## starting gunicorn
 ```shell
 gunicorn --workers=1 --worker-connections=400 --bind=0.0.0.0:62733 wsgi:app --name=ilmot --timeout 20 --daemon
 ```

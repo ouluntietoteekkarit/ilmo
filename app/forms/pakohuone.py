@@ -1,47 +1,41 @@
 from flask_wtf import FlaskForm
-from flask import Flask, render_template, url_for, redirect, request, flash, send_from_directory, session, abort
-from wtforms import StringField, BooleanField, SubmitField, RadioField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Email, Optional, length, Required, InputRequired, Optional
-from .forms import RequiredIf, RequiredIfValue
+from flask import render_template, url_for, redirect, flash, send_from_directory, abort
+from wtforms import StringField, BooleanField, SubmitField, RadioField
+from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from app import db, sqlite_to_csv
 import os
 import json
+from app import db, sqlite_to_csv
+from .forms import RequiredIfValue
+from .event import Event
 
-class pakohuoneForm(FlaskForm):
-    aika = RadioField('Aika *',
-                      choices=(['18:00', '18:00'], ['19:30', '19:30']),
-                      validators=[DataRequired()])
 
-    huone1800 = RadioField('Huone (18:00) *',
-                           choices=(['Pommi (Uusikatu)', ''],
-                                    ['Kuolleen miehen saari (Uusikatu)', ''],
-                                    ['Temppelin kirous (Uusikatu)', ''],
-                                    ['Velhon perintö (Uusikatu)', ''],
-                                    ['Murhamysteeri (Kajaaninkatu)', ''],
-                                    ['Vankilapako (Kajaaninkatu)', ''],
-                                    ['Professorin arvoitus (Kajaaninkatu)', ''],
-                                    ['The SAW (Kirkkokatu)', ''],
-                                    ['Alcatraz (Kirkkokatu)', ''],
-                                    ['Matka maailman ympäri (Kirkkokatu)', ''],
-                                    ['', '']),
-                           validators=[RequiredIfValue(other_field_name='aika', value='18:00')],
-                           default=(['', '']))
+def get_escape_games():
+    return [
+       'Pommi (Uusikatu)',
+       'Kuolleen miehen saari (Uusikatu)',
+       'Temppelin kirous (Uusikatu)',
+       'Velhon perintö (Uusikatu)',
+       'Murhamysteeri (Kajaaninkatu)',
+       'Vankilapako (Kajaaninkatu)',
+       'Professorin arvoitus (Kajaaninkatu)',
+       'The SAW (Kirkkokatu)',
+       'Alcatraz (Kirkkokatu)',
+       'Matka maailman ympäri (Kirkkokatu)',
+    ]
 
-    huone1930 = RadioField('Huone (19:30) *',
-                           choices=(['Pommi (Uusikatu)', ''],
-                                    ['Kuolleen miehen saari (Uusikatu)', ''],
-                                    ['Temppelin kirous (Uusikatu)', ''],
-                                    ['Velhon perintö (Uusikatu)', ''],
-                                    ['Murhamysteeri (Kajaaninkatu)', ''],
-                                    ['Vankilapako (Kajaaninkatu)', ''],
-                                    ['Professorin arvoitus (Kajaaninkatu)', ''],
-                                    ['The SAW (Kirkkokatu)', ''],
-                                    ['Alcatraz (Kirkkokatu)', ''],
-                                    ['Matka maailman ympäri (Kirkkokatu)', ''],
-                                    ['', '']),
-                           validators=[RequiredIfValue(other_field_name='aika', value='19:30')],
-                           default=(['', '']))
+
+def get_game_choices():
+    choices = []
+    for game in get_escape_games():
+        choices.append((game, game))
+    return choices
+
+
+class PakohuoneForm(FlaskForm):
+    aika = RadioField('Aika *', choices=[('18:00', '18:00'), ('19:30', '19:30')], validators=[DataRequired()])
+    huone1800 = RadioField('Huone (18:00) *', choices=get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value='18:00')])
+    huone1930 = RadioField('Huone (19:30) *', choices=get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value='19:30')])
 
     etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
@@ -70,7 +64,7 @@ class pakohuoneForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class pakohuoneModel(db.Model):
+class PakohuoneModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     aika = db.Column(db.String(16))
@@ -102,80 +96,38 @@ class pakohuoneModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def pakohuone_handler(KAPSI):
-    starttime = datetime(2020, 11, 5, 12, 00, 00)
-    endtime = datetime(2020, 11, 9, 23, 59, 59)
+def pakohuone_handler(request):
+    form = PakohuoneForm()
+    event = Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20)
     nowtime = datetime.now()
-
-    limit = 20
-    maxlimit = 20
-
-    entrys = pakohuoneModel.query.all()
-    count = pakohuoneModel.query.count()
+    entrys = PakohuoneModel.query.all()
+    count = PakohuoneModel.query.count()
 
     varatut = []
     for entry in entrys:
         varatut.append((entry.aika, entry.huone1800, entry.huone1930))
 
-    form = pakohuoneForm()
-
     for entry in entrys:
-        if ((entry.etunimi0 == form.etunimi0.data and entry.sukunimi0 == form.sukunimi0.data) or entry.email0 == form.email0.data):
+        if (entry.etunimi0 == form.etunimi0.data and entry.sukunimi0 == form.sukunimi0.data) or entry.email0 == form.email0.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('pakohuone.html', title='pakohuone ilmoittautuminen',
-                                   entrys=entrys,
-                                   count=count,
-                                   starttime=starttime,
-                                   endtime=endtime,
-                                   nowtime=nowtime,
-                                   limit=limit,
-                                   form=form,
-                                   varatut=json.dumps(varatut),
-                                   page="pakohuone")
+            return render_form(entrys, count, event, nowtime, form, varatut)
 
     for entry in entrys:
-        if (entry.aika == form.aika.data):
-            if (entry.aika == "18:00"):
-                if (entry.huone1800 == form.huone1800.data):
-                    flash('Valisemasi huone on jo varattu valitsemanasi aikana')
+        if entry.aika == form.aika.data:
+            if (entry.aika == "18:00" and entry.huone1800 == form.huone1800.data) or (entry.aika == "19:30" and entry.huone1930 == form.huone1930.data):
+                flash('Valisemasi huone on jo varattu valitsemanasi aikana')
+                return render_form(entrys, count, event, nowtime, form, varatut)
 
-                    return render_template('pakohuone.html', title='pakohuone ilmoittautuminen',
-                                           entrys=entrys,
-                                           count=count,
-                                           starttime=starttime,
-                                           endtime=endtime,
-                                           nowtime=nowtime,
-                                           limit=limit,
-                                           form=form,
-                                           varatut=json.dumps(varatut),
-                                           page="pakohuone")
-
-            elif (entry.aika == "19:30"):
-                if (entry.huone1930 == form.huone1930.data):
-                    flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-
-                    return render_template('pakohuone.html', title='pakohuone ilmoittautuminen',
-                                           entrys=entrys,
-                                           count=count,
-                                           starttime=starttime,
-                                           endtime=endtime,
-                                           nowtime=nowtime,
-                                           limit=limit,
-                                           form=form,
-                                           varatut=json.dumps(varatut),
-                                           page="pakohuone")
-
+    validate = False
+    submitted = False
     if request.method == 'POST':
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
-    else:
-        validate = False
-        submitted = False
 
-    if validate and submitted and count <= maxlimit:
+    if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
-        sub = pakohuoneModel(
+        sub = PakohuoneModel(
             aika=form.aika.data,
             huone1800=form.huone1800.data,
             huone1930=form.huone1930.data,
@@ -183,7 +135,6 @@ def pakohuone_handler(KAPSI):
             sukunimi0=form.sukunimi0.data,
             phone0=form.phone0.data,
             email0=form.email0.data,
-
             etunimi1=form.etunimi1.data,
             sukunimi1=form.sukunimi1.data,
             etunimi2=form.etunimi2.data,
@@ -194,60 +145,43 @@ def pakohuone_handler(KAPSI):
             sukunimi4=form.sukunimi4.data,
             etunimi5=form.etunimi5.data,
             sukunimi5=form.sukunimi5.data,
-
             consent0=form.consent0.data,
             datetime=nowtime
         )
         db.session.add(sub)
         db.session.commit()
 
-        if KAPSI:
-            msg = ["echo \"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
-                   "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
-                   "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
-                   "\nSähköposti: ", str(form.email0.data),
-                   "\nPuhelinnumero: ", str(form.phone0.data),
-                   "\nMuiden joukkuelaisten nimet: ", str(form.etunimi1.data), str(form.sukunimi1.data),
-                   str(form.etunimi2.data), str(form.sukunimi2.data),
-                   str(form.etunimi3.data), str(form.sukunimi3.data),
-                   str(form.etunimi4.data), str(form.sukunimi4.data),
-                   str(form.etunimi5.data), str(form.sukunimi5.data),
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pakopelipäivä ilmoittautuminen' ", str(form.email0.data)]
+        return redirect(url_for('route_pakohuone'))
 
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-        if KAPSI:
-            return redirect('https://ilmo.oty.fi/pakohuone')
-        else:
-            return redirect(url_for('route_pakohuone'))
-
-    elif submitted and count > maxlimit:
+    elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('pakohuone.html', title='pakohuone ilmoittautuminen',
+    return render_form(entrys, count, event, nowtime, form, varatut)
+
+
+def render_form(entrys, count, event, nowtime, form, varatut):
+    return render_template('pakohuone/pakohuone.html',
+                           title='pakohuone ilmoittautuminen',
                            entrys=entrys,
                            count=count,
-                           starttime=starttime,
-                           endtime=endtime,
+                           starttime=event.get_start_time(),
+                           endtime=event.get_end_time(),
                            nowtime=nowtime,
-                           limit=limit,
+                           limit=event.get_participant_limit(),
                            form=form,
                            varatut=json.dumps(varatut),
                            page="pakohuone")
 
-
 def pakohuone_data():
     limit = 20
-    entries = pakohuoneModel.query.all()
-    count = pakohuoneModel.query.count()
+    entries = PakohuoneModel.query.all()
+    count = PakohuoneModel.query.count()
 
-    return render_template('pakohuone_data.html', title='pakohuone data',
+    return render_template('pakohuone/pakohuone_data.html',
+                           title='pakohuone data',
                            entries=entries,
                            count=count,
                            limit=limit)
