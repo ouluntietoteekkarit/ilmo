@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from flask import Flask, render_template, url_for, redirect, request, flash, send_from_directory, session, abort
-from wtforms import StringField, BooleanField, SubmitField, RadioField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Email, Optional, length, Required, InputRequired, Optional
+from flask import render_template, url_for, redirect, request, flash, send_from_directory, abort
+from wtforms import StringField, BooleanField, SubmitField, SelectField
+from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import os
 from app import db, sqlite_to_csv
@@ -101,10 +101,10 @@ def pubivisa_handler(KAPSI):
         totalcount += entry.personcount
 
     for entry in entrys:
-        if (entry.teamname == form.teamname.data):
+        if entry.teamname == form.teamname.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('pubivisa.html', title='pubivisa ilmoittautuminen',
+            return render_template('pubivisa/pubivisa.html', title='pubivisa ilmoittautuminen',
                                    entrys=entrys,
                                    totalcount=totalcount,
                                    starttime=starttime,
@@ -236,7 +236,7 @@ def pubivisa_handler(KAPSI):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('pubivisa.html', title='pubivisa ilmoittautuminen',
+    return render_template('pubivisa/pubivisa.html', title='pubivisa ilmoittautuminen',
                            entrys=entrys,
                            totalcount=totalcount,
                            starttime=starttime,
@@ -250,7 +250,7 @@ def pubivisa_data():
     limit = 50
     entries = pubivisaModel.query.all()
     count = pubivisaModel.query.count()
-    return render_template('pubivisa_data.html', title='pubivisa data',
+    return render_template('pubivisa/pubivisa_data.html', title='pubivisa data',
                            entries=entries,
                            count=count,
                            limit=limit)

@@ -123,7 +123,7 @@ def pakohuone_handler(KAPSI):
         if ((entry.etunimi0 == form.etunimi0.data and entry.sukunimi0 == form.sukunimi0.data) or entry.email0 == form.email0.data):
             flash('Olet jo ilmoittautunut')
 
-            return render_template('pakohuone.html', title='pakohuone ilmoittautuminen',
+            return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
                                    entrys=entrys,
                                    count=count,
                                    starttime=starttime,
@@ -140,7 +140,7 @@ def pakohuone_handler(KAPSI):
                 if (entry.huone1800 == form.huone1800.data):
                     flash('Valisemasi huone on jo varattu valitsemanasi aikana')
 
-                    return render_template('pakohuone.html', title='pakohuone ilmoittautuminen',
+                    return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
                                            entrys=entrys,
                                            count=count,
                                            starttime=starttime,
@@ -155,7 +155,7 @@ def pakohuone_handler(KAPSI):
                 if (entry.huone1930 == form.huone1930.data):
                     flash('Valisemasi huone on jo varattu valitsemanasi aikana')
 
-                    return render_template('pakohuone.html', title='pakohuone ilmoittautuminen',
+                    return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
                                            entrys=entrys,
                                            count=count,
                                            starttime=starttime,
@@ -230,7 +230,7 @@ def pakohuone_handler(KAPSI):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('pakohuone.html', title='pakohuone ilmoittautuminen',
+    return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
                            entrys=entrys,
                            count=count,
                            starttime=starttime,
@@ -247,7 +247,7 @@ def pakohuone_data():
     entries = pakohuoneModel.query.all()
     count = pakohuoneModel.query.count()
 
-    return render_template('pakohuone_data.html', title='pakohuone data',
+    return render_template('pakohuone/pakohuone_data.html', title='pakohuone data',
                            entries=entries,
                            count=count,
                            limit=limit)

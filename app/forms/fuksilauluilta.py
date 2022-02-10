@@ -43,7 +43,7 @@ def fuksilauluilta_handler(KAPSI):
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
             flash('Olet jo ilmoittautunut')
 
-            return render_template('fuksilauluilta.html', title='fuksilauluilta ilmoittautuminen',
+            return render_template('fuksilauluilta/fuksilauluilta.html', title='fuksilauluilta ilmoittautuminen',
                                    entrys=entrys,
                                    count=count,
                                    starttime=starttime,
@@ -96,7 +96,7 @@ def fuksilauluilta_handler(KAPSI):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('fuksilauluilta.html', title='fuksilauluilta ilmoittautuminen',
+    return render_template('fuksilauluilta/fuksilauluilta.html', title='fuksilauluilta ilmoittautuminen',
                            entrys=entrys,
                            count=count,
                            starttime=starttime,
@@ -111,7 +111,7 @@ def fuksilauluilta_data():
     limit = 70
     entries = fuksilauluiltaModel.query.all()
     count = fuksilauluiltaModel.query.count()
-    return render_template('fuksilauluilta_data.html', title='fuksilauluilta data',
+    return render_template('fuksilauluilta/fuksilauluilta_data.html', title='fuksilauluilta data',
                            entries=entries,
                            count=count,
                            limit=limit)

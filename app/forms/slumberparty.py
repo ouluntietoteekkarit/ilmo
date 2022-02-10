@@ -56,7 +56,7 @@ def slumberparty_handler(KAPSI):
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
             flash('Olet jo ilmoittautunut')
 
-            return render_template('slumberparty.html', title='slumberparty ilmoittautuminen',
+            return render_template('slumberparty/slumberparty.html', title='slumberparty ilmoittautuminen',
                                    entrys=entrys,
                                    count=count,
                                    starttime=starttime,
@@ -115,7 +115,7 @@ def slumberparty_handler(KAPSI):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('slumberparty.html', title='slumberparty ilmoittautuminen',
+    return render_template('slumberparty/slumberparty.html', title='slumberparty ilmoittautuminen',
                            entrys=entrys,
                            count=count,
                            starttime=starttime,
@@ -131,7 +131,7 @@ def slumberparty_data():
     entries = slumberpartyModel.query.all()
     count = slumberpartyModel.query.count()
 
-    return render_template('slumberparty_data.html', title='slumberparty data',
+    return render_template('slumberparty/slumberparty_data.html', title='slumberparty data',
                            entries=entries,
                            count=count,
                            limit=limit)

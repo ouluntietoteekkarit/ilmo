@@ -47,7 +47,7 @@ def kysely_arvonta_juttu_handler(KAPSI):
                 entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data) or entry.email == form.email.data):
             flash('Olet jo ilmoittautunut')
 
-            return render_template('kysely_arvonta_juttu.html', title='kysely_arvonta_juttu ilmoittautuminen',
+            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html', title='kysely_arvonta_juttu ilmoittautuminen',
                                    entrys=entrys,
                                    count=count,
                                    starttime=starttime,
@@ -91,10 +91,10 @@ def kysely_arvonta_juttu_handler(KAPSI):
 
         if KAPSI:
             # return redirect('https://ilmo.oty.fi/kysely_arvonta_juttu')
-            return render_template('kysely_arvonta_juttu_redirect.html')
+            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
         else:
             # return redirect(url_for('kysely_arvonta_juttu'))
-            return render_template('kysely_arvonta_juttu_redirect.html')
+            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
 
     elif submitted and count > maxlimit:
         flash('Ilmoittautuminen on jo täynnä')
@@ -102,7 +102,7 @@ def kysely_arvonta_juttu_handler(KAPSI):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('kysely_arvonta_juttu.html', title='kysely_arvonta_juttu ilmoittautuminen',
+    return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html', title='kysely_arvonta_juttu ilmoittautuminen',
                            entrys=entrys,
                            count=count,
                            starttime=starttime,
@@ -118,7 +118,7 @@ def kysely_arvonta_juttu_data():
     entries = kysely_arvonta_juttuModel.query.all()
     count = kysely_arvonta_juttuModel.query.count()
 
-    return render_template('kysely_arvonta_juttu_data.html', title='kysely_arvonta_juttu data',
+    return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_data.html', title='kysely_arvonta_juttu data',
                            entries=entries,
                            count=count,
                            limit=limit)

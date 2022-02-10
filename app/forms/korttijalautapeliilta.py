@@ -55,7 +55,7 @@ def korttijalautapeliilta_handler(KAPSI):
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
             flash('Olet jo ilmoittautunut')
 
-            return render_template('korttijalautapeliilta.html', title='korttijalautapeliilta ilmoittautuminen',
+            return render_template('korttijalautapeliilta/korttijalautapeliilta.html', title='korttijalautapeliilta ilmoittautuminen',
                                    entrys=entrys,
                                    count=count,
                                    starttime=starttime,
@@ -115,7 +115,7 @@ def korttijalautapeliilta_handler(KAPSI):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('korttijalautapeliilta.html', title='korttijalautapeliilta ilmoittautuminen',
+    return render_template('korttijalautapeliilta/korttijalautapeliilta.html', title='korttijalautapeliilta ilmoittautuminen',
                            entrys=entrys,
                            count=count,
                            starttime=starttime,
@@ -129,7 +129,7 @@ def korttijalautapeliilta_data():
     limit = 50
     entries = korttijalautapeliiltaModel.query.all()
     count = korttijalautapeliiltaModel.query.count()
-    return render_template('korttijalautapeliilta_data.html', title='korttijalautapeliilta data',
+    return render_template('korttijalautapeliilta/korttijalautapeliilta_data.html', title='korttijalautapeliilta data',
                            entries=entries,
                            count=count,
                            limit=limit)
