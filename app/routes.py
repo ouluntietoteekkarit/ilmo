@@ -72,14 +72,14 @@ def route_post_fuksilauluilta():
 
 
 @server.route('/fuksilauluilta_data', methods=['GET'])
-#@auth.login_required(role=['admin', 'fuksilauluilta'])
+@auth.login_required(role=['admin', 'fuksilauluilta'])
 def route_fuksilauluilta_data():
     obj = FuksiLauluIltaController()
     return obj.get_data_request_handler(request)
 
 
 @server.route('/fuksilauluilta_data/fuksilauluilta_model_data.csv')
-#@auth.login_required(role=['admin', 'fuksilauluilta'])
+@auth.login_required(role=['admin', 'fuksilauluilta'])
 def route_fuksilauluilta_csv():
     obj = FuksiLauluIltaController()
     return obj.get_data_csv_request_handler(request)
