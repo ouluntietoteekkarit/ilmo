@@ -44,7 +44,7 @@ def route_pubivisa_csv():
 
 @server.route('/korttijalautapeliilta', methods=['GET', 'POST'])
 def route_korttijalautapeliilta():
-    return korttijalautapeliilta_handler(KAPSI)
+    return korttijalautapeliilta_handler(request, KAPSI)
 
 
 @server.route('/korttijalautapeliilta_data', methods=['GET'])
