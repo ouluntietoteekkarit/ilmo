@@ -16,7 +16,6 @@ server.config.from_object(Config)
 db = SQLAlchemy(server)
 migrate = Migrate(server, db)
 (users, roles) = load_auth_config()
-KAPSI = load_route_conf()
 
 # MEMO: Cyclic dependency within the server package
 from . import routes, config

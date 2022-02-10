@@ -1,6 +1,6 @@
 from werkzeug.security import check_password_hash
 from flask import render_template, request
-from . import server, auth, KAPSI, users, roles
+from . import server, auth, users, roles
 from .forms.pubivisa import pubivisa_handler, pubivisa_data, pubivisa_csv
 from .forms.korttijalautapeliilta import korttijalautapeliilta_handler, korttijalautapeliilta_data, korttijalautapeliilta_csv
 from .forms.fuksilauluilta import fuksilauluilta_handler, fuksilauluilta_data, fuksilauluilta_csv
@@ -27,7 +27,7 @@ def route_index():
 
 @server.route('/pubivisa', methods=['GET', 'POST'])
 def route_pubivisa():
-    return pubivisa_handler(request, KAPSI)
+    return pubivisa_handler(request)
 
 
 @server.route('/pubivisa_data', methods=['GET'])
@@ -44,7 +44,7 @@ def route_pubivisa_csv():
 
 @server.route('/korttijalautapeliilta', methods=['GET', 'POST'])
 def route_korttijalautapeliilta():
-    return korttijalautapeliilta_handler(request, KAPSI)
+    return korttijalautapeliilta_handler(request)
 
 
 @server.route('/korttijalautapeliilta_data', methods=['GET'])
@@ -61,7 +61,7 @@ def route_korttijalautapeliilta_csv():
 
 @server.route('/fuksilauluilta', methods=['GET', 'POST'])
 def route_fuksilauluilta():
-    return fuksilauluilta_handler(request, KAPSI)
+    return fuksilauluilta_handler(request)
 
 
 @server.route('/fuksilauluilta_data', methods=['GET'])
@@ -78,7 +78,7 @@ def route_fuksilauluilta_csv():
 
 @server.route('/slumberparty', methods=['GET', 'POST'])
 def route_slumberparty():
-    return slumberparty_handler(request, KAPSI)
+    return slumberparty_handler(request)
 
 
 @server.route('/slumberparty_data', methods=['GET'])
@@ -95,7 +95,7 @@ def route_slumberparty_csv():
 
 @server.route('/pakohuone', methods=['GET', 'POST'])
 def route_pakohuone():
-    return pakohuone_handler(request, KAPSI)
+    return pakohuone_handler(request)
 
 
 @server.route('/pakohuone_data', methods=['GET'])
@@ -112,7 +112,7 @@ def route_pakohuone_csv():
 
 @server.route('/kysely_arvonta_juttu', methods=['GET', 'POST'])
 def route_kysely_arvonta_juttu():
-    return kysely_arvonta_juttu_handler(request, KAPSI)
+    return kysely_arvonta_juttu_handler(request)
 
 
 @server.route('/kysely_arvonta_juttu_data', methods=['GET'])

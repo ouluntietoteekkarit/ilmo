@@ -27,22 +27,18 @@ class KyselyArvontaJuttuModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def kysely_arvonta_juttu_handler(request, kapsi):
+def kysely_arvonta_juttu_handler(request):
     form = KyselyArvontaJuttuForm()
-
     starttime = datetime(2020, 11, 2, 12, 00, 00)
     endtime = datetime(2020, 11, 23, 23, 59, 59)
     nowtime = datetime.now()
-
     limit = 4000
     maxlimit = 4000
-
     entrys = KyselyArvontaJuttuModel.query.all()
     count = KyselyArvontaJuttuModel.query.count()
 
     for entry in entrys:
-        if ((
-                entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data) or entry.email == form.email.data):
+        if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data) or entry.email == form.email.data:
             flash('Olet jo ilmoittautunut')
 
             return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html',
@@ -56,12 +52,11 @@ def kysely_arvonta_juttu_handler(request, kapsi):
                                    form=form,
                                    page="kysely_arvonta_juttu")
 
+    validate = False
+    submitted = False
     if request.method == 'POST':
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
-    else:
-        validate = False
-        submitted = False
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
@@ -70,30 +65,13 @@ def kysely_arvonta_juttu_handler(request, kapsi):
             sukunimi=form.sukunimi.data,
             email=form.email.data,
             consent0=form.consent0.data,
-
             datetime=nowtime,
         )
         db.session.add(sub)
         db.session.commit()
 
-        if kapsi:
-            msg = ["echo \"Hei", str(form.etunimi.data), str(form.sukunimi.data),
-                   "\n\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
-                   "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
-                   "\nSähköposti: ", str(form.email.data),
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'hyvinvointi- ja etäopiskelukysely' ", str(form.email.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-        if kapsi:
-            # return redirect('https://ilmo.oty.fi/kysely_arvonta_juttu')
-            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
-        else:
-            # return redirect(url_for('kysely_arvonta_juttu'))
-            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
+        # return redirect(url_for('kysely_arvonta_juttu'))
+        return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
 
     elif submitted and count > maxlimit:
         flash('Ilmoittautuminen on jo täynnä')
@@ -132,9 +110,7 @@ def kysely_arvonta_juttu_csv():
 
     try:
         print(dir)
-        return send_from_directory(directory=dir,
-                                   filename='kysely_arvonta_juttu_model_data.csv',
-                                   as_attachment=True)
+        return send_from_directory(directory=dir, filename='kysely_arvonta_juttu_model_data.csv', as_attachment=True)
     except FileNotFoundError as e:
         print(e)
         abort(404)

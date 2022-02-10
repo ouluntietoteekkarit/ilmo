@@ -42,7 +42,7 @@ class SlumberpartyModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def slumberparty_handler(request, kapsi):
+def slumberparty_handler(request):
     form = SlumberpartyForm()
     starttime = datetime(2020, 10, 21, 12, 00, 00)
     endtime = datetime(2020, 10, 27, 23, 59, 59)
@@ -53,10 +53,11 @@ def slumberparty_handler(request, kapsi):
     count = SlumberpartyModel.query.count()
 
     for entry in entrys:
-        if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
+        if entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('slumberparty/slumberparty.html', title='slumberparty ilmoittautuminen',
+            return render_template('slumberparty/slumberparty.html',
+                                   title='slumberparty ilmoittautuminen',
                                    entrys=entrys,
                                    count=count,
                                    starttime=starttime,
@@ -66,12 +67,11 @@ def slumberparty_handler(request, kapsi):
                                    form=form,
                                    page="slumberparty")
 
+    validate = False
+    submitted = False
     if request.method == 'POST':
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
-    else:
-        validate = False
-        submitted = False
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
@@ -90,24 +90,7 @@ def slumberparty_handler(request, kapsi):
         db.session.add(sub)
         db.session.commit()
 
-        if kapsi:
-            msg = ["echo \"Hei", str(form.etunimi.data), str(form.sukunimi.data),
-                   "\n\nOlet ilmoittautunut slumberpartyyn. Syötit seuraavia tietoja: ",
-                   "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
-                   "\nSähköposti: ", str(form.email.data),
-                   "\nPuhelinnumero: ", str(form.phone.data),
-                   "\nKilta: ", str(form.kilta.data),
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'slumberparty ilmoittautuminen' ", str(form.email.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-        if kapsi:
-            return redirect('https://ilmo.oty.fi/slumberparty')
-        else:
-            return redirect(url_for('route_slumberparty'))
+        return redirect(url_for('route_slumberparty'))
 
     elif submitted and count > maxlimit:
         flash('Ilmoittautuminen on jo täynnä')

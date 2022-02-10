@@ -28,7 +28,7 @@ class FuksilauluiltaModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def fuksilauluilta_handler(request, kapsi):
+def fuksilauluilta_handler(request):
     form = FuksilauluiltaForm()
     starttime = datetime(2020, 10, 7, 12, 00, 00)
     endtime = datetime(2020, 10, 13, 23, 59, 59)
@@ -42,7 +42,8 @@ def fuksilauluilta_handler(request, kapsi):
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
             flash('Olet jo ilmoittautunut')
 
-            return render_template('fuksilauluilta/fuksilauluilta.html', title='fuksilauluilta ilmoittautuminen',
+            return render_template('fuksilauluilta/fuksilauluilta.html',
+                                   title='fuksilauluilta ilmoittautuminen',
                                    entrys=entrys,
                                    count=count,
                                    starttime=starttime,
@@ -52,12 +53,11 @@ def fuksilauluilta_handler(request, kapsi):
                                    form=form,
                                    page="fuksilauluilta")
 
+    validate = False
+    submitted = False
     if request.method == 'POST':
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
-    else:
-        validate = False
-        submitted = False
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
@@ -66,28 +66,12 @@ def fuksilauluilta_handler(request, kapsi):
             sukunimi=form.sukunimi.data,
             email=form.email.data,
             consent1=form.consent1.data,
-
             datetime=nowtime,
         )
         db.session.add(sub)
         db.session.commit()
 
-        if kapsi:
-            msg = ["echo \"Hei", str(form.etunimi.data), str(form.sukunimi.data),
-                   "\n\nOlet ilmoittautunut fuksilauluiltaan. Syötit seuraavia tietoja: ",
-                   "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
-                   "\nSähköposti: ", str(form.email.data),
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'fuksilauluilta ilmoittautuminen' ", str(form.email.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-        if kapsi:
-            return redirect('https://ilmo.oty.fi/fuksilauluilta')
-        else:
-            return redirect(url_for('route_fuksilauluilta'))
+        return redirect(url_for('route_fuksilauluilta'))
 
     elif submitted and count > maxlimit:
         flash('Ilmoittautuminen on jo täynnä')
@@ -95,7 +79,8 @@ def fuksilauluilta_handler(request, kapsi):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('fuksilauluilta/fuksilauluilta.html', title='fuksilauluilta ilmoittautuminen',
+    return render_template('fuksilauluilta/fuksilauluilta.html',
+                           title='fuksilauluilta ilmoittautuminen',
                            entrys=entrys,
                            count=count,
                            starttime=starttime,
@@ -110,7 +95,8 @@ def fuksilauluilta_data():
     limit = 70
     entries = FuksilauluiltaModel.query.all()
     count = FuksilauluiltaModel.query.count()
-    return render_template('fuksilauluilta/fuksilauluilta_data.html', title='fuksilauluilta data',
+    return render_template('fuksilauluilta/fuksilauluilta_data.html',
+                           title='fuksilauluilta data',
                            entries=entries,
                            count=count,
                            limit=limit)

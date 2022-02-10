@@ -103,14 +103,12 @@ class PakohuoneModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def pakohuone_handler(request, kapsi):
+def pakohuone_handler(request):
     starttime = datetime(2020, 11, 5, 12, 00, 00)
     endtime = datetime(2020, 11, 9, 23, 59, 59)
     nowtime = datetime.now()
-
     limit = 20
     maxlimit = 20
-
     entrys = PakohuoneModel.query.all()
     count = PakohuoneModel.query.count()
 
@@ -121,7 +119,7 @@ def pakohuone_handler(request, kapsi):
     form = PakohuoneForm()
 
     for entry in entrys:
-        if ((entry.etunimi0 == form.etunimi0.data and entry.sukunimi0 == form.sukunimi0.data) or entry.email0 == form.email0.data):
+        if (entry.etunimi0 == form.etunimi0.data and entry.sukunimi0 == form.sukunimi0.data) or entry.email0 == form.email0.data:
             flash('Olet jo ilmoittautunut')
 
             return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
@@ -136,9 +134,9 @@ def pakohuone_handler(request, kapsi):
                                    page="pakohuone")
 
     for entry in entrys:
-        if (entry.aika == form.aika.data):
-            if (entry.aika == "18:00"):
-                if (entry.huone1800 == form.huone1800.data):
+        if entry.aika == form.aika.data:
+            if entry.aika == "18:00":
+                if entry.huone1800 == form.huone1800.data:
                     flash('Valisemasi huone on jo varattu valitsemanasi aikana')
 
                     return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
@@ -152,11 +150,12 @@ def pakohuone_handler(request, kapsi):
                                            varatut=json.dumps(varatut),
                                            page="pakohuone")
 
-            elif (entry.aika == "19:30"):
-                if (entry.huone1930 == form.huone1930.data):
+            elif entry.aika == "19:30":
+                if entry.huone1930 == form.huone1930.data:
                     flash('Valisemasi huone on jo varattu valitsemanasi aikana')
 
-                    return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
+                    return render_template('pakohuone/pakohuone.html',
+                                           title='pakohuone ilmoittautuminen',
                                            entrys=entrys,
                                            count=count,
                                            starttime=starttime,
@@ -167,12 +166,11 @@ def pakohuone_handler(request, kapsi):
                                            varatut=json.dumps(varatut),
                                            page="pakohuone")
 
+    validate = False
+    submitted = False
     if request.method == 'POST':
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
-    else:
-        validate = False
-        submitted = False
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
@@ -184,7 +182,6 @@ def pakohuone_handler(request, kapsi):
             sukunimi0=form.sukunimi0.data,
             phone0=form.phone0.data,
             email0=form.email0.data,
-
             etunimi1=form.etunimi1.data,
             sukunimi1=form.sukunimi1.data,
             etunimi2=form.etunimi2.data,
@@ -195,35 +192,13 @@ def pakohuone_handler(request, kapsi):
             sukunimi4=form.sukunimi4.data,
             etunimi5=form.etunimi5.data,
             sukunimi5=form.sukunimi5.data,
-
             consent0=form.consent0.data,
             datetime=nowtime
         )
         db.session.add(sub)
         db.session.commit()
 
-        if kapsi:
-            msg = ["echo \"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
-                   "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
-                   "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
-                   "\nSähköposti: ", str(form.email0.data),
-                   "\nPuhelinnumero: ", str(form.phone0.data),
-                   "\nMuiden joukkuelaisten nimet: ", str(form.etunimi1.data), str(form.sukunimi1.data),
-                   str(form.etunimi2.data), str(form.sukunimi2.data),
-                   str(form.etunimi3.data), str(form.sukunimi3.data),
-                   str(form.etunimi4.data), str(form.sukunimi4.data),
-                   str(form.etunimi5.data), str(form.sukunimi5.data),
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pakopelipäivä ilmoittautuminen' ", str(form.email0.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-        if kapsi:
-            return redirect('https://ilmo.oty.fi/pakohuone')
-        else:
-            return redirect(url_for('route_pakohuone'))
+        return redirect(url_for('route_pakohuone'))
 
     elif submitted and count > maxlimit:
         flash('Ilmoittautuminen on jo täynnä')
@@ -231,7 +206,8 @@ def pakohuone_handler(request, kapsi):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('pakohuone/pakohuone.html', title='pakohuone ilmoittautuminen',
+    return render_template('pakohuone/pakohuone.html',
+                           title='pakohuone ilmoittautuminen',
                            entrys=entrys,
                            count=count,
                            starttime=starttime,

@@ -86,7 +86,7 @@ class PubivisaModel(db.Model):
     personcount = db.Column(db.Integer())
 
 
-def pubivisa_handler(request, kapsi):
+def pubivisa_handler(request):
     form = PubivisaForm()
 
     starttime = datetime(2020, 10, 7, 12, 00, 00)
@@ -105,7 +105,8 @@ def pubivisa_handler(request, kapsi):
         if entry.teamname == form.teamname.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_template('pubivisa/pubivisa.html', title='pubivisa ilmoittautuminen',
+            return render_template('pubivisa/pubivisa.html',
+                                   title='pubivisa ilmoittautuminen',
                                    entrys=entrys,
                                    totalcount=totalcount,
                                    starttime=starttime,
@@ -126,12 +127,11 @@ def pubivisa_handler(request, kapsi):
 
     totalcount += count
 
+    validate = False
+    submitted = False
     if request.method == 'POST':
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
-    else:
-        validate = False
-        submitted = False
 
     if validate and submitted and totalcount <= maxlimit:
         flash('Ilmoittautuminen onnistui')
@@ -160,75 +160,13 @@ def pubivisa_handler(request, kapsi):
             consent0=form.consent0.data,
             consent1=form.consent1.data,
             consent2=form.consent2.data,
-
             personcount=count,
-
             datetime=nowtime
         )
         db.session.add(sub)
         db.session.commit()
 
-        if kapsi:
-            msg = ["echo \"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
-                   "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                   "\n'Joukkueen nimi: ", str(form.teamname.data),
-                   "\n'Osallistujien nimet:\n", str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                   str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                   str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                   str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pubivisa ilmoittautuminen' ", str(form.email0.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-            msg = ["echo \"Hei", str(form.etunimi1.data), str(form.sukunimi1.data),
-                   "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                   "\n'Joukkueen nimi: ", str(form.teamname.data),
-                   "\n'Osallistujien nimet:\n", str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                   str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                   str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                   str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pubivisa ilmoittautuminen' ", str(form.email1.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-            msg = ["echo \"Hei", str(form.etunimi2.data), str(form.sukunimi2.data),
-                   "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                   "\n'Joukkueen nimi: ", str(form.teamname.data),
-                   "\n'Osallistujien nimet:\n", str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                   str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                   str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                   str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pubivisa ilmoittautuminen' ", str(form.email2.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-            msg = ["echo \"Hei", str(form.etunimi3.data), str(form.sukunimi3.data),
-                   "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                   "\n'Joukkueen nimi: ", str(form.teamname.data),
-                   "\n'Osallistujien nimet:\n", str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                   str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                   str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                   str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'pubivisa ilmoittautuminen' ", str(form.email3.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-        if kapsi:
-            return redirect('https://ilmo.oty.fi/pubivisa')
-        else:
-            return redirect(url_for('route_pubivisa'))
+        return redirect(url_for('route_pubivisa'))
 
     elif submitted and totalcount > maxlimit:
         totalcount -= count
@@ -237,7 +175,8 @@ def pubivisa_handler(request, kapsi):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('pubivisa/pubivisa.html', title='pubivisa ilmoittautuminen',
+    return render_template('pubivisa/pubivisa.html',
+                           title='pubivisa ilmoittautuminen',
                            entrys=entrys,
                            totalcount=totalcount,
                            starttime=starttime,
@@ -252,7 +191,8 @@ def pubivisa_data():
     limit = 50
     entries = PubivisaModel.query.all()
     count = PubivisaModel.query.count()
-    return render_template('pubivisa/pubivisa_data.html', title='pubivisa data',
+    return render_template('pubivisa/pubivisa_data.html',
+                           title='pubivisa data',
                            entries=entries,
                            count=count,
                            limit=limit)

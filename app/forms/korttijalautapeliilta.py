@@ -42,7 +42,7 @@ class KorttijalautapeliiltaModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def korttijalautapeliilta_handler(request, kapsi):
+def korttijalautapeliilta_handler(request):
     form = KorttijalautapeliiltaForm()
     starttime = datetime(2020, 10, 7, 12, 00, 00)
     endtime = datetime(2020, 10, 13, 23, 59, 59)
@@ -53,7 +53,7 @@ def korttijalautapeliilta_handler(request, kapsi):
     count = KorttijalautapeliiltaModel.query.count()
 
     for entry in entrys:
-        if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
+        if entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data:
             flash('Olet jo ilmoittautunut')
 
             return render_template('korttijalautapeliilta/korttijalautapeliilta.html',
@@ -67,12 +67,11 @@ def korttijalautapeliilta_handler(request, kapsi):
                                    form=form,
                                    page="korttijalautapeliilta")
 
+    validate = False
+    submitted = False
     if request.method == 'POST':
         validate = form.validate_on_submit()
         submitted = form.is_submitted()
-    else:
-        validate = False
-        submitted = False
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
@@ -91,25 +90,7 @@ def korttijalautapeliilta_handler(request, kapsi):
         db.session.add(sub)
         db.session.commit()
 
-        if kapsi:
-            msg = ["echo \"Hei", str(form.etunimi.data), str(form.sukunimi.data),
-                   "\n\nOlet ilmoittautunut kortti- ja lautapeli-iltaan. Syötit seuraavia tietoja: ",
-                   "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
-                   "\nSähköposti: ", str(form.email.data),
-                   "\nPuhelinnumero: ", str(form.phone.data),
-                   "\nKilta: ", str(form.kilta.data),
-                   "\n\nÄlä vastaa tähän sähköpostiin",
-                   "\n\nTerveisin: ropottilari\"",
-                   "|mail -aFrom:no-reply@oty.fi -s 'kortti- ja lautapeli-ilta ilmoittautuminen' ",
-                   str(form.email.data)]
-
-            cmd = ' '.join(msg)
-            returned_value = os.system(cmd)
-
-        if kapsi:
-            return redirect('https://ilmo.oty.fi/korttijalautapeliilta')
-        else:
-            return redirect(url_for('route_korttijalautapeliilta'))
+        return redirect(url_for('route_korttijalautapeliilta'))
 
     elif submitted and count > maxlimit:
         flash('Ilmoittautuminen on jo täynnä')
