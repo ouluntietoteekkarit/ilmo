@@ -3,7 +3,7 @@ from flask import render_template, request
 from . import server, auth, users, roles
 from .forms.pubivisa import pubivisa_handler, pubivisa_data, pubivisa_csv
 from .forms.korttijalautapeliilta import korttijalautapeliilta_handler, korttijalautapeliilta_data, korttijalautapeliilta_csv
-from .forms.fuksilauluilta import fuksilauluilta_handler, fuksilauluilta_data, fuksilauluilta_csv
+from .forms.fuksilauluilta import FuksiLauluIltaController
 from .forms.slumberparty import slumberparty_handler, slumberparty_data, slumberparty_csv
 from .forms.pakohuone import pakohuone_handler, pakohuone_data, pakohuone_csv
 from .forms.kyselyarvontajuttu import kysely_arvonta_juttu_handler, kysely_arvonta_juttu_data, kysely_arvonta_juttu_csv
@@ -59,21 +59,30 @@ def route_korttijalautapeliilta_csv():
     return korttijalautapeliilta_csv()
 
 
-@server.route('/fuksilauluilta', methods=['GET', 'POST'])
-def route_fuksilauluilta():
-    return fuksilauluilta_handler(request)
+@server.route('/fuksilauluilta', methods=['GET'])
+def route_get_fuksilauluilta():
+    obj = FuksiLauluIltaController()
+    return obj.get_request_handler(request)
+
+
+@server.route('/fuksilauluilta', methods=['POST'])
+def route_post_fuksilauluilta():
+    obj = FuksiLauluIltaController()
+    return obj.post_request_handler(request)
 
 
 @server.route('/fuksilauluilta_data', methods=['GET'])
 @auth.login_required(role=['admin', 'fuksilauluilta'])
 def route_fuksilauluilta_data():
-    return fuksilauluilta_data()
+    obj = FuksiLauluIltaController()
+    return obj.get_data_request_handler(request)
 
 
 @server.route('/fuksilauluilta_data/fuksilauluilta_model_data.csv')
 @auth.login_required(role=['admin', 'fuksilauluilta'])
 def route_fuksilauluilta_csv():
-    return fuksilauluilta_csv()
+    obj = FuksiLauluIltaController()
+    return obj.get_data_csv_request_handler(request)
 
 
 @server.route('/slumberparty', methods=['GET', 'POST'])

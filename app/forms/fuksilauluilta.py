@@ -1,11 +1,12 @@
 from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash, send_from_directory, abort
+from flask import render_template, url_for, redirect, flash
 from wtforms import StringField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-import os
-from app import db, sqlite_to_csv
+from app import db
+from typing import Any
 from .forms_util.event import Event
+from .forms_util.form_controller import FormController
 
 
 class FuksilauluiltaForm(FlaskForm):
@@ -27,52 +28,71 @@ class FuksilauluiltaModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def fuksilauluilta_handler(request):
-    form = FuksilauluiltaForm()
-    event = Event('Fuksilauluilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2024, 10, 13, 23, 59, 59), 70)
+class FuksiLauluIltaController(FormController):
 
-    nowtime = datetime.now()
-    entrys = FuksilauluiltaModel.query.all()
-    count = FuksilauluiltaModel.query.count()
+    def get_request_handler(self, request) -> Any:
+        form = FuksilauluiltaForm()
+        event = self._get_event()
 
-    for entry in entrys:
-        if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
-            flash('Olet jo ilmoittautunut')
-            return render_form(entrys, count, event, nowtime, form)
+        entries = FuksilauluiltaModel.query.all()
 
-    validate = False
-    submitted = False
-    if request.method == 'POST':
-        validate = form.validate_on_submit()
-        submitted = form.is_submitted()
+        return _render_form(entries, len(entries), event, datetime.now(), form)
 
-    if validate and submitted and count <= event.get_participant_limit():
-        flash('Ilmoittautuminen onnistui')
-        sub = FuksilauluiltaModel(
-            etunimi=form.etunimi.data,
-            sukunimi=form.sukunimi.data,
-            email=form.email.data,
-            consent1=form.consent1.data,
-            datetime=nowtime,
-        )
-        db.session.add(sub)
-        db.session.commit()
+    def post_request_handler(self, request) -> Any:
+        # MEMO: This routine is prone to data race since it does not use transactions
+        form = FuksilauluiltaForm()
+        event = self._get_event()
 
-        return redirect(url_for('route_fuksilauluilta'))
+        nowtime = datetime.now()
+        entries = FuksilauluiltaModel.query.all()
+        count = len(entries)
 
-    elif submitted and count > event.get_participant_limit():
-        flash('Ilmoittautuminen on jo täynnä')
+        if count >= event.get_participant_limit():
+            flash('Ilmoittautuminen on jo täynnä')
+            return _render_form(entries, count, event, nowtime, form)
 
-    elif (not validate) and submitted:
-        flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+        for entry in entries:
+            if entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data:
+                flash('Olet jo ilmoittautunut')
+                return _render_form(entries, count, event, nowtime, form)
 
-    return render_form(entrys, count, event, nowtime, form)
+        if form.validate_on_submit():
+            sub = _form_to_model(form, nowtime)
+            db.session.add(sub)
+            db.session.commit()
+
+            flash('Ilmoittautuminen onnistui')
+            return redirect(url_for('route_get_fuksilauluilta'))
+
+        else:
+            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+
+        return _render_form(entries, count, event, nowtime, form)
+
+    def get_data_request_handler(self, request) -> Any:
+        return self._data_view(FuksilauluiltaModel, 'fuksilauluilta/fuksilauluilta_data.html', )
+
+    def get_data_csv_request_handler(self, request) -> Any:
+        return self._export_to_csv(FuksilauluiltaModel.__tablename__)
+
+    def _get_event(self) -> Event:
+        return Event('Fuksilauluilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 70)
 
 
-def render_form(entrys, count, event, nowtime, form):
+def _form_to_model (form, nowtime):
+    return FuksilauluiltaModel(
+        etunimi=form.etunimi.data,
+        sukunimi=form.sukunimi.data,
+        email=form.email.data,
+        consent1=form.consent1.data,
+        datetime=nowtime,
+    )
+
+
+def _render_form(entries, count, event, nowtime, form):
     return render_template('fuksilauluilta/fuksilauluilta.html',
                            title='fuksilauluilta ilmoittautuminen',
-                           entrys=entrys,
+                           entrys=entries,
                            count=count,
                            starttime=event.get_start_time(),
                            endtime=event.get_end_time(),
@@ -80,26 +100,3 @@ def render_form(entrys, count, event, nowtime, form):
                            limit=event.get_participant_limit(),
                            form=form,
                            page="fuksilauluilta")
-
-def fuksilauluilta_data():
-    limit = 70
-    entries = FuksilauluiltaModel.query.all()
-    count = FuksilauluiltaModel.query.count()
-    return render_template('fuksilauluilta/fuksilauluilta_data.html',
-                           title='fuksilauluilta data',
-                           entries=entries,
-                           count=count,
-                           limit=limit)
-
-
-def fuksilauluilta_csv():
-    os.system('mkdir csv')
-    sqlite_to_csv.exportToCSV('fuksilauluilta_model')
-    dir = os.path.join(os.getcwd(), 'csv/')
-
-    try:
-        print(dir)
-        return send_from_directory(directory=dir, filename='fuksilauluilta_model_data.csv', as_attachment=True)
-    except FileNotFoundError as e:
-        print(e)
-        abort(404)

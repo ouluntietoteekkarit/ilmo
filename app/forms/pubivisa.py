@@ -9,21 +9,9 @@ from .forms_util.guilds import *
 from .forms_util.event import Event
 
 
-def get_guilds():
-    return [
-        Guild(GUILD_OTIT),
-        Guild(GUILD_SIK),
-        Guild(GUILD_YMP),
-        Guild(GUILD_KONE),
-        Guild(GUILD_PROSE),
-        Guild(GUILD_OPTIEM),
-        Guild(GUILD_ARK)
-    ]
-
-
 def get_guild_choices():
     choices = []
-    for guild in get_guilds():
+    for guild in get_all_guilds():
         choices.append((guild.get_name(), guild.get_name()))
     return choices
 
@@ -99,28 +87,32 @@ class PubivisaModel(db.Model):
     personcount = db.Column(db.Integer())
 
 
+def get_event():
+    return Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50)
+
+
 def pubivisa_handler(request):
     form = PubivisaForm()
-    event = Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50)
+    event = get_event()
     nowtime = datetime.now()
-    entrys = PubivisaModel.query.all()
-    count = 0
+    entries = PubivisaModel.query.all()
+    group_size = 0
     totalcount = 0
-    for entry in entrys:
+    for entry in entries:
         totalcount += entry.personcount
 
-    for entry in entrys:
+    for entry in entries:
         if entry.teamname == form.teamname.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_form(entrys, totalcount, event, nowtime, form)
+            return _render_form(entries, totalcount, event, nowtime, form)
 
-    count += int(form.etunimi0.data and form.sukunimi0.data)
-    count += int(form.etunimi1.data and form.sukunimi1.data)
-    count += int(form.etunimi2.data and form.sukunimi2.data)
-    count += int(form.etunimi3.data and form.sukunimi3.data)
+    group_size += int(form.etunimi0.data and form.sukunimi0.data)
+    group_size += int(form.etunimi1.data and form.sukunimi1.data)
+    group_size += int(form.etunimi2.data and form.sukunimi2.data)
+    group_size += int(form.etunimi3.data and form.sukunimi3.data)
 
-    totalcount += count
+    totalcount += group_size
 
     validate = False
     submitted = False
@@ -130,54 +122,27 @@ def pubivisa_handler(request):
 
     if validate and submitted and totalcount <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
-        sub = PubivisaModel(
-            teamname=form.teamname.data,
-            etunimi0=form.etunimi0.data,
-            sukunimi0=form.sukunimi0.data,
-            phone0=form.phone0.data,
-            email0=form.email0.data,
-            kilta0=form.kilta0.data,
-            etunimi1=form.etunimi1.data,
-            sukunimi1=form.sukunimi1.data,
-            phone1=form.phone1.data,
-            email1=form.email1.data,
-            kilta1=form.kilta1.data,
-            etunimi2=form.etunimi2.data,
-            sukunimi2=form.sukunimi2.data,
-            phone2=form.phone2.data,
-            email2=form.email2.data,
-            kilta2=form.kilta2.data,
-            etunimi3=form.etunimi3.data,
-            sukunimi3=form.sukunimi3.data,
-            phone3=form.phone3.data,
-            email3=form.email3.data,
-            kilta3=form.kilta3.data,
-            consent0=form.consent0.data,
-            consent1=form.consent1.data,
-            consent2=form.consent2.data,
-            personcount=count,
-            datetime=nowtime
-        )
+        sub = _form_to_model(form, group_size, nowtime)
         db.session.add(sub)
         db.session.commit()
 
         return redirect(url_for('route_pubivisa'))
 
     elif submitted and totalcount > event.get_participant_limit():
-        totalcount -= count
+        totalcount -= group_size
         flash('Ilmoittautuminen on jo täynnä')
 
-    elif (not validate) and submitted:
+    elif not validate and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_form(entrys, totalcount, event, nowtime, form)
+    return _render_form(entries, totalcount, event, nowtime, form)
 
 
-def render_form(entrys, totalcount, event, nowtime, form):
+def _render_form(entrys, count, event, nowtime, form):
     return render_template('pubivisa/pubivisa.html',
                            title='pubivisa ilmoittautuminen',
                            entrys=entrys,
-                           totalcount=totalcount,
+                           count=count,
                            starttime=event.get_start_time(),
                            endtime=event.get_end_time(),
                            nowtime=nowtime,
@@ -185,10 +150,42 @@ def render_form(entrys, totalcount, event, nowtime, form):
                            form=form,
                            page="pubivisa")
 
+
+def _form_to_model(form, count, nowtime):
+    return PubivisaModel(
+        teamname=form.teamname.data,
+        etunimi0=form.etunimi0.data,
+        sukunimi0=form.sukunimi0.data,
+        phone0=form.phone0.data,
+        email0=form.email0.data,
+        kilta0=form.kilta0.data,
+        etunimi1=form.etunimi1.data,
+        sukunimi1=form.sukunimi1.data,
+        phone1=form.phone1.data,
+        email1=form.email1.data,
+        kilta1=form.kilta1.data,
+        etunimi2=form.etunimi2.data,
+        sukunimi2=form.sukunimi2.data,
+        phone2=form.phone2.data,
+        email2=form.email2.data,
+        kilta2=form.kilta2.data,
+        etunimi3=form.etunimi3.data,
+        sukunimi3=form.sukunimi3.data,
+        phone3=form.phone3.data,
+        email3=form.email3.data,
+        kilta3=form.kilta3.data,
+        consent0=form.consent0.data,
+        consent1=form.consent1.data,
+        consent2=form.consent2.data,
+        personcount=count,
+        datetime=nowtime
+    )
+
 def pubivisa_data():
-    limit = 50
+    event = get_event()
+    limit = event.get_participant_limit()
     entries = PubivisaModel.query.all()
-    count = PubivisaModel.query.count()
+    count = len(entries)
     return render_template('pubivisa/pubivisa_data.html',
                            title='pubivisa data',
                            entries=entries,
@@ -198,7 +195,7 @@ def pubivisa_data():
 
 def pubivisa_csv():
     os.system('mkdir csv')
-    sqlite_to_csv.exportToCSV('pubivisa_model')
+    sqlite_to_csv.export_to_csv('pubivisa_model')
     dir = os.path.join(os.getcwd(), 'csv/')
 
     try:

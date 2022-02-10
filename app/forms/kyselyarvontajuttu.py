@@ -25,18 +25,22 @@ class KyselyArvontaJuttuModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
+def get_event():
+    return Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000)
+
+
 def kysely_arvonta_juttu_handler(request):
     form = KyselyArvontaJuttuForm()
-    event = Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000)
+    event = get_event()
     nowtime = datetime.now()
-    entrys = KyselyArvontaJuttuModel.query.all()
-    count = KyselyArvontaJuttuModel.query.count()
+    entries = KyselyArvontaJuttuModel.query.all()
+    count = len(entries)
 
-    for entry in entrys:
+    for entry in entries:
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data) or entry.email == form.email.data:
             flash('Olet jo ilmoittautunut')
 
-            return render_form(entrys, count, event, nowtime, form)
+            return _render_form(entries, count, event, nowtime, form)
 
     validate = False
     submitted = False
@@ -46,13 +50,7 @@ def kysely_arvonta_juttu_handler(request):
 
     if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
-        sub = KyselyArvontaJuttuModel(
-            etunimi=form.etunimi.data,
-            sukunimi=form.sukunimi.data,
-            email=form.email.data,
-            consent0=form.consent0.data,
-            datetime=nowtime,
-        )
+        sub = _form_to_model(form, nowtime)
         db.session.add(sub)
         db.session.commit()
 
@@ -62,13 +60,13 @@ def kysely_arvonta_juttu_handler(request):
     elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
-    elif (not validate) and submitted:
+    elif not validate and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_form(entrys, count, event, nowtime, form)
+    return _render_form(entries, count, event, nowtime, form)
 
 
-def render_form(entrys, count, event, nowtime, form):
+def _render_form(entrys, count, event, nowtime, form):
     return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html',
                            title='kysely_arvonta_juttu ilmoittautuminen',
                            entrys=entrys,
@@ -81,11 +79,20 @@ def render_form(entrys, count, event, nowtime, form):
                            page="kysely_arvonta_juttu")
 
 
-def kysely_arvonta_juttu_data():
-    limit = 4000
-    entries = KyselyArvontaJuttuModel.query.all()
-    count = KyselyArvontaJuttuModel.query.count()
+def _form_to_model(form, nowtime):
+    return KyselyArvontaJuttuModel(
+        etunimi=form.etunimi.data,
+        sukunimi=form.sukunimi.data,
+        email=form.email.data,
+        consent0=form.consent0.data,
+        datetime=nowtime,
+    )
 
+def kysely_arvonta_juttu_data():
+    event = get_event()
+    limit = event.get_participant_limit()
+    entries = KyselyArvontaJuttuModel.query.all()
+    count = len(entries)
     return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_data.html',
                            title='kysely_arvonta_juttu data',
                            entries=entries,
@@ -95,7 +102,7 @@ def kysely_arvonta_juttu_data():
 
 def kysely_arvonta_juttu_csv():
     os.system('mkdir csv')
-    sqlite_to_csv.exportToCSV('kysely_arvonta_juttu_model')
+    sqlite_to_csv.export_to_csv('kysely_arvonta_juttu_model')
     dir = os.path.join(os.getcwd(), 'csv/')
 
     try:

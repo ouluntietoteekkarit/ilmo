@@ -9,23 +9,12 @@ from .forms_util.guilds import *
 from .forms_util.event import Event
 
 
-def get_guilds():
-    return [
-        Guild(GUILD_OTIT),
-        Guild(GUILD_SIK),
-        Guild(GUILD_YMP),
-        Guild(GUILD_KONE),
-        Guild(GUILD_PROSE),
-        Guild(GUILD_OPTIEM),
-        Guild(GUILD_ARK)
-    ]
-
-
 def get_guild_choices():
     choices = []
-    for guild in get_guilds():
+    for guild in get_all_guilds():
         choices.append((guild.get_name(), guild.get_name()))
     return choices
+
 
 class SlumberpartyForm(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
@@ -53,17 +42,21 @@ class SlumberpartyModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
+def get_event():
+    return Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50)
+
+
 def slumberparty_handler(request):
     form = SlumberpartyForm()
-    event = Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50)
+    event = get_event()
     nowtime = datetime.now()
-    entrys = SlumberpartyModel.query.all()
-    count = SlumberpartyModel.query.count()
+    entries = SlumberpartyModel.query.all()
+    count = len(entries)
 
-    for entry in entrys:
+    for entry in entries:
         if entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data:
             flash('Olet jo ilmoittautunut')
-            return render_form(entrys, count, event, nowtime, form)
+            return _render_form(entries, count, event, nowtime, form)
 
     validate = False
     submitted = False
@@ -73,17 +66,7 @@ def slumberparty_handler(request):
 
     if validate and submitted and count <= event.get_participant_limit():
         flash('Ilmoittautuminen onnistui')
-        sub = SlumberpartyModel(
-            etunimi=form.etunimi.data,
-            sukunimi=form.sukunimi.data,
-            phone=form.phone.data,
-            email=form.email.data,
-            kilta=form.kilta.data,
-            consent0=form.consent0.data,
-            consent1=form.consent1.data,
-            consent2=form.consent2.data,
-            datetime=nowtime
-        )
+        sub = _form_to_model(form, nowtime)
         db.session.add(sub)
         db.session.commit()
 
@@ -92,13 +75,13 @@ def slumberparty_handler(request):
     elif submitted and count > event.get_participant_limit():
         flash('Ilmoittautuminen on jo täynnä')
 
-    elif (not validate) and submitted:
+    elif not validate and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_form(entrys, count, event, nowtime, form)
+    return _render_form(entries, count, event, nowtime, form)
 
 
-def render_form(entrys, count, event, nowtime, form):
+def _render_form(entrys, count, event, nowtime, form):
     return render_template('slumberparty/slumberparty.html',
                            title='slumberparty ilmoittautuminen',
                            entrys=entrys,
@@ -111,11 +94,25 @@ def render_form(entrys, count, event, nowtime, form):
                            page="slumberparty")
 
 
-def slumberparty_data():
-    limit = 50
-    entries = SlumberpartyModel.query.all()
-    count = SlumberpartyModel.query.count()
+def _form_to_model(form, nowtime):
+    return SlumberpartyModel(
+        etunimi=form.etunimi.data,
+        sukunimi=form.sukunimi.data,
+        phone=form.phone.data,
+        email=form.email.data,
+        kilta=form.kilta.data,
+        consent0=form.consent0.data,
+        consent1=form.consent1.data,
+        consent2=form.consent2.data,
+        datetime=nowtime
+    )
 
+
+def slumberparty_data():
+    event = get_event()
+    limit = event.get_participant_limit()
+    entries = SlumberpartyModel.query.all()
+    count = len(entries)
     return render_template('slumberparty/slumberparty_data.html',
                            title='slumberparty data',
                            entries=entries,
@@ -125,7 +122,7 @@ def slumberparty_data():
 
 def slumberparty_csv():
     os.system('mkdir csv')
-    sqlite_to_csv.exportToCSV('slumberparty_model')
+    sqlite_to_csv.export_to_csv('slumberparty_model')
     dir = os.path.join(os.getcwd(), 'csv/')
 
     try:
