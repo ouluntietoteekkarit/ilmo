@@ -1,20 +1,12 @@
 from werkzeug.security import check_password_hash
-from flask import render_template
-from flask_httpauth import HTTPBasicAuth
-from . import server
+from flask import render_template, request
+from . import server, auth, KAPSI, users, roles
 from .forms.pubivisa import pubivisa_handler, pubivisa_data, pubivisa_csv
 from .forms.korttijalautapeliilta import korttijalautapeliilta_handler, korttijalautapeliilta_data, korttijalautapeliilta_csv
 from .forms.fuksilauluilta import fuksilauluilta_handler, fuksilauluilta_data, fuksilauluilta_csv
 from .forms.slumberparty import slumberparty_handler, slumberparty_data, slumberparty_csv
 from .forms.pakohuone import pakohuone_handler, pakohuone_data, pakohuone_csv
 from .forms.kyselyarvontajuttu import kysely_arvonta_juttu_handler, kysely_arvonta_juttu_data, kysely_arvonta_juttu_csv
-from flask_wtf.csrf import CSRFProtect
-from .config import load_route_conf, load_auth_config
-
-auth = HTTPBasicAuth()
-csrf = CSRFProtect()
-(users, roles) = load_auth_config()
-KAPSI = load_route_conf()
 
 
 @auth.verify_password
@@ -35,7 +27,7 @@ def route_index():
 
 @server.route('/pubivisa', methods=['GET', 'POST'])
 def route_pubivisa():
-    return pubivisa_handler(KAPSI)
+    return pubivisa_handler(request, KAPSI)
 
 
 @server.route('/pubivisa_data', methods=['GET'])
@@ -69,7 +61,7 @@ def route_korttijalautapeliilta_csv():
 
 @server.route('/fuksilauluilta', methods=['GET', 'POST'])
 def route_fuksilauluilta():
-    return fuksilauluilta_handler(KAPSI)
+    return fuksilauluilta_handler(request, KAPSI)
 
 
 @server.route('/fuksilauluilta_data', methods=['GET'])
@@ -86,7 +78,7 @@ def route_fuksilauluilta_csv():
 
 @server.route('/slumberparty', methods=['GET', 'POST'])
 def route_slumberparty():
-    return slumberparty_handler(KAPSI)
+    return slumberparty_handler(request, KAPSI)
 
 
 @server.route('/slumberparty_data', methods=['GET'])
@@ -103,7 +95,7 @@ def route_slumberparty_csv():
 
 @server.route('/pakohuone', methods=['GET', 'POST'])
 def route_pakohuone():
-    return pakohuone_handler(KAPSI)
+    return pakohuone_handler(request, KAPSI)
 
 
 @server.route('/pakohuone_data', methods=['GET'])
@@ -120,7 +112,7 @@ def route_pakohuone_csv():
 
 @server.route('/kysely_arvonta_juttu', methods=['GET', 'POST'])
 def route_kysely_arvonta_juttu():
-    return kysely_arvonta_juttu_handler(KAPSI)
+    return kysely_arvonta_juttu_handler(request, KAPSI)
 
 
 @server.route('/kysely_arvonta_juttu_data', methods=['GET'])

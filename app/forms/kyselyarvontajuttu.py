@@ -1,13 +1,13 @@
 from flask_wtf import FlaskForm
-from flask import Flask, render_template, url_for, redirect, request, flash, send_from_directory, session, abort
-from wtforms import StringField, BooleanField, SubmitField, RadioField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Email, Optional, length, Required, InputRequired, Optional
+from flask import render_template, flash, send_from_directory, abort
+from wtforms import StringField, BooleanField, SubmitField
+from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from app import db, sqlite_to_csv
 import os
+from app import db, sqlite_to_csv
 
 
-class kysely_arvonta_juttuForm(FlaskForm):
+class KyselyArvontaJuttuForm(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
@@ -18,19 +18,17 @@ class kysely_arvonta_juttuForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
-class kysely_arvonta_juttuModel(db.Model):
+class KyselyArvontaJuttuModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
     email = db.Column(db.String(128))
-
     consent0 = db.Column(db.Boolean())
-
     datetime = db.Column(db.DateTime())
 
 
-def kysely_arvonta_juttu_handler(KAPSI):
-    form = kysely_arvonta_juttuForm()
+def kysely_arvonta_juttu_handler(request, kapsi):
+    form = KyselyArvontaJuttuForm()
 
     starttime = datetime(2020, 11, 2, 12, 00, 00)
     endtime = datetime(2020, 11, 23, 23, 59, 59)
@@ -39,15 +37,16 @@ def kysely_arvonta_juttu_handler(KAPSI):
     limit = 4000
     maxlimit = 4000
 
-    entrys = kysely_arvonta_juttuModel.query.all()
-    count = kysely_arvonta_juttuModel.query.count()
+    entrys = KyselyArvontaJuttuModel.query.all()
+    count = KyselyArvontaJuttuModel.query.count()
 
     for entry in entrys:
         if ((
                 entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data) or entry.email == form.email.data):
             flash('Olet jo ilmoittautunut')
 
-            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html', title='kysely_arvonta_juttu ilmoittautuminen',
+            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html',
+                                   title='kysely_arvonta_juttu ilmoittautuminen',
                                    entrys=entrys,
                                    count=count,
                                    starttime=starttime,
@@ -66,7 +65,7 @@ def kysely_arvonta_juttu_handler(KAPSI):
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
-        sub = kysely_arvonta_juttuModel(
+        sub = KyselyArvontaJuttuModel(
             etunimi=form.etunimi.data,
             sukunimi=form.sukunimi.data,
             email=form.email.data,
@@ -77,7 +76,7 @@ def kysely_arvonta_juttu_handler(KAPSI):
         db.session.add(sub)
         db.session.commit()
 
-        if KAPSI:
+        if kapsi:
             msg = ["echo \"Hei", str(form.etunimi.data), str(form.sukunimi.data),
                    "\n\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
                    "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
@@ -89,7 +88,7 @@ def kysely_arvonta_juttu_handler(KAPSI):
             cmd = ' '.join(msg)
             returned_value = os.system(cmd)
 
-        if KAPSI:
+        if kapsi:
             # return redirect('https://ilmo.oty.fi/kysely_arvonta_juttu')
             return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
         else:
@@ -102,7 +101,8 @@ def kysely_arvonta_juttu_handler(KAPSI):
     elif (not validate) and submitted:
         flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html', title='kysely_arvonta_juttu ilmoittautuminen',
+    return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html',
+                           title='kysely_arvonta_juttu ilmoittautuminen',
                            entrys=entrys,
                            count=count,
                            starttime=starttime,
@@ -115,10 +115,11 @@ def kysely_arvonta_juttu_handler(KAPSI):
 
 def kysely_arvonta_juttu_data():
     limit = 4000
-    entries = kysely_arvonta_juttuModel.query.all()
-    count = kysely_arvonta_juttuModel.query.count()
+    entries = KyselyArvontaJuttuModel.query.all()
+    count = KyselyArvontaJuttuModel.query.count()
 
-    return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_data.html', title='kysely_arvonta_juttu data',
+    return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_data.html',
+                           title='kysely_arvonta_juttu data',
                            entries=entries,
                            count=count,
                            limit=limit)
@@ -131,7 +132,8 @@ def kysely_arvonta_juttu_csv():
 
     try:
         print(dir)
-        return send_from_directory(directory=dir, filename='kysely_arvonta_juttu_model_data.csv',
+        return send_from_directory(directory=dir,
+                                   filename='kysely_arvonta_juttu_model_data.csv',
                                    as_attachment=True)
     except FileNotFoundError as e:
         print(e)

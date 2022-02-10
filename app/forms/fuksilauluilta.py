@@ -1,13 +1,13 @@
 from flask_wtf import FlaskForm
-from flask import Flask, render_template, url_for, redirect, request, flash, send_from_directory, session, abort
-from wtforms import StringField, BooleanField, SubmitField, RadioField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Email, Optional, length, Required, InputRequired, Optional
+from flask import render_template, url_for, redirect, flash, send_from_directory, abort
+from wtforms import StringField, BooleanField, SubmitField
+from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from app import db, sqlite_to_csv
 import os
+from app import db, sqlite_to_csv
 
 
-class fuksilauluiltaForm(FlaskForm):
+class FuksilauluiltaForm(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
@@ -19,25 +19,24 @@ class fuksilauluiltaForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class fuksilauluiltaModel(db.Model):
+class FuksilauluiltaModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
     email = db.Column(db.String(128))
-
     consent1 = db.Column(db.Boolean())
-
     datetime = db.Column(db.DateTime())
 
-def fuksilauluilta_handler(KAPSI):
-    form = fuksilauluiltaForm()
+
+def fuksilauluilta_handler(request, kapsi):
+    form = FuksilauluiltaForm()
     starttime = datetime(2020, 10, 7, 12, 00, 00)
     endtime = datetime(2020, 10, 13, 23, 59, 59)
     nowtime = datetime.now()
     limit = 70
     maxlimit = 70
-    entrys = fuksilauluiltaModel.query.all()
-    count = fuksilauluiltaModel.query.count()
+    entrys = FuksilauluiltaModel.query.all()
+    count = FuksilauluiltaModel.query.count()
 
     for entry in entrys:
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
@@ -62,7 +61,7 @@ def fuksilauluilta_handler(KAPSI):
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
-        sub = fuksilauluiltaModel(
+        sub = FuksilauluiltaModel(
             etunimi=form.etunimi.data,
             sukunimi=form.sukunimi.data,
             email=form.email.data,
@@ -73,7 +72,7 @@ def fuksilauluilta_handler(KAPSI):
         db.session.add(sub)
         db.session.commit()
 
-        if KAPSI:
+        if kapsi:
             msg = ["echo \"Hei", str(form.etunimi.data), str(form.sukunimi.data),
                    "\n\nOlet ilmoittautunut fuksilauluiltaan. Syötit seuraavia tietoja: ",
                    "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
@@ -85,7 +84,7 @@ def fuksilauluilta_handler(KAPSI):
             cmd = ' '.join(msg)
             returned_value = os.system(cmd)
 
-        if KAPSI:
+        if kapsi:
             return redirect('https://ilmo.oty.fi/fuksilauluilta')
         else:
             return redirect(url_for('route_fuksilauluilta'))
@@ -109,8 +108,8 @@ def fuksilauluilta_handler(KAPSI):
 
 def fuksilauluilta_data():
     limit = 70
-    entries = fuksilauluiltaModel.query.all()
-    count = fuksilauluiltaModel.query.count()
+    entries = FuksilauluiltaModel.query.all()
+    count = FuksilauluiltaModel.query.count()
     return render_template('fuksilauluilta/fuksilauluilta_data.html', title='fuksilauluilta data',
                            entries=entries,
                            count=count,

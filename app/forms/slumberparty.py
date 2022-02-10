@@ -1,13 +1,13 @@
 from flask_wtf import FlaskForm
-from flask import Flask, render_template, url_for, redirect, request, flash, send_from_directory, session, abort
-from wtforms import StringField, BooleanField, SubmitField, RadioField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Email, Optional, length, Required, InputRequired, Optional
+from flask import render_template, url_for, redirect, flash, send_from_directory, abort
+from wtforms import StringField, BooleanField, SubmitField, SelectField
+from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from app import db, sqlite_to_csv
 import os
+from app import db, sqlite_to_csv
 
 
-class slumberpartyForm(FlaskForm):
+class SlumberpartyForm(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
@@ -26,7 +26,7 @@ class slumberpartyForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class slumberpartyModel(db.Model):
+class SlumberpartyModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
@@ -42,15 +42,15 @@ class slumberpartyModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def slumberparty_handler(KAPSI):
-    form = slumberpartyForm()
+def slumberparty_handler(request, kapsi):
+    form = SlumberpartyForm()
     starttime = datetime(2020, 10, 21, 12, 00, 00)
     endtime = datetime(2020, 10, 27, 23, 59, 59)
     nowtime = datetime.now()
     limit = 50
     maxlimit = 50
-    entrys = slumberpartyModel.query.all()
-    count = slumberpartyModel.query.count()
+    entrys = SlumberpartyModel.query.all()
+    count = SlumberpartyModel.query.count()
 
     for entry in entrys:
         if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data):
@@ -75,7 +75,7 @@ def slumberparty_handler(KAPSI):
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
-        sub = slumberpartyModel(
+        sub = SlumberpartyModel(
             etunimi=form.etunimi.data,
             sukunimi=form.sukunimi.data,
             phone=form.phone.data,
@@ -90,7 +90,7 @@ def slumberparty_handler(KAPSI):
         db.session.add(sub)
         db.session.commit()
 
-        if KAPSI:
+        if kapsi:
             msg = ["echo \"Hei", str(form.etunimi.data), str(form.sukunimi.data),
                    "\n\nOlet ilmoittautunut slumberpartyyn. Syötit seuraavia tietoja: ",
                    "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
@@ -104,7 +104,7 @@ def slumberparty_handler(KAPSI):
             cmd = ' '.join(msg)
             returned_value = os.system(cmd)
 
-        if KAPSI:
+        if kapsi:
             return redirect('https://ilmo.oty.fi/slumberparty')
         else:
             return redirect(url_for('route_slumberparty'))
@@ -128,8 +128,8 @@ def slumberparty_handler(KAPSI):
 
 def slumberparty_data():
     limit = 50
-    entries = slumberpartyModel.query.all()
-    count = slumberpartyModel.query.count()
+    entries = SlumberpartyModel.query.all()
+    count = SlumberpartyModel.query.count()
 
     return render_template('slumberparty/slumberparty_data.html', title='slumberparty data',
                            entries=entries,

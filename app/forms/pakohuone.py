@@ -1,14 +1,15 @@
 from flask_wtf import FlaskForm
-from flask import Flask, render_template, url_for, redirect, request, flash, send_from_directory, session, abort
-from wtforms import StringField, BooleanField, SubmitField, RadioField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Email, Optional, length, Required, InputRequired, Optional
-from .forms import RequiredIf, RequiredIfValue
+from flask import render_template, url_for, redirect, flash, send_from_directory, abort
+from wtforms import StringField, BooleanField, SubmitField, RadioField
+from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from app import db, sqlite_to_csv
 import os
 import json
+from app import db, sqlite_to_csv
+from .forms import RequiredIfValue
 
-class pakohuoneForm(FlaskForm):
+
+class PakohuoneForm(FlaskForm):
     aika = RadioField('Aika *',
                       choices=(['18:00', '18:00'], ['19:30', '19:30']),
                       validators=[DataRequired()])
@@ -70,7 +71,7 @@ class pakohuoneForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class pakohuoneModel(db.Model):
+class PakohuoneModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     aika = db.Column(db.String(16))
@@ -102,7 +103,7 @@ class pakohuoneModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def pakohuone_handler(KAPSI):
+def pakohuone_handler(request, kapsi):
     starttime = datetime(2020, 11, 5, 12, 00, 00)
     endtime = datetime(2020, 11, 9, 23, 59, 59)
     nowtime = datetime.now()
@@ -110,14 +111,14 @@ def pakohuone_handler(KAPSI):
     limit = 20
     maxlimit = 20
 
-    entrys = pakohuoneModel.query.all()
-    count = pakohuoneModel.query.count()
+    entrys = PakohuoneModel.query.all()
+    count = PakohuoneModel.query.count()
 
     varatut = []
     for entry in entrys:
         varatut.append((entry.aika, entry.huone1800, entry.huone1930))
 
-    form = pakohuoneForm()
+    form = PakohuoneForm()
 
     for entry in entrys:
         if ((entry.etunimi0 == form.etunimi0.data and entry.sukunimi0 == form.sukunimi0.data) or entry.email0 == form.email0.data):
@@ -175,7 +176,7 @@ def pakohuone_handler(KAPSI):
 
     if validate and submitted and count <= maxlimit:
         flash('Ilmoittautuminen onnistui')
-        sub = pakohuoneModel(
+        sub = PakohuoneModel(
             aika=form.aika.data,
             huone1800=form.huone1800.data,
             huone1930=form.huone1930.data,
@@ -201,7 +202,7 @@ def pakohuone_handler(KAPSI):
         db.session.add(sub)
         db.session.commit()
 
-        if KAPSI:
+        if kapsi:
             msg = ["echo \"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
                    "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
                    "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
@@ -219,7 +220,7 @@ def pakohuone_handler(KAPSI):
             cmd = ' '.join(msg)
             returned_value = os.system(cmd)
 
-        if KAPSI:
+        if kapsi:
             return redirect('https://ilmo.oty.fi/pakohuone')
         else:
             return redirect(url_for('route_pakohuone'))
@@ -244,8 +245,8 @@ def pakohuone_handler(KAPSI):
 
 def pakohuone_data():
     limit = 20
-    entries = pakohuoneModel.query.all()
-    count = pakohuoneModel.query.count()
+    entries = PakohuoneModel.query.all()
+    count = PakohuoneModel.query.count()
 
     return render_template('pakohuone/pakohuone_data.html', title='pakohuone data',
                            entries=entries,
