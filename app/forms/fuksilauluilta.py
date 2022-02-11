@@ -76,7 +76,7 @@ class FuksiLauluIltaController(FormController):
         return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
-        return Event('Fuksilauluilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 70)
+        return Event('Fuksilauluilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 70, 0)
 
 
 def _form_to_model (form, nowtime):

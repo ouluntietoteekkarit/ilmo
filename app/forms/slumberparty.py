@@ -83,7 +83,7 @@ class SlumberPartyController(FormController):
         return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
-        return Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50)
+        return Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50, 0)
 
 
 def _render_form(entrys, count, event, nowtime, form):

@@ -22,7 +22,7 @@ def get_user_roles(user):
 
 @server.route('/')
 def route_index():
-    return render_template('index.html', title='OTY:n ilmot', page="index")
+    return render_template('index.html', title='OTiTin ilmot', page="index")
 
 
 @server.route('/pubivisa', methods=['GET'])

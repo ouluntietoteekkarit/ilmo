@@ -2,12 +2,19 @@ import shlex
 import os
 
 
-def kapsi_url(path):
+_EMAIL_SENDER_BOT = 'no-reply@otitkakspistenolla.oulu.fi'
+
+def kapsi_url(path: str):
     return 'https://ilmo.oty.fi/{}'.format(path)
 
 
-def _send_mail(msg, subject, recipient):
-    cmd = "echo {} | mail -aFrom:no-reply@oty.fi -s {} {}".format(shlex.quote(msg), shlex.quote(subject), shlex.quote(recipient))
+def send_email(msg: str, subject: str, recipient: str):
+    cmd = "echo {} | mail -aFrom:{} -s {} {}".format(
+        shlex.quote(msg),
+        _EMAIL_SENDER_BOT,
+        shlex.quote(subject),
+        shlex.quote(recipient)
+    )
     os.system(cmd)
 
 
@@ -22,7 +29,7 @@ def pubi_visa_mail_to(form, recipient):
                     str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
                     "\n\nÄlä vastaa tähän sähköpostiin",
                     "\n\nTerveisin: ropottilari\""])
-    _send_mail(msg, "pubivisa ilmoittautuminen", recipient)
+    send_email(msg, "pubivisa ilmoittautuminen", recipient)
 
 
 def pubi_visa_mail(form):
@@ -41,7 +48,7 @@ def peli_ilta_mail(form):
                     "\nKilta: ", str(form.kilta.data),
                     "\n\nÄlä vastaa tähän sähköpostiin",
                     "\n\nTerveisin: ropottilari\""])
-    _send_mail(msg, "kortti- ja lautapeli-ilta ilmoittautuminen", str(form.email.data))
+    send_email(msg, "kortti- ja lautapeli-ilta ilmoittautuminen", str(form.email.data))
 
 
 def slumberparty_mail(form):
@@ -53,7 +60,7 @@ def slumberparty_mail(form):
                     "\nKilta: ", str(form.kilta.data),
                     "\n\nÄlä vastaa tähän sähköpostiin",
                     "\n\nTerveisin: ropottilari\""])
-    _send_mail(msg, "slumberparty ilmoittautuminen", str(form.email.data))
+    send_email(msg, "slumberparty ilmoittautuminen", str(form.email.data))
 
 
 def pakopeli_mail(form):
@@ -69,7 +76,7 @@ def pakopeli_mail(form):
                     str(form.etunimi5.data), str(form.sukunimi5.data),
                     "\n\nÄlä vastaa tähän sähköpostiin",
                     "\n\nTerveisin: ropottilari\""])
-    _send_mail(msg, "pakopelipäivä ilmoittautuminen", str(form.email0.data))
+    send_email(msg, "pakopelipäivä ilmoittautuminen", str(form.email0.data))
 
 
 def hyvinvointi_mail(form):
@@ -79,7 +86,7 @@ def hyvinvointi_mail(form):
                     "\nSähköposti: ", str(form.email.data),
                     "\n\nÄlä vastaa tähän sähköpostiin",
                     "\n\nTerveisin: ropottilari\""])
-    _send_mail(msg, "hyvinvointi- ja etäopiskelukysely", str(form.email.data))
+    send_email(msg, "hyvinvointi- ja etäopiskelukysely", str(form.email.data))
 
 
 def fuksilaulu_mail(form):
@@ -89,5 +96,5 @@ def fuksilaulu_mail(form):
                     "\nSähköposti: ", str(form.email.data),
                     "\n\nÄlä vastaa tähän sähköpostiin",
                     "\n\nTerveisin: ropottilari\""])
-    _send_mail(msg, "fuksilauluilta ilmoittautuminen", str(form.email.data))
+    send_email(msg, "fuksilauluilta ilmoittautuminen", str(form.email.data))
 

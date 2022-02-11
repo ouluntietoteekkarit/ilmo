@@ -5,7 +5,7 @@ from flask_migrate import Migrate
 from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CSRFProtect
 from config import Config
-from .config import load_route_conf, load_auth_config
+from .config import load_auth_config
 
 auth = HTTPBasicAuth()
 csrf = CSRFProtect()

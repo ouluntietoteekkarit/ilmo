@@ -77,7 +77,7 @@ class KyselyArvontaJuttuController(FormController):
 
     def _get_event(self) -> Event:
         return Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00),
-                     datetime(2020, 11, 23, 23, 59, 59), 4000)
+                     datetime(2020, 11, 23, 23, 59, 59), 4000, 0)
 
 
 def _render_form(entrys, count, event, nowtime, form):

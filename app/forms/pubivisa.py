@@ -112,6 +112,10 @@ class PubiVisaController(FormController):
         group_size += int(form.etunimi3.data and form.sukunimi3.data)
         totalcount += group_size
 
+        if nowtime > event.get_end_time():
+            flash('Ilmoittautuminen on päättynyt')
+            return _render_form(entries, totalcount, event, nowtime, form)
+
         if totalcount >= event.get_participant_limit():
             flash('Ilmoittautuminen on jo täynnä')
             totalcount -= group_size
@@ -143,7 +147,7 @@ class PubiVisaController(FormController):
         return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
-        return Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50)
+        return Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50, 0)
 
 
 def _render_form(entrys, count, event, nowtime, form):
