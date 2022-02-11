@@ -151,7 +151,7 @@ def _form_to_model (form, nowtime):
 
 
 def _render_form(entries, count, event, nowtime, form):
-    return render_template('index.html',
+    return render_template('pitsakalja/index.html',
                            title='pitsakaljasitsit ilmoittautuminen',
                            entrys=entries,
                            totalcount=count,
