@@ -1,11 +1,13 @@
 from flask_wtf import FlaskForm
-from flask import render_template, flash, send_from_directory, abort
+from flask import render_template, flash
 from wtforms import StringField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-import os
-from app import db, sqlite_to_csv
+from app import db
+from typing import Any
+from .forms_util.guilds import *
 from .forms_util.event import Event
+from .forms_util.form_controller import FormController
 
 
 class KyselyArvontaJuttuForm(FlaskForm):
@@ -25,45 +27,56 @@ class KyselyArvontaJuttuModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-def get_event():
-    return Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000)
+class KyselyArvontaJuttuController(FormController):
 
+    def get_request_handler(self, request) -> Any:
+        form = KyselyArvontaJuttuForm()
+        event = self._get_event()
+        entries = KyselyArvontaJuttuModel.query.all()
 
-def kysely_arvonta_juttu_handler(request):
-    form = KyselyArvontaJuttuForm()
-    event = get_event()
-    nowtime = datetime.now()
-    entries = KyselyArvontaJuttuModel.query.all()
-    count = len(entries)
+        return _render_form(entries, len(entries), event, datetime.now(), form)
 
-    for entry in entries:
-        if (entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data) or entry.email == form.email.data:
-            flash('Olet jo ilmoittautunut')
+    def post_request_handler(self, request) -> Any:
+        form = KyselyArvontaJuttuForm()
+        event = self._get_event()
+        nowtime = datetime.now()
+        entries = KyselyArvontaJuttuModel.query.all()
+        count = len(entries)
 
+        if count >= event.get_participant_limit():
+            flash('Ilmoittautuminen on jo täynnä')
             return _render_form(entries, count, event, nowtime, form)
 
-    validate = False
-    submitted = False
-    if request.method == 'POST':
-        validate = form.validate_on_submit()
-        submitted = form.is_submitted()
+        firstname = form.etunimi.data
+        lastname = form.sukunimi.data
+        email = form.email.data
+        for entry in entries:
+            if (entry.etunimi == firstname and entry.sukunimi == lastname) or entry.email == email:
+                flash('Olet jo ilmoittautunut')
+                return _render_form(entries, count, event, nowtime, form)
 
-    if validate and submitted and count <= event.get_participant_limit():
-        flash('Ilmoittautuminen onnistui')
-        sub = _form_to_model(form, nowtime)
-        db.session.add(sub)
-        db.session.commit()
+        if form.validate_on_submit():
+            db.session.add(_form_to_model(form, nowtime))
+            db.session.commit()
 
-        # return redirect(url_for('kysely_arvonta_juttu'))
-        return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
+            flash('Ilmoittautuminen onnistui')
+            # return redirect(url_for('route_get_kysely_arvonta_juttu'))
+            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
 
-    elif submitted and count > event.get_participant_limit():
-        flash('Ilmoittautuminen on jo täynnä')
+        else:
+            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    elif not validate and submitted:
-        flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+        return _render_form(entries, count, event, nowtime, form)
 
-    return _render_form(entries, count, event, nowtime, form)
+    def get_data_request_handler(self, request) -> Any:
+        return self._data_view(KyselyArvontaJuttuModel, 'kysely_arvonta_juttu/kysely_arvonta_juttu_data.html')
+
+    def get_data_csv_request_handler(self, request) -> Any:
+        return self._export_to_csv(KyselyArvontaJuttuModel.__tablename__)
+
+    def _get_event(self) -> Event:
+        return Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00),
+                     datetime(2020, 11, 23, 23, 59, 59), 4000)
 
 
 def _render_form(entrys, count, event, nowtime, form):
@@ -87,27 +100,3 @@ def _form_to_model(form, nowtime):
         consent0=form.consent0.data,
         datetime=nowtime,
     )
-
-def kysely_arvonta_juttu_data():
-    event = get_event()
-    limit = event.get_participant_limit()
-    entries = KyselyArvontaJuttuModel.query.all()
-    count = len(entries)
-    return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_data.html',
-                           title='kysely_arvonta_juttu data',
-                           entries=entries,
-                           count=count,
-                           limit=limit)
-
-
-def kysely_arvonta_juttu_csv():
-    os.system('mkdir csv')
-    sqlite_to_csv.export_to_csv('kysely_arvonta_juttu_model')
-    dir = os.path.join(os.getcwd(), 'csv/')
-
-    try:
-        print(dir)
-        return send_from_directory(directory=dir, filename='kysely_arvonta_juttu_model_data.csv', as_attachment=True)
-    except FileNotFoundError as e:
-        print(e)
-        abort(404)

@@ -1,13 +1,13 @@
 from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash, send_from_directory, abort
+from flask import render_template, url_for, redirect, flash
 from wtforms import StringField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-import os
-from app import db, sqlite_to_csv
+from app import db
+from typing import Any
 from .forms_util.guilds import *
 from .forms_util.event import Event
-
+from .forms_util.form_controller import FormController
 
 def get_guild_choices():
     choices = []
@@ -28,7 +28,7 @@ class KorttijalautapeliiltaForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class KorttijalautapeliiltaModel(db.Model):
+class KorttiJaLautaPeliIltaModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
@@ -41,52 +41,57 @@ class KorttijalautapeliiltaModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-class KorttiJaLautapeliIltaController:
-    pass
+class KorttiJaLautapeliIltaController(FormController):
 
+    def get_request_handler(self, request) -> Any:
+        form = KorttijalautapeliiltaForm()
+        event = self._get_event()
+        entries = KorttiJaLautaPeliIltaModel.query.all()
 
-def get_event():
-    return Event('korttijalautapeliilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 50)
+        return _render_form(entries, len(entries), event, datetime.now(), form)
 
+    def post_request_handler(self, request) -> Any:
+        form = KorttijalautapeliiltaForm()
+        event = self._get_event()
+        nowtime = datetime.now()
+        entries = KorttiJaLautaPeliIltaModel.query.all()
+        count = len(entries)
 
-def korttijalautapeliilta_handler(request):
-    form = KorttijalautapeliiltaForm()
-    event = get_event()
-    nowtime = datetime.now()
-    entries = KorttijalautapeliiltaModel.query.all()
-    count = len(entries)
-
-    for entry in entries:
-        if entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data:
-            flash('Olet jo ilmoittautunut')
-
+        if count >= event.get_participant_limit():
+            flash('Ilmoittautuminen on jo täynnä')
             return _render_form(entries, count, event, nowtime, form)
 
-    validate = False
-    submitted = False
-    if request.method == 'POST':
-        validate = form.validate_on_submit()
-        submitted = form.is_submitted()
+        firstname = form.etunimi.data
+        lastname = form.sukunimi.data
+        for entry in entries:
+            if entry.etunimi == firstname and entry.sukunimi == lastname:
+                flash('Olet jo ilmoittautunut')
+                return _render_form(entries, count, event, nowtime, form)
 
-    if validate and submitted and count <= event.get_participant_limit():
-        flash('Ilmoittautuminen onnistui')
-        sub = _form_to_model(form, nowtime)
-        db.session.add(sub)
-        db.session.commit()
+        if form.validate_on_submit():
+            db.session.add(_form_to_model(form, nowtime))
+            db.session.commit()
 
-        return redirect(url_for('route_korttijalautapeliilta'))
+            flash('Ilmoittautuminen onnistui')
+            return redirect(url_for('route_get_korttijalautapeliilta'))
 
-    elif submitted and count > event.get_participant_limit():
-        flash('Ilmoittautuminen on jo täynnä')
+        else:
+            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    elif not validate and submitted:
-        flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+        return _render_form(entries, count, event, nowtime, form)
 
-    return _render_form(entries, count, event, nowtime, form)
+    def get_data_request_handler(self, request) -> Any:
+        return self._data_view(KorttiJaLautaPeliIltaModel, 'korttijalautapeliilta/korttijalautapeliilta_data.html')
+
+    def get_data_csv_request_handler(self, request) -> Any:
+        return self._export_to_csv(KorttiJaLautaPeliIltaModel.__tablename__)
+
+    def _get_event(self) -> Event:
+        return Event('korttijalautapeliilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 50)
 
 
 def _form_to_model(form, nowtime):
-    return KorttijalautapeliiltaModel(
+    return KorttiJaLautaPeliIltaModel(
         etunimi=form.etunimi.data,
         sukunimi=form.sukunimi.data,
         phone=form.phone.data,
@@ -98,10 +103,11 @@ def _form_to_model(form, nowtime):
         datetime=nowtime
     )
 
-def _render_form(entrys, count, event, nowtime, form):
+
+def _render_form(entries, count, event, nowtime, form):
     return render_template('korttijalautapeliilta/korttijalautapeliilta.html',
                            title='korttijalautapeliilta ilmoittautuminen',
-                           entrys=entrys,
+                           entrys=entries,
                            count=count,
                            starttime=event.get_start_time(),
                            endtime=event.get_end_time(),
@@ -109,28 +115,3 @@ def _render_form(entrys, count, event, nowtime, form):
                            limit=event.get_participant_limit(),
                            form=form,
                            page="korttijalautapeliilta")
-
-
-def korttijalautapeliilta_data():
-    event = get_event()
-    limit = event.get_participant_limit()
-    entries = KorttijalautapeliiltaModel.query.all()
-    count = len(entries)
-    return render_template('korttijalautapeliilta/korttijalautapeliilta_data.html',
-                           title='korttijalautapeliilta data',
-                           entries=entries,
-                           count=count,
-                           limit=limit)
-
-
-def korttijalautapeliilta_csv():
-    os.system('mkdir csv')
-    sqlite_to_csv.export_to_csv('korttijalautapeliilta_model')
-    dir = os.path.join(os.getcwd(), 'csv/')
-
-    try:
-        print(dir)
-        return send_from_directory(directory=dir, filename='korttijalautapeliilta_model_data.csv', as_attachment=True)
-    except FileNotFoundError as e:
-        print(e)
-        abort(404)
