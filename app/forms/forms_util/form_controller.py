@@ -1,13 +1,17 @@
+from __future__ import annotations
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from flask import send_from_directory, abort, render_template, flash
-from flask_wtf import FlaskForm
-from typing import Any, Type
-from app import db
+from typing import Any, Type, TYPE_CHECKING
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email
-from .event import Event
+
+if TYPE_CHECKING:
+    from app import db
+    from flask_wtf import FlaskForm
+    from .event import Event
+    from .form_module_info import FormModuleInfo
 
 
 class FormController(ABC):
@@ -112,7 +116,7 @@ class FormController(ABC):
 
         return self._render_form(entries, count, event, nowtime, form)
 
-    def _data_view(self, model, template, **additional_template_args) -> Any:
+    def _data_view(self, form_info: FormModuleInfo, model, **additional_template_args) -> Any:
         """
         A helper method to render a data view template.
         """
@@ -120,11 +124,13 @@ class FormController(ABC):
         limit = event.get_participant_limit()
         entries = model.query.all()
         count = len(entries)
+        template = '{}/data.html'.format(form_info.get_form_name())
         return render_template(template, **{
             'title': '{} data'.format(event.get_name()),
             'entries': entries,
             'count': count,
             'limit': limit,
+            'form_info': form_info,
             **additional_template_args
         })
 

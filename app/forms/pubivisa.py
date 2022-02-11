@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from app import db
-from .forms_util.form_module import FormModule, file_path_to_form_name
+from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
 from .forms_util.forms import get_guild_choices
 from .forms_util.guilds import *
 from .forms_util.event import Event
@@ -19,13 +19,13 @@ from .forms_util.form_controller import FormController
 _form_module = None
 
 
-def get_form_info() -> FormModule:
+def get_form_info() -> FormModuleInfo:
     """
     Returns this form's module information.
     """
     global _form_module
     if _form_module is None:
-        _form_module = FormModule(_Controller, True, file_path_to_form_name(__file__))
+        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
     return _form_module
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
@@ -146,7 +146,8 @@ class _Controller(FormController):
             db.session.commit()
 
             flash('Ilmoittautuminen onnistui')
-            return redirect(url_for('route_get_pubivisa'))
+            form_info = get_form_info()
+            return redirect(url_for(form_info.get_endpoint_get_index()))
 
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
@@ -154,7 +155,7 @@ class _Controller(FormController):
         return self._render_form(entries, totalcount, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(_Model, 'pubivisa/data.html')
+        return self._data_view(get_form_info(), _Model)
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -172,7 +173,8 @@ class _Controller(FormController):
                                nowtime=nowtime,
                                limit=event.get_participant_limit(),
                                form=form,
-                               page="pubivisa")
+                               page="pubivisa",
+                               form_info=get_form_info())
 
     def _find_from_entries(self, entries, form: _Form) -> bool:
         teamname = form.teamname.data

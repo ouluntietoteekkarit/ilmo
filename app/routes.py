@@ -6,7 +6,7 @@ from flask import render_template, request, Flask
 import importlib.util
 
 from . import server, auth, users, roles
-from .forms.forms_util.form_module import FormModule
+from .forms.forms_util.form_module_info import FormModuleInfo
 
 
 def _find_modules(folder:str, package: str) -> List[str]:
@@ -33,7 +33,7 @@ def load_module(module_name: str) -> ModuleType:
     return importlib.import_module(module_name, package)
 
 
-def register_module_route(server: Flask, form_info: FormModule):
+def register_module_route(server: Flask, form_info: FormModuleInfo):
     if not form_info.is_active():
         return
 
@@ -73,10 +73,10 @@ def register_module_route(server: Flask, form_info: FormModule):
     server.add_url_rule(data_csv_url_path, data_get_csv_endpoint, get_form_data_csv)
 
     # Set mapped url endpoints to form_info instance
-    form_info.set_get_index_endpoint(index_get_endpoint)
-    form_info.set_post_index_endpoint(index_post_endpoint)
-    form_info.set_get_data_endpoint(data_get_endpoint)
-    form_info.set_get_data_csv_endpoint(data_get_csv_endpoint)
+    form_info.set_endpoint_get_index(index_get_endpoint)
+    form_info.set_endpoint_post_index(index_post_endpoint)
+    form_info.set_endpoint_get_data(data_get_endpoint)
+    form_info.set_endpoint_get_data_csv(data_get_csv_endpoint)
 
 
 @auth.verify_password

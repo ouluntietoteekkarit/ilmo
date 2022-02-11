@@ -7,7 +7,7 @@ import json
 from typing import Any
 
 from app import db
-from .forms_util.form_module import FormModule, file_path_to_form_name
+from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIfValue
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
@@ -19,13 +19,13 @@ from .forms_util.form_controller import FormController
 _form_module = None
 
 
-def get_form_info() -> FormModule:
+def get_form_info() -> FormModuleInfo:
     """
     Returns this form's module information.
     """
     global _form_module
     if _form_module is None:
-        _form_module = FormModule(_Controller, True, file_path_to_form_name(__file__))
+        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
     return _form_module
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
@@ -157,13 +157,9 @@ class _Controller(FormController):
             flash('Ilmoittautuminen on jo täynnä')
             return self._render_form(entries, count, event, nowtime, form)
 
-        firstname = form.etunimi0.data
-        lastname = form.sukunimi0.data
-        email = form.email0.data
-        for entry in entries:
-            if (entry.etunimi0 == firstname and entry.sukunimi0 == lastname) or entry.email0 == email:
-                flash('Olet jo ilmoittautunut')
-                return self._render_form(entries, count, event, nowtime, form,)
+        if self._find_from_entries(entries, form):
+            flash('Olet jo ilmoittautunut')
+            return self._render_form(entries, count, event, nowtime, form,)
 
         chosen_time = form.aika.data
         early_room = form.huone1800.data
@@ -178,7 +174,8 @@ class _Controller(FormController):
             db.session.commit()
 
             flash('Ilmoittautuminen onnistui')
-            return redirect(url_for('route_get_pakohuone'))
+            form_info = get_form_info()
+            return redirect(url_for(form_info.get_endpoint_get_index()))
 
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
@@ -186,7 +183,7 @@ class _Controller(FormController):
         return self._render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(_Model, 'pakohuone/data.html')
+        return self._data_view(get_form_info(), _Model)
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -209,7 +206,8 @@ class _Controller(FormController):
                                limit=event.get_participant_limit(),
                                form=form,
                                varatut=json.dumps(varatut),
-                               page="pakohuone")
+                               page="pakohuone",
+                               form_info=get_form_info())
 
     def _find_from_entries(self, entries, form: FlaskForm) -> bool:
         firstname = form.etunimi0.data

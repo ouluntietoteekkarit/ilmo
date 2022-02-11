@@ -7,7 +7,7 @@ from typing import Any
 
 from app import db
 from .forms_util.guilds import *
-from .forms_util.form_module import FormModule, file_path_to_form_name
+from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
 from .forms_util.forms import get_guild_choices
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
@@ -19,13 +19,13 @@ from .forms_util.form_controller import FormController
 _form_module = None
 
 
-def get_form_info() -> FormModule:
+def get_form_info() -> FormModuleInfo:
     """
     Returns this form's module information.
     """
     global _form_module
     if _form_module is None:
-        _form_module = FormModule(_Controller, True, file_path_to_form_name(__file__))
+        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
     return _form_module
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
@@ -72,7 +72,7 @@ class _Controller(FormController):
         return self._post_routine(_Form(), _Model)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(_Model, 'korttijalautapeliilta/data.html')
+        return self._data_view(get_form_info(), _Model)
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -81,6 +81,7 @@ class _Controller(FormController):
         return Event('korttijalautapeliilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 50, 0)
 
     def _render_form(self, entries, count: int, event: Event, nowtime, form: _Form) -> Any:
+
         return render_template('korttijalautapeliilta/index.html',
                                title='korttijalautapeliilta ilmoittautuminen',
                                entrys=entries,
@@ -90,7 +91,8 @@ class _Controller(FormController):
                                nowtime=nowtime,
                                limit=event.get_participant_limit(),
                                form=form,
-                               page="korttijalautapeliilta")
+                               page="korttijalautapeliilta",
+                               form_info=get_form_info())
 
     def _find_from_entries(self, entries, form: _Form) -> bool:
         firstname = form.etunimi.data
