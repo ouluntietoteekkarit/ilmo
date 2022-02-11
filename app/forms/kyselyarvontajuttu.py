@@ -62,7 +62,7 @@ class KyselyArvontaJuttuController(FormController):
 
             flash('Ilmoittautuminen onnistui')
             # return redirect(url_for('route_get_kysely_arvonta_juttu'))
-            return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu_redirect.html')
+            return render_template('kysely_arvonta_juttu/redirect.html')
 
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
@@ -70,7 +70,7 @@ class KyselyArvontaJuttuController(FormController):
         return _render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(_Model, 'kysely_arvonta_juttu/kysely_arvonta_juttu_data.html')
+        return self._data_view(_Model, 'kysely_arvonta_juttu/data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -81,7 +81,7 @@ class KyselyArvontaJuttuController(FormController):
 
 
 def _render_form(entrys, count, event, nowtime, form):
-    return render_template('kysely_arvonta_juttu/kysely_arvonta_juttu.html',
+    return render_template('kysely_arvonta_juttu/index.html',
                            title='kysely_arvonta_juttu ilmoittautuminen',
                            entrys=entrys,
                            count=count,

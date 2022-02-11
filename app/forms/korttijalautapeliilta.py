@@ -78,7 +78,7 @@ class KorttiJaLautapeliIltaController(FormController):
         return _render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(_Model, 'korttijalautapeliilta/korttijalautapeliilta_data.html')
+        return self._data_view(_Model, 'korttijalautapeliilta/data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -102,7 +102,7 @@ def _form_to_model(form, nowtime):
 
 
 def _render_form(entries, count, event, nowtime, form):
-    return render_template('korttijalautapeliilta/korttijalautapeliilta.html',
+    return render_template('korttijalautapeliilta/index.html',
                            title='korttijalautapeliilta ilmoittautuminen',
                            entrys=entries,
                            count=count,

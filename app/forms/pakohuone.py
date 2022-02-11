@@ -174,7 +174,7 @@ class PakoHuoneController(FormController):
         return _render_form(entries, count, event, nowtime, form, varatut)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(_Model, 'pakohuone/pakohuone_data.html')
+        return self._data_view(_Model, 'pakohuone/data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -184,7 +184,7 @@ class PakoHuoneController(FormController):
 
 
 def _render_form(entrys, count, event, nowtime, form, varatut):
-    return render_template('pakohuone/pakohuone.html',
+    return render_template('pakohuone/index.html',
                            title='pakohuone ilmoittautuminen',
                            entrys=entrys,
                            count=count,

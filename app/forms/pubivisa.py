@@ -137,7 +137,7 @@ class PubiVisaController(FormController):
         return _render_form(entries, totalcount, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(_Model, 'pubivisa/pubivisa_data.html')
+        return self._data_view(_Model, 'pubivisa/data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -147,7 +147,7 @@ class PubiVisaController(FormController):
 
 
 def _render_form(entrys, count, event, nowtime, form):
-    return render_template('pubivisa/pubivisa.html',
+    return render_template('pubivisa/index.html',
                            title='pubivisa ilmoittautuminen',
                            entrys=entrys,
                            count=count,

@@ -77,7 +77,7 @@ class SlumberPartyController(FormController):
         return _render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(_Model, 'slumberparty/slumberparty_data.html')
+        return self._data_view(_Model, 'slumberparty/data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -87,7 +87,7 @@ class SlumberPartyController(FormController):
 
 
 def _render_form(entrys, count, event, nowtime, form):
-    return render_template('slumberparty/slumberparty.html',
+    return render_template('slumberparty/index.html',
                            title='slumberparty ilmoittautuminen',
                            entrys=entrys,
                            count=count,
