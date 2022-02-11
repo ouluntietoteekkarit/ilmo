@@ -15,11 +15,18 @@ from .forms_util.form_controller import FormController
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
+"""Singleton instance containing this form module's information."""
+_form_module = None
+
+
 def get_form_info() -> FormModule:
     """
     Returns this form's module information.
     """
-    return FormModule(_Controller, True, file_path_to_form_name(__file__))
+    global _form_module
+    if _form_module is None:
+        _form_module = FormModule(_Controller, True, file_path_to_form_name(__file__))
+    return _form_module
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 

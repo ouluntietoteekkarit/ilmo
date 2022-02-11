@@ -40,6 +40,7 @@ def register_module_route(server: Flask, form_info: FormModule):
     controller = form_info.get_controller_type()
     form_name = form_info.get_form_name()
 
+    # Request handler closures
     def get_form_index() -> Any:
         return controller().get_request_handler(request)
 
@@ -54,19 +55,28 @@ def register_module_route(server: Flask, form_info: FormModule):
         return controller().get_data_csv_request_handler(request)
     get_form_data_csv = auth.login_required(role=['admin', form_name])(get_form_data_csv)
 
+    # Create URL paths
     index_url_path = '/{}'.format(form_name)
     data_url_path = '/{}/data'.format(form_name)
     data_csv_url_path = '/{}/data/{}.csv'.format(form_name, form_name)
 
+    # Create endpoint identifiers
     index_get_endpoint = 'route_get_{}'.format(form_name)
     index_post_endpoint = 'route_post_{}'.format(form_name)
     data_get_endpoint = 'route_get_{}_data'.format(form_name)
     data_get_csv_endpoint = 'route_get_{}_data_csv'.format(form_name)
 
+    # Map url path to form module controller's methods using closures
     server.add_url_rule(index_url_path, index_get_endpoint, get_form_index, methods=['GET'])
     server.add_url_rule(index_url_path, index_post_endpoint, post_form_index, methods=['POST'])
     server.add_url_rule(data_url_path, data_get_endpoint, get_form_data)
     server.add_url_rule(data_csv_url_path, data_get_csv_endpoint, get_form_data_csv)
+
+    # Set mapped url endpoints to form_info instance
+    form_info.set_get_index_endpoint(index_get_endpoint)
+    form_info.set_post_index_endpoint(index_post_endpoint)
+    form_info.set_get_data_endpoint(data_get_endpoint)
+    form_info.set_get_data_csv_endpoint(data_get_csv_endpoint)
 
 
 @auth.verify_password
