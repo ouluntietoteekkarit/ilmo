@@ -9,7 +9,7 @@ from .forms_util.event import Event
 from .forms_util.form_controller import FormController
 
 
-class FuksilauluiltaForm(FlaskForm):
+class _Form(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
@@ -19,7 +19,8 @@ class FuksilauluiltaForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class FuksilauluiltaModel(db.Model):
+class _Model(db.Model):
+    __tablename__ = 'fuksilauluilta'
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
@@ -31,18 +32,18 @@ class FuksilauluiltaModel(db.Model):
 class FuksiLauluIltaController(FormController):
 
     def get_request_handler(self, request) -> Any:
-        form = FuksilauluiltaForm()
+        form = _Form()
         event = self._get_event()
-        entries = FuksilauluiltaModel.query.all()
+        entries = _Model.query.all()
 
         return _render_form(entries, len(entries), event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
-        form = FuksilauluiltaForm()
+        form = _Form()
         event = self._get_event()
         nowtime = datetime.now()
-        entries = FuksilauluiltaModel.query.all()
+        entries = _Model.query.all()
         count = len(entries)
 
         if count >= event.get_participant_limit():
@@ -69,17 +70,17 @@ class FuksiLauluIltaController(FormController):
         return _render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(FuksilauluiltaModel, 'fuksilauluilta/fuksilauluilta_data.html', )
+        return self._data_view(_Model, 'fuksilauluilta/fuksilauluilta_data.html', )
 
     def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(FuksilauluiltaModel.__tablename__)
+        return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
         return Event('Fuksilauluilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 70)
 
 
 def _form_to_model (form, nowtime):
-    return FuksilauluiltaModel(
+    return _Model(
         etunimi=form.etunimi.data,
         sukunimi=form.sukunimi.data,
         email=form.email.data,

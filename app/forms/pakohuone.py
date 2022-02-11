@@ -51,7 +51,7 @@ def _get_time_choices():
     return choices
 
 
-class PakohuoneForm(FlaskForm):
+class _Form(FlaskForm):
     aika = RadioField('Aika *', choices=_get_time_choices(), validators=[DataRequired()])
     huone1800 = RadioField('Huone (18:00) *', choices=_get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
     huone1930 = RadioField('Huone (19:30) *', choices=_get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
@@ -83,7 +83,8 @@ class PakohuoneForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class PakohuoneModel(db.Model):
+class _Model(db.Model):
+    __tablename__ = 'pakohuone'
     id = db.Column(db.Integer, primary_key=True)
 
     aika = db.Column(db.String(16))
@@ -118,9 +119,9 @@ class PakohuoneModel(db.Model):
 class PakoHuoneController(FormController):
 
     def get_request_handler(self, request) -> Any:
-        form = PakohuoneForm()
+        form = _Form()
         event = self._get_event()
-        entries = PakohuoneModel.query.all()
+        entries = _Model.query.all()
 
         varatut = []
         for entry in entries:
@@ -129,10 +130,11 @@ class PakoHuoneController(FormController):
         return _render_form(entries, len(entries), event, datetime.now(), form, varatut)
 
     def post_request_handler(self, request) -> Any:
-        form = PakohuoneForm()
+        # MEMO: This routine is prone to data race since it does not use transactions
+        form = _Form()
         event = self._get_event()
         nowtime = datetime.now()
-        entries = PakohuoneModel.query.all()
+        entries = _Model.query.all()
         count = len(entries)
 
         varatut = []
@@ -172,10 +174,10 @@ class PakoHuoneController(FormController):
         return _render_form(entries, count, event, nowtime, form, varatut)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(PakohuoneModel, 'pakohuone/pakohuone_data.html')
+        return self._data_view(_Model, 'pakohuone/pakohuone_data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(PakohuoneModel.__tablename__)
+        return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
         return Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20)
@@ -196,7 +198,7 @@ def _render_form(entrys, count, event, nowtime, form, varatut):
 
 
 def _form_to_model(form, nowtime):
-    return PakohuoneModel(
+    return _Model(
         aika=form.aika.data,
         huone1800=form.huone1800.data,
         huone1930=form.huone1930.data,

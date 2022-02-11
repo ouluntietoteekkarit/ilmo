@@ -5,31 +5,26 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 from app import db
 from typing import Any
+from .forms_util.forms import get_guild_choices
 from .forms_util.guilds import *
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
 
 
-def _get_guild_choices():
-    choices = []
-    for guild in get_all_guilds():
-        choices.append((guild.get_name(), guild.get_name()))
-    return choices
-
-
-class SlumberpartyForm(FlaskForm):
+class _Form(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta = SelectField('Kilta *', choices=_get_guild_choices())
+    kilta = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()))
     consent0 = BooleanField('Sallin nimeni julkaisemisen osallistujalistassa')
     consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
     consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
     submit = SubmitField('Ilmoittaudu')
 
 
-class SlumberpartyModel(db.Model):
+class _Model(db.Model):
+    __tablename__ = 'slumberparty'
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
@@ -45,17 +40,17 @@ class SlumberpartyModel(db.Model):
 class SlumberPartyController(FormController):
 
     def get_request_handler(self, request) -> Any:
-        form = SlumberpartyForm()
+        form = _Form()
         event = self._get_event()
-        entries = SlumberpartyModel.query.all()
+        entries = _Model.query.all()
 
         return _render_form(entries, len(entries), event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
-        form = SlumberpartyForm()
+        form = _Form()
         event = self._get_event()
         nowtime = datetime.now()
-        entries = SlumberpartyModel.query.all()
+        entries = _Model.query.all()
         count = len(entries)
 
         if count >= event.get_participant_limit():
@@ -82,10 +77,10 @@ class SlumberPartyController(FormController):
         return _render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(SlumberpartyModel, 'slumberparty/slumberparty_data.html')
+        return self._data_view(_Model, 'slumberparty/slumberparty_data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(SlumberpartyModel.__tablename__)
+        return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
         return Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50)
@@ -105,7 +100,7 @@ def _render_form(entrys, count, event, nowtime, form):
 
 
 def _form_to_model(form, nowtime):
-    return SlumberpartyModel(
+    return _Model(
         etunimi=form.etunimi.data,
         sukunimi=form.sukunimi.data,
         phone=form.phone.data,

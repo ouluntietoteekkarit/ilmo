@@ -5,12 +5,11 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 from app import db
 from typing import Any
-from .forms_util.guilds import *
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
 
 
-class KyselyArvontaJuttuForm(FlaskForm):
+class _Form(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
@@ -18,7 +17,8 @@ class KyselyArvontaJuttuForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
-class KyselyArvontaJuttuModel(db.Model):
+class _Model(db.Model):
+    __tablename__ = 'kysely_arvonta_juttu'
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
@@ -30,17 +30,18 @@ class KyselyArvontaJuttuModel(db.Model):
 class KyselyArvontaJuttuController(FormController):
 
     def get_request_handler(self, request) -> Any:
-        form = KyselyArvontaJuttuForm()
+        form = _Form()
         event = self._get_event()
-        entries = KyselyArvontaJuttuModel.query.all()
+        entries = _Model.query.all()
 
         return _render_form(entries, len(entries), event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
-        form = KyselyArvontaJuttuForm()
+        # MEMO: This routine is prone to data race since it does not use transactions
+        form = _Form()
         event = self._get_event()
         nowtime = datetime.now()
-        entries = KyselyArvontaJuttuModel.query.all()
+        entries = _Model.query.all()
         count = len(entries)
 
         if count >= event.get_participant_limit():
@@ -69,10 +70,10 @@ class KyselyArvontaJuttuController(FormController):
         return _render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(KyselyArvontaJuttuModel, 'kysely_arvonta_juttu/kysely_arvonta_juttu_data.html')
+        return self._data_view(_Model, 'kysely_arvonta_juttu/kysely_arvonta_juttu_data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(KyselyArvontaJuttuModel.__tablename__)
+        return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
         return Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00),
@@ -93,7 +94,7 @@ def _render_form(entrys, count, event, nowtime, form):
 
 
 def _form_to_model(form, nowtime):
-    return KyselyArvontaJuttuModel(
+    return _Model(
         etunimi=form.etunimi.data,
         sukunimi=form.sukunimi.data,
         email=form.email.data,

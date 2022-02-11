@@ -5,44 +5,38 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 from app import db
 from typing import Any
+from .forms_util.forms import get_guild_choices
 from .forms_util.guilds import *
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
 
 
-def get_guild_choices():
-    choices = []
-    for guild in get_all_guilds():
-        choices.append((guild.get_name(), guild.get_name()))
-    return choices
-
-
-class PubivisaForm(FlaskForm):
+class _Form(FlaskForm):
     teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
 
     etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email0 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta0 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
+    kilta0 = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()), validators=[DataRequired()])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi1 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone1 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email1 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta1 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
+    kilta1 = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()), validators=[DataRequired()])
 
     etunimi2 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi2 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone2 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
     email2 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta2 = SelectField('Kilta *', choices=get_guild_choices(), validators=[DataRequired()])
+    kilta2 = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()), validators=[DataRequired()])
 
     etunimi3 = StringField('Etunimi', validators=[length(max=50)])
     sukunimi3 = StringField('Sukunimi', validators=[length(max=50)])
     phone3 = StringField('Puhelinnumero', validators=[length(max=20)])
     email3 = StringField('Sähköposti', validators=[length(max=100)])
-    kilta3 = SelectField('Kilta', choices=get_guild_choices())
+    kilta3 = SelectField('Kilta', choices=get_guild_choices(get_all_guilds()))
 
     consent0 = BooleanField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
     consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
@@ -51,7 +45,8 @@ class PubivisaForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class PubivisaModel(db.Model):
+class _Model(db.Model):
+    __tablename__ = 'pubivisa'
     id = db.Column(db.Integer, primary_key=True)
     teamname = db.Column(db.String(128))
 
@@ -91,9 +86,9 @@ class PubivisaModel(db.Model):
 class PubiVisaController(FormController):
 
     def get_request_handler(self, request) -> Any:
-        form = PubivisaForm()
+        form = _Form()
         event = self._get_event()
-        entries = PubivisaModel.query.all()
+        entries = _Model.query.all()
         totalcount = 0
         for entry in entries:
             totalcount += entry.personcount
@@ -101,10 +96,11 @@ class PubiVisaController(FormController):
         return _render_form(entries, totalcount, event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
-        form = PubivisaForm()
+        # MEMO: This routine is prone to data race since it does not use transactions
+        form = _Form()
         event = self._get_event()
         nowtime = datetime.now()
-        entries = PubivisaModel.query.all()
+        entries = _Model.query.all()
         totalcount = 0
         for entry in entries:
             totalcount += entry.personcount
@@ -141,10 +137,10 @@ class PubiVisaController(FormController):
         return _render_form(entries, totalcount, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(PubivisaModel, 'pubivisa/pubivisa_data.html')
+        return self._data_view(_Model, 'pubivisa/pubivisa_data.html')
 
     def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(PubivisaModel.__tablename__)
+        return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
         return Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50)
@@ -164,7 +160,7 @@ def _render_form(entrys, count, event, nowtime, form):
 
 
 def _form_to_model(form, count, nowtime):
-    return PubivisaModel(
+    return _Model(
         teamname=form.teamname.data,
         etunimi0=form.etunimi0.data,
         sukunimi0=form.sukunimi0.data,
