@@ -123,11 +123,7 @@ class PakoHuoneController(FormController):
         event = self._get_event()
         entries = _Model.query.all()
 
-        varatut = []
-        for entry in entries:
-            varatut.append((entry.aika, entry.huone1800, entry.huone1930))
-
-        return _render_form(entries, len(entries), event, datetime.now(), form, varatut)
+        return self._render_form(entries, len(entries), event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
@@ -137,13 +133,9 @@ class PakoHuoneController(FormController):
         entries = _Model.query.all()
         count = len(entries)
 
-        varatut = []
-        for entry in entries:
-            varatut.append((entry.aika, entry.huone1800, entry.huone1930))
-
         if count >= event.get_participant_limit():
             flash('Ilmoittautuminen on jo täynnä')
-            return _render_form(entries, count, event, nowtime, form, varatut)
+            return self._render_form(entries, count, event, nowtime, form)
 
         firstname = form.etunimi0.data
         lastname = form.sukunimi0.data
@@ -151,7 +143,7 @@ class PakoHuoneController(FormController):
         for entry in entries:
             if (entry.etunimi0 == firstname and entry.sukunimi0 == lastname) or entry.email0 == email:
                 flash('Olet jo ilmoittautunut')
-                return _render_form(entries, count, event, nowtime, form, varatut)
+                return self._render_form(entries, count, event, nowtime, form,)
 
         chosen_time = form.aika.data
         early_room = form.huone1800.data
@@ -159,10 +151,10 @@ class PakoHuoneController(FormController):
         for entry in entries:
             if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-                return _render_form(entries, count, event, nowtime, form, varatut)
+                return self._render_form(entries, count, event, nowtime, form)
 
         if form.validate_on_submit():
-            db.session.add(_form_to_model(form, nowtime))
+            db.session.add(self._form_to_model(form, nowtime))
             db.session.commit()
 
             flash('Ilmoittautuminen onnistui')
@@ -171,7 +163,7 @@ class PakoHuoneController(FormController):
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-        return _render_form(entries, count, event, nowtime, form, varatut)
+        return self._render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
         return self._data_view(_Model, 'pakohuone/data.html')
@@ -182,40 +174,71 @@ class PakoHuoneController(FormController):
     def _get_event(self) -> Event:
         return Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0)
 
+    def _render_form(self, entries, count: int, event: Event, nowtime, form: _Form) -> Any:
+        varatut = []
+        for entry in entries:
+            varatut.append((entry.aika, entry.huone1800, entry.huone1930))
 
-def _render_form(entrys, count, event, nowtime, form, varatut):
-    return render_template('pakohuone/index.html',
-                           title='pakohuone ilmoittautuminen',
-                           entrys=entrys,
-                           count=count,
-                           starttime=event.get_start_time(),
-                           endtime=event.get_end_time(),
-                           nowtime=nowtime,
-                           limit=event.get_participant_limit(),
-                           form=form,
-                           varatut=json.dumps(varatut),
-                           page="pakohuone")
+        return render_template('pakohuone/index.html',
+                               title='pakohuone ilmoittautuminen',
+                               entrys=entries,
+                               count=count,
+                               starttime=event.get_start_time(),
+                               endtime=event.get_end_time(),
+                               nowtime=nowtime,
+                               limit=event.get_participant_limit(),
+                               form=form,
+                               varatut=json.dumps(varatut),
+                               page="pakohuone")
 
+    def _find_from_entries(self, entries, form: FlaskForm) -> bool:
+        firstname = form.etunimi0.data
+        lastname = form.sukunimi0.data
+        email = form.email0.data
+        for entry in entries:
+            if (entry.etunimi0 == firstname and entry.sukunimi0 == lastname) or entry.email0 == email:
+                return True
+        return False
 
-def _form_to_model(form, nowtime):
-    return _Model(
-        aika=form.aika.data,
-        huone1800=form.huone1800.data,
-        huone1930=form.huone1930.data,
-        etunimi0=form.etunimi0.data,
-        sukunimi0=form.sukunimi0.data,
-        phone0=form.phone0.data,
-        email0=form.email0.data,
-        etunimi1=form.etunimi1.data,
-        sukunimi1=form.sukunimi1.data,
-        etunimi2=form.etunimi2.data,
-        sukunimi2=form.sukunimi2.data,
-        etunimi3=form.etunimi3.data,
-        sukunimi3=form.sukunimi3.data,
-        etunimi4=form.etunimi4.data,
-        sukunimi4=form.sukunimi4.data,
-        etunimi5=form.etunimi5.data,
-        sukunimi5=form.sukunimi5.data,
-        consent0=form.consent0.data,
-        datetime=nowtime
-    )
+    def _get_email_subject(self) -> str:
+        return "pakopelipäivä ilmoittautuminen"
+
+    def _get_email_recipient(self, form: FlaskForm) -> str:
+        return str(form.email0.data)
+
+    def _get_email_msg(self, form: FlaskForm, reserve: bool) -> str:
+        return ' '.join(["\"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
+                        "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
+                        "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
+                        "\nSähköposti: ", str(form.email0.data),
+                        "\nPuhelinnumero: ", str(form.phone0.data),
+                        "\nMuiden joukkuelaisten nimet: ", str(form.etunimi1.data), str(form.sukunimi1.data),
+                        str(form.etunimi2.data), str(form.sukunimi2.data),
+                        str(form.etunimi3.data), str(form.sukunimi3.data),
+                        str(form.etunimi4.data), str(form.sukunimi4.data),
+                        str(form.etunimi5.data), str(form.sukunimi5.data),
+                        "\n\nÄlä vastaa tähän sähköpostiin",
+                        "\n\nTerveisin: ropottilari\""])
+
+    def _form_to_model(self, form: _Form, nowtime) -> _Model:
+        return _Model(
+            aika=form.aika.data,
+            huone1800=form.huone1800.data,
+            huone1930=form.huone1930.data,
+            etunimi0=form.etunimi0.data,
+            sukunimi0=form.sukunimi0.data,
+            phone0=form.phone0.data,
+            email0=form.email0.data,
+            etunimi1=form.etunimi1.data,
+            sukunimi1=form.sukunimi1.data,
+            etunimi2=form.etunimi2.data,
+            sukunimi2=form.sukunimi2.data,
+            etunimi3=form.etunimi3.data,
+            sukunimi3=form.sukunimi3.data,
+            etunimi4=form.etunimi4.data,
+            sukunimi4=form.sukunimi4.data,
+            etunimi5=form.etunimi5.data,
+            sukunimi5=form.sukunimi5.data,
+            consent0=form.consent0.data,
+            datetime=nowtime
+        )

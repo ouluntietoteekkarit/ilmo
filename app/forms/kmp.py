@@ -62,43 +62,10 @@ class KmpController(FormController):
         event = self._get_event()
         entries = _Model.query.all()
 
-        return _render_form(entries, len(entries), event, datetime.now(), form)
+        return self._render_form(entries, len(entries), event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
-        form = _Form()
-        event = self._get_event()
-        nowtime = datetime.now()
-        entries = _Model.query.all()
-        count = len(entries)
-        maxlimit = event.get_participant_limit() + event.get_participant_reserve()
-
-        if count >= maxlimit:
-            flash('Ilmoittautuminen on jo täynnä')
-            return _render_form(entries, count, event, nowtime, form)
-
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        for entry in entries:
-            if entry.etunimi == firstname and entry.sukunimi == lastname:
-                flash('Olet jo ilmoittautunut')
-                return _render_form(entries, count, event, nowtime, form)
-
-        if form.validate_on_submit():
-            db.session.add(_form_to_model(form, nowtime))
-            db.session.commit()
-
-            reserve = count >= event.get_participant_limit()
-            msg = _make_email(str(form.etunimi.data), str(form.sukunimi.data), str(form.email.data),
-                              str(form.puh.data), str(form.lahtopaikka.data), reserve)
-            flash(_make_success_msg(reserve))
-            send_email(msg, 'OTiT KMP ilmoittautuminen', str(form.email.data))
-
-            return redirect(url_for('route_get_kmp'))
-
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
-
-        return _render_form(entries, count, event, nowtime, form)
+        return self._post_routine(_Form(), _Model)
 
     def get_data_request_handler(self, request) -> Any:
         return self._data_view(_Model, 'kmp/data.html')
@@ -109,62 +76,71 @@ class KmpController(FormController):
     def _get_event(self) -> Event:
         return Event('Kmp', datetime(2021, 11, 19, 13, 37, 37), datetime(2021, 12, 3, 2, 00, 00), 15, 15)
 
+    def _render_form(self, entries, count: int, event: Event, nowtime, form: _Form) -> Any:
+         return render_template('kmp/index.html',
+                                title='kmp ilmoittautuminen',
+                                entrys=entries,
+                                totalcount=count,
+                                starttime=event.get_start_time(),
+                                endtime=event.get_end_time(),
+                                nowtime=nowtime,
+                                limit=event.get_participant_limit(),
+                                form=form,
+                                page="kmp")
 
-def _form_to_model (form, nowtime):
-    return _Model(
-                etunimi=form.etunimi.data,
-                sukunimi=form.sukunimi.data,
-                email=form.email.data,
-                puh=form.puh.data,
-                lahtopaikka=form.lahtopaikka.data,
-                consent0=form.consent0.data,
-                consent1=form.consent1.data,
-                consent2=form.consent2.data,
-                datetime=nowtime
-            )
+    def _find_from_entries(self, entries, form: _Form) -> bool:
+        firstname = form.etunimi.data
+        lastname = form.sukunimi.data
+        for entry in entries:
+            if entry.etunimi == firstname and entry.sukunimi == lastname:
+                return True
+        return False
 
+    def _get_email_subject(self) -> str:
+        return 'OTiT KMP ilmoittautuminen'
 
-def _render_form(entries, count, event, nowtime, form):
-    return render_template('kmp/index.html',
-                           title='kmp ilmoittautuminen',
-                           entrys=entries,
-                           totalcount=count,
-                           starttime=event.get_start_time(),
-                           endtime=event.get_end_time(),
-                           nowtime=nowtime,
-                           limit=event.get_participant_limit(),
-                           form=form,
-                           page="kmp")
+    def _get_email_recipient(self, form: _Form) -> str:
+        return str(form.email.data)
 
+    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
+        firstname = str(form.etunimi.data)
+        lastname = str(form.sukunimi.data)
+        email = str(form.email.data),
+        phone_number = str(form.puh.data)
+        departure_location = str(form.lahtopaikka.data)
+        if reserve:
+            return ' '.join([
+                "\"Hei", firstname, " ", lastname,
+                "\n\nOlet ilmoittautunut OTiTin KMP:lle. Olet varasijalla. ",
+                "Jos KMPlle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
+            ])
+        else:
+            return ' '.join([
+                "\"Hei", firstname, " ", lastname,
+                "\n\nOlet ilmoittautunut OTiTin KMPlle. Tässä vielä syöttämäsi tiedot: ",
+                "\n\nNimi: ", firstname, lastname,
+                "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
+                "\nLähtöpaikka: ", departure_location,
+                "\nKMP:llä Lappeenrannassa järjestettäville sitseille voit ilmoittautua osoitteessa https://forms.gle/aLLSsT1PpUQMQaNb8",
+                "\n\nMaksuohjeet: ",
+                "\nHinta: 40 euroa",
+                "\nTilinumero: FI03 4744 3020 0116 87",
+                "\nVastaanottajan nimi: Oulun Tietoteekkarit ry",
+                "\nViestiksi \"KMP + etunimi ja sukunimi\"",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
+            ])
 
-def _make_email(firstname: str, lastname: str, email: str, phone_number: str,
-                departure_location: str, reserve: bool):
-    if reserve:
-        return ' '.join([
-            "\"Hei", firstname, " ", lastname,
-            "\n\nOlet ilmoittautunut OTiTin KMP:lle. Olet varasijalla. ",
-            "Jos KMPlle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-            "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
-        ])
-    else:
-        return ' '.join([
-            "\"Hei", firstname, " ", lastname,
-            "\n\nOlet ilmoittautunut OTiTin KMPlle. Tässä vielä syöttämäsi tiedot: ",
-            "\n\nNimi: ", firstname, lastname,
-            "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
-            "\nLähtöpaikka: ", departure_location,
-            "\nKMP:llä Lappeenrannassa järjestettäville sitseille voit ilmoittautua osoitteessa https://forms.gle/aLLSsT1PpUQMQaNb8",
-            "\n\nMaksuohjeet: ",
-            "\nHinta: 40 euroa",
-            "\nTilinumero: FI03 4744 3020 0116 87",
-            "\nVastaanottajan nimi: Oulun Tietoteekkarit ry",
-            "\nViestiksi \"KMP + etunimi ja sukunimi\"",
-            "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
-        ])
+    def _form_to_model(self, form: _Form, nowtime) -> _Model:
+        return _Model(
+            etunimi=form.etunimi.data,
+            sukunimi=form.sukunimi.data,
+            email=form.email.data,
+            puh=form.puh.data,
+            lahtopaikka=form.lahtopaikka.data,
+            consent0=form.consent0.data,
+            consent1=form.consent1.data,
+            consent2=form.consent2.data,
+            datetime=nowtime
+        )
 
-
-def _make_success_msg(reserve: bool):
-    if reserve:
-        return 'Ilmoittautuminen onnistui, olet varasijalla'
-    else:
-        return 'Ilmoittautuminen onnistui'

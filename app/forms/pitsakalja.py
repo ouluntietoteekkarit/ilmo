@@ -79,7 +79,6 @@ class _Model(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-
 class PitsaKaljaController(FormController):
 
     def get_request_handler(self, request) -> Any:
@@ -87,43 +86,10 @@ class PitsaKaljaController(FormController):
         event = self._get_event()
         entries = _Model.query.all()
 
-        return _render_form(entries, len(entries), event, datetime.now(), form)
+        return self._render_form(entries, len(entries), event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
-        # MEMO: This routine is prone to data race since it does not use transactions
-        form = _Form()
-        event = self._get_event()
-        nowtime = datetime.now()
-        entries = _Model.query.all()
-        count = len(entries)
-        maxlimit = event.get_participant_limit() + event.get_participant_reserve()
-
-        if count >= maxlimit:
-            flash('Ilmoittautuminen on jo täynnä')
-            return _render_form(entries, count, event, nowtime, form)
-
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        for entry in entries:
-            if entry.etunimi == firstname and entry.sukunimi == lastname:
-                flash('Olet jo ilmoittautunut')
-                return _render_form(entries, count, event, nowtime, form)
-
-        if form.validate_on_submit():
-            db.session.add(_form_to_model(form, nowtime))
-            db.session.commit()
-
-            reserve = count >= event.get_participant_limit()
-            msg = _make_email(str(form.etunimi.data), str(form.sukunimi.data), count >= event.get_participant_limit())
-            flash(_make_success_msg(reserve))
-            send_email(msg, 'OTiT Pitsakaljasitsit ilmoittautuminen', str(form.email.data))
-
-            return redirect(url_for('route_get_pitsakaljasitsit'))
-
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
-
-        return _render_form(entries, count, event, nowtime, form)
+        return self._post_routine(_Form(), _Model)
 
     def get_data_request_handler(self, request) -> Any:
         return self._data_view(_Model, 'pitsakalja/data.html')
@@ -134,58 +100,67 @@ class PitsaKaljaController(FormController):
     def _get_event(self) -> Event:
         return Event('Pitsakalja', datetime(2021, 10, 26, 12, 00, 00), datetime(2021, 11, 9, 23, 59, 59), 60, 30)
 
+    def _render_form(self, entries, count, event, nowtime, form):
+        return render_template('pitsakalja/index.html',
+                               title='pitsakaljasitsit ilmoittautuminen',
+                               entrys=entries,
+                               totalcount=count,
+                               starttime=event.get_start_time(),
+                               endtime=event.get_end_time(),
+                               nowtime=nowtime,
+                               limit=event.get_participant_limit(),
+                               form=form,
+                               page="pitsakaljasitsit")
 
-def _form_to_model(form, nowtime):
-    return _Model(
-        etunimi=form.etunimi.data,
-        sukunimi=form.sukunimi.data,
-        email=form.email.data,
-        alkoholi=form.alkoholi.data,
-        mieto=form.mieto.data,
-        pitsa=form.pitsa.data,
-        allergiat=form.allergiat.data,
-        consent0=form.consent0.data,
-        consent1=form.consent1.data,
-        datetime=nowtime
-    )
+    # MEMO: "Evil" Covariant parameter
+    def _find_from_entries(self, entries, form: _Form) -> bool:
+        firstname = form.etunimi.data
+        lastname = form.sukunimi.data
+        for entry in entries:
+            if entry.etunimi == firstname and entry.sukunimi == lastname:
+                return True
+        return False
 
+    def _get_email_subject(self) -> str:
+        return 'OTiT Pitsakaljasitsit ilmoittautuminen'
 
-def _render_form(entries, count, event, nowtime, form):
-    return render_template('pitsakalja/index.html',
-                           title='pitsakaljasitsit ilmoittautuminen',
-                           entrys=entries,
-                           totalcount=count,
-                           starttime=event.get_start_time(),
-                           endtime=event.get_end_time(),
-                           nowtime=nowtime,
-                           limit=event.get_participant_limit(),
-                           form=form,
-                           page="pitsakaljasitsit")
+    def _get_email_recipient(self, form: _Form) -> str:
+        return str(form.email.data)
 
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, form: _Form, reserve: bool):
+        firstname = str(form.etunimi.data)
+        lastname = str(form.sukunimi.data)
+        if reserve:
+            return ' '.join([
+                "\"Hei", firstname, " ", lastname,
+                "\n\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Olet varasijalla. ",
+                "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
+                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\"",
+            ])
+        else:
+            return ' '.join([
+                "\"Hei", firstname, " ", lastname,
+                "\n\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
+                "\n\n", "Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
+                "kanssa 17€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille ",
+                "FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, ",
+                "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
+                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""])
 
-def _make_email(firstname: str, lastname: str, reserve: bool):
-    if reserve:
-        return ' '.join([
-            "\"Hei", firstname, " ", lastname,
-            "\n\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Olet varasijalla. ",
-            "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-            "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
-            "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\"",
-        ])
-    else:
-        return ' '.join([
-            "\"Hei", firstname, " ", lastname,
-            "\n\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
-            "\n\n", "Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
-            "kanssa 17€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille ",
-            "FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, ",
-            "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
-            "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
-            "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""])
-
-
-def _make_success_msg(reserve: bool):
-    if reserve:
-        return 'Ilmoittautuminen onnistui, olet varasijalla'
-    else:
-        return 'Ilmoittautuminen onnistui'
+    # MEMO: "Evil" Covariant parameters
+    def _form_to_model(self, form: _Form, nowtime) -> _Model:
+        return _Model(
+            etunimi=form.etunimi.data,
+            sukunimi=form.sukunimi.data,
+            email=form.email.data,
+            alkoholi=form.alkoholi.data,
+            mieto=form.mieto.data,
+            pitsa=form.pitsa.data,
+            allergiat=form.allergiat.data,
+            consent0=form.consent0.data,
+            consent1=form.consent1.data,
+            datetime=nowtime
+        )

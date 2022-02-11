@@ -7,6 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 from config import Config
 from .config import load_auth_config
 
+
 auth = HTTPBasicAuth()
 csrf = CSRFProtect()
 server = Flask(__name__)

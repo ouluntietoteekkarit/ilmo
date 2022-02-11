@@ -196,12 +196,14 @@ def route_post_fucu():
     return obj.post_request_handler(request)
 
 
-@server.route('/fucu_data', methods=['GET'])
-@auth.login_required(role=['admin', 'fucu'])
+#@server.route('/fucu_data', methods=['GET'])
+#@auth.login_required(role=['admin', 'fucu'])
 def route_fucu_data():
     obj = FucuController()
     return obj.get_data_request_handler(request)
 
+route_fucu_data = auth.login_required(role=['admin', 'fucu'])(route_fucu_data)
+server.add_url_rule('/fucu_data', 'route_fucu_data', route_fucu_data)
 
 @server.route('/fucu_data/fucu_data.csv')
 @auth.login_required(role=['admin', 'fucu'])

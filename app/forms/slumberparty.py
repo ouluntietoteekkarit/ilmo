@@ -44,37 +44,10 @@ class SlumberPartyController(FormController):
         event = self._get_event()
         entries = _Model.query.all()
 
-        return _render_form(entries, len(entries), event, datetime.now(), form)
+        return self._render_form(entries, len(entries), event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
-        form = _Form()
-        event = self._get_event()
-        nowtime = datetime.now()
-        entries = _Model.query.all()
-        count = len(entries)
-
-        if count >= event.get_participant_limit():
-            flash('Ilmoittautuminen on jo täynnä')
-            return _render_form(entries, count, event, nowtime, form)
-
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        for entry in entries:
-            if entry.etunimi == firstname and entry.sukunimi == lastname:
-                flash('Olet jo ilmoittautunut')
-                return _render_form(entries, count, event, nowtime, form)
-
-        if form.validate_on_submit():
-            db.session.add(_form_to_model(form, nowtime))
-            db.session.commit()
-
-            flash('Ilmoittautuminen onnistui')
-            return redirect(url_for('route_get_slumberparty'))
-
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
-
-        return _render_form(entries, count, event, nowtime, form)
+        return self._post_routine(_Form(), _Model)
 
     def get_data_request_handler(self, request) -> Any:
         return self._data_view(_Model, 'slumberparty/data.html')
@@ -85,29 +58,51 @@ class SlumberPartyController(FormController):
     def _get_event(self) -> Event:
         return Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50, 0)
 
+    def _render_form(self, entries, count: int, event: Event, nowtime, form: FlaskForm) -> Any:
+        return render_template('slumberparty/index.html',
+                               title='slumberparty ilmoittautuminen',
+                               entrys=entries,
+                               count=count,
+                               starttime=event.get_start_time(),
+                               endtime=event.get_end_time(),
+                               nowtime=nowtime,
+                               limit=event.get_participant_limit(),
+                               form=form,
+                               page="slumberparty")
 
-def _render_form(entrys, count, event, nowtime, form):
-    return render_template('slumberparty/index.html',
-                           title='slumberparty ilmoittautuminen',
-                           entrys=entrys,
-                           count=count,
-                           starttime=event.get_start_time(),
-                           endtime=event.get_end_time(),
-                           nowtime=nowtime,
-                           limit=event.get_participant_limit(),
-                           form=form,
-                           page="slumberparty")
+    def _find_from_entries(self, entries, form: FlaskForm) -> bool:
+        firstname = form.etunimi.data
+        lastname = form.sukunimi.data
+        for entry in entries:
+            if entry.etunimi == firstname and entry.sukunimi == lastname:
+                return True
+        return False
 
+    def _get_email_subject(self) -> str:
+        return "slumberparty ilmoittautuminen"
 
-def _form_to_model(form, nowtime):
-    return _Model(
-        etunimi=form.etunimi.data,
-        sukunimi=form.sukunimi.data,
-        phone=form.phone.data,
-        email=form.email.data,
-        kilta=form.kilta.data,
-        consent0=form.consent0.data,
-        consent1=form.consent1.data,
-        consent2=form.consent2.data,
-        datetime=nowtime
-    )
+    def _get_email_recipient(self, form: FlaskForm) -> str:
+        return str(form.email.data)
+
+    def _get_email_msg(self, form: FlaskForm, reserve: bool) -> str:
+        return ' '.join(["\"Hei", str(form.etunimi.data), str(form.sukunimi.data),
+                        "\n\nOlet ilmoittautunut slumberpartyyn. Syötit seuraavia tietoja: ",
+                        "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
+                        "\nSähköposti: ", str(form.email.data),
+                        "\nPuhelinnumero: ", str(form.phone.data),
+                        "\nKilta: ", str(form.kilta.data),
+                        "\n\nÄlä vastaa tähän sähköpostiin",
+                        "\n\nTerveisin: ropottilari\""])
+
+    def _form_to_model(self, form: FlaskForm, nowtime) -> db.Model:
+        return _Model(
+            etunimi=form.etunimi.data,
+            sukunimi=form.sukunimi.data,
+            phone=form.phone.data,
+            email=form.email.data,
+            kilta=form.kilta.data,
+            consent0=form.consent0.data,
+            consent1=form.consent1.data,
+            consent2=form.consent2.data,
+            datetime=nowtime
+        )

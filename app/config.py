@@ -1,6 +1,7 @@
 import os
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from typing import Tuple, Dict
+
 
 def load_auth_config() -> Tuple[Dict[str, str], Dict[str, str]]:
     users = {}
