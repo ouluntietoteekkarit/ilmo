@@ -21,6 +21,11 @@ migrate = Migrate(server, db)
 # MEMO: Cyclic dependency within the server package
 from . import routes, config
 
+module_names = routes.find_form_modules()
+for module_name in module_names:
+    module = routes.load_module(module_name)
+    routes.register_module_route(server, module)
+
 db.create_all()
 db.session.commit()
 

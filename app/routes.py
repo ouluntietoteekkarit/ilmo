@@ -1,15 +1,52 @@
+from typing import List
+from types import ModuleType
+from os.path import dirname, basename, isfile, join
 from werkzeug.security import check_password_hash
-from flask import render_template, request
+from flask import render_template, request, Flask
+import importlib.util
 from . import server, auth, users, roles
-from .forms.pubivisa import PubiVisaController
-from .forms.korttijalautapeliilta import KorttiJaLautapeliIltaController
-from .forms.fuksilauluilta import FuksiLauluIltaController
-from .forms.slumberparty import SlumberPartyController
-from .forms.pakohuone import PakoHuoneController
-from .forms.kyselyarvontajuttu import KyselyArvontaJuttuController
-from .forms.fucu import FucuController
-from .forms.kmp import KmpController
-from .forms.pitsakalja import PitsaKaljaController
+from .forms.pubivisa import _Controller as PubiVisaController
+from .forms.korttijalautapeliilta import _Controller as KorttiJaLautapeliIltaController
+from .forms.fuksilauluilta import _Controller as FuksiLauluIltaController
+from .forms.slumberparty import _Controller as SlumberPartyController
+from .forms.pakohuone import _Controller as PakoHuoneController
+from .forms.kyselyarvontajuttu import _Controller as KyselyArvontaJuttuController
+from .forms.fucu import _Controller as FucuController
+from .forms.kmp import _Controller as KmpController
+from .forms.pitsakalja import _Controller as PitsaKaljaController
+
+
+def _find_modules(folder:str, package: str) -> List[str]:
+    from glob import glob
+    pattern = join(folder, package.strip('.'), "*.py")
+    modules = []
+    for module in glob(pattern):
+        if isfile(module) and module.find('__init__') == -1:
+            modules.append(".".join([package, basename(module)[:-3]]))
+
+    return modules
+
+
+def find_form_modules():
+    return _find_modules(dirname(__file__), ".forms")
+
+
+def load_module(module_name: str):
+    module_name = module_name.strip()
+    package = None
+    if module_name[0] == '.':
+        package = __package__
+
+    return importlib.import_module(module_name, package)
+
+
+def register_module_route(server: Flask, module: ModuleType):
+    if not module.is_active():
+        return
+
+    controller = module.get_controller_type()
+    form_name = module.get_form_name()
+
 
 
 @auth.verify_password

@@ -1,13 +1,26 @@
 from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash
+from flask import render_template
 from wtforms import StringField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from app import db
-from app.email import send_email
 from typing import Any, List, Iterable, Tuple
+
+from app import db
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
+from .forms_util.form_module import FormModule
+
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+
+def get_form_info() -> FormModule:
+    """
+    Returns this form's module information.
+    """
+    return FormModule(_Controller, True, 'kmp')
+
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D
+
 
 _DEPARTURE_BUS_STOP_UNI = 'Yliopisto'
 _DEPARTURE_BUS_STOP_MERIKOSKI = 'Merikoskenkatu (tuiran bussipysäkki)'
@@ -55,7 +68,7 @@ class _Model(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-class KmpController(FormController):
+class _Controller(FormController):
 
     def get_request_handler(self, request) -> Any:
         form = _Form()

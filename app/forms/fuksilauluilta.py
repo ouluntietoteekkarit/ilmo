@@ -1,12 +1,25 @@
 from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash
+from flask import render_template
 from wtforms import StringField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from app import db
 from typing import Any
+
+from app import db
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
+from .forms_util.form_module import FormModule
+
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+
+def get_form_info() -> FormModule:
+    """
+    Returns this form's module information.
+    """
+    return FormModule(_Controller, True, 'fuksilauluilta')
+
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
 class _Form(FlaskForm):
@@ -29,7 +42,7 @@ class _Model(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-class FuksiLauluIltaController(FormController):
+class _Controller(FormController):
 
     def get_request_handler(self, request) -> Any:
         form = _Form()

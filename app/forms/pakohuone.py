@@ -4,11 +4,24 @@ from wtforms import StringField, BooleanField, SubmitField, RadioField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 import json
-from app import db
 from typing import Any
+
+from app import db
+from .forms_util.form_module import FormModule
 from .forms_util.forms import RequiredIfValue
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
+
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+
+def get_form_info() -> FormModule:
+    """
+    Returns this form's module information.
+    """
+    return FormModule(_Controller, True, 'pakohuone')
+
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
 _PAKO_TIME_FIRST = '18:00'
@@ -116,7 +129,7 @@ class _Model(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-class PakoHuoneController(FormController):
+class _Controller(FormController):
 
     def get_request_handler(self, request) -> Any:
         form = _Form()
