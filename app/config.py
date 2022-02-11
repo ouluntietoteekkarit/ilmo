@@ -25,7 +25,7 @@ def load_auth_config() -> Tuple[Dict[str, str], Dict[str, str]]:
         print("username: admin")
         print("password: " + password)
 
-    return (users, roles)
+    return users, roles
 
 
 def load_route_conf() -> bool:

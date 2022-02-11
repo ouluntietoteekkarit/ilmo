@@ -7,7 +7,7 @@ from typing import Any
 
 from app import db
 from .forms_util.guilds import *
-from .forms_util.form_module import FormModule
+from .forms_util.form_module import FormModule, file_path_to_form_name
 from .forms_util.forms import get_guild_choices
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
@@ -19,7 +19,7 @@ def get_form_info() -> FormModule:
     """
     Returns this form's module information.
     """
-    return FormModule(_Controller, True, 'korttijalautapeliilta')
+    return FormModule(_Controller, True, file_path_to_form_name(__file__))
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
