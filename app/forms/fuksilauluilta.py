@@ -33,7 +33,6 @@ class FuksiLauluIltaController(FormController):
     def get_request_handler(self, request) -> Any:
         form = FuksilauluiltaForm()
         event = self._get_event()
-
         entries = FuksilauluiltaModel.query.all()
 
         return _render_form(entries, len(entries), event, datetime.now(), form)
@@ -42,7 +41,6 @@ class FuksiLauluIltaController(FormController):
         # MEMO: This routine is prone to data race since it does not use transactions
         form = FuksilauluiltaForm()
         event = self._get_event()
-
         nowtime = datetime.now()
         entries = FuksilauluiltaModel.query.all()
         count = len(entries)
@@ -51,14 +49,15 @@ class FuksiLauluIltaController(FormController):
             flash('Ilmoittautuminen on jo täynnä')
             return _render_form(entries, count, event, nowtime, form)
 
+        firstname = form.etunimi.data
+        lastname = form.sukunimi.data
         for entry in entries:
-            if entry.etunimi == form.etunimi.data and entry.sukunimi == form.sukunimi.data:
+            if entry.etunimi == firstname and entry.sukunimi == lastname:
                 flash('Olet jo ilmoittautunut')
                 return _render_form(entries, count, event, nowtime, form)
 
         if form.validate_on_submit():
-            sub = _form_to_model(form, nowtime)
-            db.session.add(sub)
+            db.session.add(_form_to_model(form, nowtime))
             db.session.commit()
 
             flash('Ilmoittautuminen onnistui')

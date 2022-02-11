@@ -1,12 +1,13 @@
 from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash, send_from_directory, abort
+from flask import render_template, url_for, redirect, flash
 from wtforms import StringField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-import os
-from app import db, sqlite_to_csv
+from app import db
+from typing import Any
 from .forms_util.guilds import *
 from .forms_util.event import Event
+from .forms_util.form_controller import FormController
 
 
 def get_guild_choices():
@@ -87,55 +88,66 @@ class PubivisaModel(db.Model):
     personcount = db.Column(db.Integer())
 
 
-def get_event():
-    return Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50)
+class PubiVisaController(FormController):
 
+    def get_request_handler(self, request) -> Any:
+        form = PubivisaForm()
+        event = self._get_event()
+        entries = PubivisaModel.query.all()
+        totalcount = 0
+        for entry in entries:
+            totalcount += entry.personcount
 
-def pubivisa_handler(request):
-    form = PubivisaForm()
-    event = get_event()
-    nowtime = datetime.now()
-    entries = PubivisaModel.query.all()
-    group_size = 0
-    totalcount = 0
-    for entry in entries:
-        totalcount += entry.personcount
+        return _render_form(entries, totalcount, event, datetime.now(), form)
 
-    for entry in entries:
-        if entry.teamname == form.teamname.data:
-            flash('Olet jo ilmoittautunut')
+    def post_request_handler(self, request) -> Any:
+        form = PubivisaForm()
+        event = self._get_event()
+        nowtime = datetime.now()
+        entries = PubivisaModel.query.all()
+        totalcount = 0
+        for entry in entries:
+            totalcount += entry.personcount
 
+        group_size = 0
+        group_size += int(form.etunimi0.data and form.sukunimi0.data)
+        group_size += int(form.etunimi1.data and form.sukunimi1.data)
+        group_size += int(form.etunimi2.data and form.sukunimi2.data)
+        group_size += int(form.etunimi3.data and form.sukunimi3.data)
+        totalcount += group_size
+
+        if totalcount >= event.get_participant_limit():
+            flash('Ilmoittautuminen on jo täynnä')
+            totalcount -= group_size
             return _render_form(entries, totalcount, event, nowtime, form)
 
-    group_size += int(form.etunimi0.data and form.sukunimi0.data)
-    group_size += int(form.etunimi1.data and form.sukunimi1.data)
-    group_size += int(form.etunimi2.data and form.sukunimi2.data)
-    group_size += int(form.etunimi3.data and form.sukunimi3.data)
+        teamname = form.teamname.data
+        for entry in entries:
+            if entry.teamname == teamname:
+                flash('Olet jo ilmoittautunut')
 
-    totalcount += group_size
+                return _render_form(entries, totalcount, event, nowtime, form)
 
-    validate = False
-    submitted = False
-    if request.method == 'POST':
-        validate = form.validate_on_submit()
-        submitted = form.is_submitted()
+        if form.validate_on_submit():
+            db.session.add(_form_to_model(form, group_size, nowtime))
+            db.session.commit()
 
-    if validate and submitted and totalcount <= event.get_participant_limit():
-        flash('Ilmoittautuminen onnistui')
-        sub = _form_to_model(form, group_size, nowtime)
-        db.session.add(sub)
-        db.session.commit()
+            flash('Ilmoittautuminen onnistui')
+            return redirect(url_for('route_get_pubivisa'))
 
-        return redirect(url_for('route_pubivisa'))
+        else:
+            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-    elif submitted and totalcount > event.get_participant_limit():
-        totalcount -= group_size
-        flash('Ilmoittautuminen on jo täynnä')
+        return _render_form(entries, totalcount, event, nowtime, form)
 
-    elif not validate and submitted:
-        flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+    def get_data_request_handler(self, request) -> Any:
+        return self._data_view(PubivisaModel, 'pubivisa/pubivisa_data.html')
 
-    return _render_form(entries, totalcount, event, nowtime, form)
+    def get_data_csv_request_handler(self, request) -> Any:
+        return self._export_to_csv(PubivisaModel.__tablename__)
+
+    def _get_event(self) -> Event:
+        return Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50)
 
 
 def _render_form(entrys, count, event, nowtime, form):
@@ -180,27 +192,3 @@ def _form_to_model(form, count, nowtime):
         personcount=count,
         datetime=nowtime
     )
-
-def pubivisa_data():
-    event = get_event()
-    limit = event.get_participant_limit()
-    entries = PubivisaModel.query.all()
-    count = len(entries)
-    return render_template('pubivisa/pubivisa_data.html',
-                           title='pubivisa data',
-                           entries=entries,
-                           count=count,
-                           limit=limit)
-
-
-def pubivisa_csv():
-    os.system('mkdir csv')
-    sqlite_to_csv.export_to_csv('pubivisa_model')
-    dir = os.path.join(os.getcwd(), 'csv/')
-
-    try:
-        print(dir)
-        return send_from_directory(directory=dir, filename='pubivisa_model_data.csv', as_attachment=True)
-    except FileNotFoundError as e:
-        print(e)
-        abort(404)
