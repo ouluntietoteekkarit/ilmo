@@ -118,7 +118,7 @@ class PitsaKaljaController(FormController):
             flash(_make_success_msg(reserve))
             send_email(msg, 'OTiT Pitsakaljasitsit ilmoittautuminen', str(form.email.data))
 
-            return redirect(url_for('pitsakaljasitsit'))
+            return redirect(url_for('route_get_pitsakaljasitsit'))
 
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
@@ -135,7 +135,7 @@ class PitsaKaljaController(FormController):
         return Event('Pitsakalja', datetime(2021, 10, 26, 12, 00, 00), datetime(2021, 11, 9, 23, 59, 59), 60, 30)
 
 
-def _form_to_model (form, nowtime):
+def _form_to_model(form, nowtime):
     return _Model(
         etunimi=form.etunimi.data,
         sukunimi=form.sukunimi.data,

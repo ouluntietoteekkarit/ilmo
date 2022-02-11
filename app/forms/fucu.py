@@ -110,7 +110,7 @@ class FucuController(FormController):
             flash(_make_success_msg(reserve))
             send_email(msg, 'OTiT Fuksicursio ilmoittautuminen', str(form.email.data))
 
-            return redirect(url_for('fucu'))
+            return redirect(url_for('route_get_fucu'))
 
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')

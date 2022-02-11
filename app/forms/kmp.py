@@ -93,7 +93,7 @@ class KmpController(FormController):
             flash(_make_success_msg(reserve))
             send_email(msg, 'OTiT KMP ilmoittautuminen', str(form.email.data))
 
-            return redirect(url_for('kmp'))
+            return redirect(url_for('route_get_kmp'))
 
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')

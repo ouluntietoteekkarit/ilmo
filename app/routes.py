@@ -7,6 +7,9 @@ from .forms.fuksilauluilta import FuksiLauluIltaController
 from .forms.slumberparty import SlumberPartyController
 from .forms.pakohuone import PakoHuoneController
 from .forms.kyselyarvontajuttu import KyselyArvontaJuttuController
+from .forms.fucu import FucuController
+from .forms.kmp import KmpController
+from .forms.pitsakalja import PitsaKaljaController
 
 
 @auth.verify_password
@@ -178,4 +181,82 @@ def route_kysely_arvonta_juttu_data():
 @auth.login_required(role=['admin', 'kysely_arvonta_juttu'])
 def route_kysely_arvonta_juttu_csv():
     obj = KyselyArvontaJuttuController()
+    return obj.get_data_csv_request_handler(request)
+
+
+@server.route('/fucu', methods=['GET'])
+def route_get_fucu():
+    obj = FucuController()
+    return obj.get_request_handler(request)
+
+
+@server.route('/fucu', methods=['POST'])
+def route_post_fucu():
+    obj = FucuController()
+    return obj.post_request_handler(request)
+
+
+@server.route('/fucu_data', methods=['GET'])
+@auth.login_required(role=['admin', 'fucu'])
+def route_fucu_data():
+    obj = FucuController()
+    return obj.get_data_request_handler(request)
+
+
+@server.route('/fucu_data/fucu_data.csv')
+@auth.login_required(role=['admin', 'fucu'])
+def route_fucu_csv():
+    obj = FucuController()
+    return obj.get_data_csv_request_handler(request)
+
+
+@server.route('/kmp', methods=['GET'])
+def route_get_kmp():
+    obj = KmpController()
+    return obj.get_request_handler(request)
+
+
+@server.route('/kmp', methods=['POST'])
+def route_post_kmp():
+    obj = KmpController()
+    return obj.post_request_handler(request)
+
+
+@server.route('/kmp_data', methods=['GET'])
+@auth.login_required(role=['admin', 'kmp'])
+def route_kmp_data():
+    obj = KmpController()
+    return obj.get_data_request_handler(request)
+
+
+@server.route('/kmp_data/kmp_data.csv')
+@auth.login_required(role=['admin', 'kmp'])
+def route_kmp_csv():
+    obj = KmpController()
+    return obj.get_data_csv_request_handler(request)
+
+
+@server.route('/pitsakaljasitsit', methods=['GET'])
+def route_get_pitsakaljasitsit():
+    obj = PitsaKaljaController()
+    return obj.get_request_handler(request)
+
+
+@server.route('/pitsakaljasitsit', methods=['POST'])
+def route_post_pitsakaljasitsit():
+    obj = PitsaKaljaController()
+    return obj.post_request_handler(request)
+
+
+@server.route('/pitsakaljasitsit_data', methods=['GET'])
+@auth.login_required(role=['admin', 'pitsakaljasitsit'])
+def route_pitsakaljasitsit_data():
+    obj = PitsaKaljaController()
+    return obj.get_data_request_handler(request)
+
+
+@server.route('/pitsakaljasitsit_data/pitsakaljasitsit_data.csv')
+@auth.login_required(role=['admin', 'pitsakaljasitsit'])
+def route_pitsakaljasitsit_csv():
+    obj = PitsaKaljaController()
     return obj.get_data_csv_request_handler(request)
