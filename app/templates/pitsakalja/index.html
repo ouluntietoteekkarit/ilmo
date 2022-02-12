@@ -1,6 +1,14 @@
 {% extends "header.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
+{% block extra_styles %}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/pitsakalja.jpg') }}");
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
     <script src="{{ url_for('static',filename='pitsakaljasitsit.js') }}"></script>
     <div class="container p-3" style="max-width: 800px; background-color: white;">
