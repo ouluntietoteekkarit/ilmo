@@ -2,17 +2,17 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
-<div class="container p-3">
-    <h1>{{ title }}</h1>
+    <div class="container p-3">
+        <h1>{{ title }}</h1>
 
-    <a href="{{ url_for(form_info.get_endpoint_get_data_csv()) }}">
-        <button class="btn btn-info">Lataa CSV</button>
-    </a>
-    <div>
-        <h2>Osallistujat</h2>
-        <h3>{{ count }}/{{ limit }}</h3>
-        <table class="table" rules="all">
-            <thead>
+        <a href="{{ url_for(form_info.get_endpoint_get_data_csv()) }}">
+            <button class="btn btn-info">Lataa CSV</button>
+        </a>
+        <div>
+            <h2>Osallistujat</h2>
+            <h3>{{ count }}/{{ limit }}</h3>
+            <table class="table" rules="all">
+                <thead>
                 <tr>
                     <td>N</td>
                     <td>etunimi</td>
@@ -25,28 +25,28 @@
                     <td>ymmärrän että ilmoittautuminen on sitova</td>
                     <td>datetime</td>
                 </tr>
-            </thead>
-            <tbody>
+                </thead>
+                <tbody>
                 {% for entry in entries %}
-                <tr>
-                    <td>{{ loop.index }}.
-                        {% if loop.index > limit %}
-                        (Vara)
-                        {% endif %}</td>
-                    <td>{{ entry.etunimi }}
-                    </td>
-                    <td>{{ entry.sukunimi }}</td>
-                    <td>{{ entry.phone }}</td>
-                    <td>{{ entry.email }}</td>
-                    <td>{{ entry.kilta }}</td>
-                    <td>{{ entry.consent0 }}</td>
-                    <td>{{ entry.consent1 }}</td>
-                    <td>{{ entry.consent2 }}</td>
-                    <td>{{ entry.datetime }}</td>
-                </tr>
+                    <tr>
+                        <td>{{ loop.index }}.
+                            {% if loop.index > limit %}
+                                (Vara)
+                            {% endif %}</td>
+                        <td>{{ entry.etunimi }}
+                        </td>
+                        <td>{{ entry.sukunimi }}</td>
+                        <td>{{ entry.phone }}</td>
+                        <td>{{ entry.email }}</td>
+                        <td>{{ entry.kilta }}</td>
+                        <td>{{ entry.consent0 }}</td>
+                        <td>{{ entry.consent1 }}</td>
+                        <td>{{ entry.consent2 }}</td>
+                        <td>{{ entry.datetime }}</td>
+                    </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 {% endblock %}
