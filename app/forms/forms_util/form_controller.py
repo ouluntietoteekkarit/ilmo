@@ -134,8 +134,7 @@ class FormController(ABC):
         limit = event.get_participant_limit()
         entries = model.query.all()
         count = len(entries)
-        template = '{}/data.html'.format(form_info.get_form_name())
-        return render_template(template, **{
+        return render_template('data.html', **{
             'title': '{} data'.format(event.get_name()),
             'entries': entries,
             'count': count,
