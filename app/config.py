@@ -1,30 +1,34 @@
 import os
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
+from typing import Tuple, Dict
 
-def load_auth_config():
-    password = os.urandom(64)
-    users = {"admin": generate_password_hash(password)}
-    roles = {"admin": "admin"}
+
+def load_auth_config() -> Tuple[Dict[str, str], Dict[str, str]]:
+    users = {}
+    roles = {}
     try:
         file = open("auth.conf", "r")
         for line in file.readlines():
             new_user = line.split(",", 6)
-            users[new_user[0]] = generate_password_hash(new_user[1])
+            users[new_user[0]] = new_user[1]
             roles[new_user[0]] = new_user[2:6]
 
         file.close()
     except FileNotFoundError as e:
+        password = os.urandom(64).hex()
+        users['admin'] = generate_password_hash(password)
+        roles['admin'] = 'admin'
+        
         print(e)
         print("auth.conf not found")
+        print("For production, create auth.conf with proper users and hashed passwords")
+        print("username: admin")
+        print("password: " + password)
 
-    print("created default user")
-    print("username: admin")
-    print("password: " + str(password))
-
-    return (users, roles)
+    return users, roles
 
 
-def load_route_conf():
+def load_route_conf() -> bool:
     kapsi = False
     try:
         with open("routes.conf", "r") as file:

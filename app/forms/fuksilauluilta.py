@@ -1,15 +1,35 @@
 from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash
+from flask import render_template
 from wtforms import StringField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from app import db
 from typing import Any
+
+from app import db
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
+from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
 
 
-class FuksilauluiltaForm(FlaskForm):
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+
+"""Singleton instance containing this form module's information."""
+_form_module = None
+
+
+def get_form_info() -> FormModuleInfo:
+    """
+    Returns this form's module information.
+    """
+    global _form_module
+    if _form_module is None:
+        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+    return _form_module
+
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D
+
+
+class _Form(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
@@ -19,7 +39,8 @@ class FuksilauluiltaForm(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class FuksilauluiltaModel(db.Model):
+class _Model(db.Model):
+    __tablename__ = 'fuksilauluilta'
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
@@ -28,74 +49,69 @@ class FuksilauluiltaModel(db.Model):
     datetime = db.Column(db.DateTime())
 
 
-class FuksiLauluIltaController(FormController):
+class _Controller(FormController):
 
     def get_request_handler(self, request) -> Any:
-        form = FuksilauluiltaForm()
+        form = _Form()
         event = self._get_event()
-        entries = FuksilauluiltaModel.query.all()
+        entries = _Model.query.all()
 
-        return _render_form(entries, len(entries), event, datetime.now(), form)
+        return self._render_form(entries, len(entries), event, datetime.now(), form)
 
     def post_request_handler(self, request) -> Any:
-        # MEMO: This routine is prone to data race since it does not use transactions
-        form = FuksilauluiltaForm()
-        event = self._get_event()
-        nowtime = datetime.now()
-        entries = FuksilauluiltaModel.query.all()
-        count = len(entries)
+        return self._post_routine(_Form(), _Model)
 
-        if count >= event.get_participant_limit():
-            flash('Ilmoittautuminen on jo täynnä')
-            return _render_form(entries, count, event, nowtime, form)
+    def get_data_request_handler(self, request) -> Any:
+        return self._data_view(get_form_info(), _Model)
 
+    def get_data_csv_request_handler(self, request) -> Any:
+        return self._export_to_csv(_Model.__tablename__)
+
+    def _get_event(self) -> Event:
+        return Event('Fuksilauluilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 70, 0)
+
+    def _render_form(self, entries, count, event, nowtime, form):
+        return render_template('fuksilauluilta/index.html',
+                               title='fuksilauluilta ilmoittautuminen',
+                               entrys=entries,
+                               count=count,
+                               starttime=event.get_start_time(),
+                               endtime=event.get_end_time(),
+                               nowtime=nowtime,
+                               limit=event.get_participant_limit(),
+                               form=form,
+                               page="fuksilauluilta",
+                               form_info=get_form_info())
+
+    def _find_from_entries(self, entries, form: _Form) -> bool:
         firstname = form.etunimi.data
         lastname = form.sukunimi.data
         for entry in entries:
             if entry.etunimi == firstname and entry.sukunimi == lastname:
-                flash('Olet jo ilmoittautunut')
-                return _render_form(entries, count, event, nowtime, form)
+                return True
+        return False
 
-        if form.validate_on_submit():
-            db.session.add(_form_to_model(form, nowtime))
-            db.session.commit()
+    def _get_email_subject(self) -> str:
+        return 'fuksilauluilta ilmoittautuminen'
 
-            flash('Ilmoittautuminen onnistui')
-            return redirect(url_for('route_get_fuksilauluilta'))
+    def _get_email_recipient(self, form: _Form) -> str:
+        return str(form.email.data)
 
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+    def _get_email_msg(self, form: FlaskForm, reserve: bool) -> str:
+        firstname = str(form.etunimi.data)
+        lastname = str(form.sukunimi.data)
+        return ' '.join(["\"Hei", firstname, " ", lastname,
+                         "\n\nOlet ilmoittautunut fuksilauluiltaan. Syötit seuraavia tietoja: ",
+                         "\n'Nimi: ", firstname, " ", lastname,
+                         "\nSähköposti: ", str(form.email.data),
+                         "\n\nÄlä vastaa tähän sähköpostiin",
+                         "\n\nTerveisin: ropottilari\""])
 
-        return _render_form(entries, count, event, nowtime, form)
-
-    def get_data_request_handler(self, request) -> Any:
-        return self._data_view(FuksilauluiltaModel, 'fuksilauluilta/fuksilauluilta_data.html', )
-
-    def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(FuksilauluiltaModel.__tablename__)
-
-    def _get_event(self) -> Event:
-        return Event('Fuksilauluilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 70)
-
-
-def _form_to_model (form, nowtime):
-    return FuksilauluiltaModel(
-        etunimi=form.etunimi.data,
-        sukunimi=form.sukunimi.data,
-        email=form.email.data,
-        consent1=form.consent1.data,
-        datetime=nowtime,
-    )
-
-
-def _render_form(entries, count, event, nowtime, form):
-    return render_template('fuksilauluilta/fuksilauluilta.html',
-                           title='fuksilauluilta ilmoittautuminen',
-                           entrys=entries,
-                           count=count,
-                           starttime=event.get_start_time(),
-                           endtime=event.get_end_time(),
-                           nowtime=nowtime,
-                           limit=event.get_participant_limit(),
-                           form=form,
-                           page="fuksilauluilta")
+    def _form_to_model(self, form: FlaskForm, nowtime) -> db.Model:
+        return _Model(
+            etunimi=form.etunimi.data,
+            sukunimi=form.sukunimi.data,
+            email=form.email.data,
+            consent1=form.consent1.data,
+            datetime=nowtime,
+        )

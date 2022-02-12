@@ -2,11 +2,10 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
-
 <div class="container p-3">
     <h1>{{ title }}</h1>
 
-    <a href="{{ url_for('route_kysely_arvonta_juttu_csv') }}">
+    <a href="{{ url_for(form_info.get_endpoint_get_data_csv()) }}">
         <button class="btn btn-info">Lataa CSV</button>
     </a>
     <div>
@@ -33,7 +32,7 @@
                     <td>{{ entry.etunimi }}</td>
                     <td>{{ entry.sukunimi }}</td>
                     <td>{{ entry.email }}</td>
-                    <td>{{ entry.consent0 }}</td>
+                    <td>{{ entry.consent1 }}</td>
                     <td>{{ entry.datetime }}</td>
                 </tr>
                 {% endfor %}
@@ -41,5 +40,4 @@
         </table>
     </div>
 </div>
-
 {% endblock %}

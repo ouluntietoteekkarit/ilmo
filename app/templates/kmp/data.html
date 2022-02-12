@@ -2,11 +2,10 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
-
 <div class="container p-3">
     <h1>{{ title }}</h1>
 
-    <a href="{{ url_for('route_korttijalautapeliilta_csv') }}">
+    <a href="{{ url_for(form_info.get_endpoint_get_data_csv()) }}">
         <button class="btn btn-info">Lataa CSV</button>
     </a>
     <div>
@@ -18,12 +17,12 @@
                     <td>N</td>
                     <td>etunimi</td>
                     <td>sukunimi</td>
-                    <td>phone</td>
                     <td>email</td>
-                    <td>kilta</td>
-                    <td>hyväksyn nimen julkaisemisen</td>
+                    <td>puhelinnumero</td>
+                    <td>lahtopaikka</td>
+                    <td>hyväksyn nimeni julkaisemisen</td>
                     <td>hyväksyn tietosuojaselosteen</td>
-                    <td>ymmärrän että ilmoittautuminen on sitova</td>
+                    <td>ymmärrän, että ilmoittautuminen on sitova</td>
                     <td>datetime</td>
                 </tr>
             </thead>
@@ -36,9 +35,9 @@
                         {% endif %}</td>
                     <td>{{ entry.etunimi }}</td>
                     <td>{{ entry.sukunimi }}</td>
-                    <td>{{ entry.phone }}</td>
                     <td>{{ entry.email }}</td>
-                    <td>{{ entry.kilta }}</td>
+                    <td>{{ entry.puh }}</td>
+                    <td>{{ entry.lahtopaikka }}</td>
                     <td>{{ entry.consent0 }}</td>
                     <td>{{ entry.consent1 }}</td>
                     <td>{{ entry.consent2 }}</td>
@@ -49,5 +48,4 @@
         </table>
     </div>
 </div>
-
 {% endblock %}

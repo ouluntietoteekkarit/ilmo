@@ -2,11 +2,10 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
-
 <div class="container p-3">
     <h1>{{ title }}</h1>
 
-    <a href="{{ url_for('route_slumberparty_csv') }}">
+    <a href="{{ url_for(form_info.get_endpoint_get_data_csv()) }}">
         <button class="btn btn-info">Lataa CSV</button>
     </a>
     <div>
@@ -34,8 +33,7 @@
                         {% if loop.index > limit %}
                         (Vara)
                         {% endif %}</td>
-                    <td>{{ entry.etunimi }}
-                    </td>
+                    <td>{{ entry.etunimi }}</td>
                     <td>{{ entry.sukunimi }}</td>
                     <td>{{ entry.phone }}</td>
                     <td>{{ entry.email }}</td>
@@ -50,5 +48,4 @@
         </table>
     </div>
 </div>
-
 {% endblock %}

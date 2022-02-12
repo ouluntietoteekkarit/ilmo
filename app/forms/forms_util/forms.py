@@ -1,4 +1,6 @@
 from wtforms.validators import InputRequired, Optional
+from typing import Iterable
+from .guilds import Guild
 
 
 class RequiredIf(InputRequired):
@@ -49,3 +51,10 @@ class RequiredIfValue(InputRequired):
             super(RequiredIfValue, self).__call__(form, field)
         else:
             Optional().__call__(form, field)
+
+
+def get_guild_choices(guilds: Iterable[Guild]) -> list:
+    choices = []
+    for guild in guilds:
+        choices.append((guild.get_name(), guild.get_name()))
+    return choices

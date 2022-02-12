@@ -1,12 +1,82 @@
+from typing import List, Any
+from types import ModuleType
+from os.path import dirname, basename, isfile, join
 from werkzeug.security import check_password_hash
-from flask import render_template, request
+from flask import render_template, request, Flask
+import importlib.util
+
 from . import server, auth, users, roles
-from .forms.pubivisa import PubiVisaController
-from .forms.korttijalautapeliilta import KorttiJaLautapeliIltaController
-from .forms.fuksilauluilta import FuksiLauluIltaController
-from .forms.slumberparty import SlumberPartyController
-from .forms.pakohuone import PakoHuoneController
-from .forms.kyselyarvontajuttu import KyselyArvontaJuttuController
+from .forms.forms_util.form_module_info import FormModuleInfo
+
+
+def _find_modules(folder:str, package: str) -> List[str]:
+    from glob import glob
+    pattern = join(folder, package.strip('.'), "*.py")
+    modules = []
+    for module in glob(pattern):
+        if isfile(module) and module.find('__init__') == -1:
+            modules.append(".".join([package, basename(module)[:-3]]))
+
+    return modules
+
+
+def find_form_modules():
+    return _find_modules(dirname(__file__), ".forms")
+
+
+def load_module(module_name: str) -> ModuleType:
+    module_name = module_name.strip()
+    package = None
+    if module_name[0] == '.':
+        package = __package__
+
+    return importlib.import_module(module_name, package)
+
+
+def register_module_route(server: Flask, form_info: FormModuleInfo):
+    if not form_info.is_active():
+        return
+
+    controller = form_info.get_controller_type()
+    form_name = form_info.get_form_name()
+
+    # Request handler closures
+    def get_form_index() -> Any:
+        return controller().get_request_handler(request)
+
+    def post_form_index() -> Any:
+        return controller().post_request_handler(request)
+
+    def get_form_data() -> Any:
+        return controller().get_data_request_handler(request)
+    get_form_data = auth.login_required(role=['admin', form_name])(get_form_data)
+
+    def get_form_data_csv() -> Any:
+        return controller().get_data_csv_request_handler(request)
+    get_form_data_csv = auth.login_required(role=['admin', form_name])(get_form_data_csv)
+
+    # Create URL paths
+    index_url_path = '/{}'.format(form_name)
+    data_url_path = '/{}/data'.format(form_name)
+    data_csv_url_path = '/{}/data/{}.csv'.format(form_name, form_name)
+
+    # Create endpoint identifiers
+    index_get_endpoint = 'route_get_{}'.format(form_name)
+    index_post_endpoint = 'route_post_{}'.format(form_name)
+    data_get_endpoint = 'route_get_{}_data'.format(form_name)
+    data_get_csv_endpoint = 'route_get_{}_data_csv'.format(form_name)
+
+    # Map url path to form module controller's methods using closures
+    server.add_url_rule(index_url_path, index_get_endpoint, get_form_index, methods=['GET'])
+    server.add_url_rule(index_url_path, index_post_endpoint, post_form_index, methods=['POST'])
+    server.add_url_rule(data_url_path, data_get_endpoint, get_form_data)
+    server.add_url_rule(data_csv_url_path, data_get_csv_endpoint, get_form_data_csv)
+
+    # Set mapped url endpoints to form_info instance
+    form_info.set_endpoint_get_index(index_get_endpoint)
+    form_info.set_endpoint_post_index(index_post_endpoint)
+    form_info.set_endpoint_get_data(data_get_endpoint)
+    form_info.set_endpoint_get_data_csv(data_get_csv_endpoint)
 
 
 @auth.verify_password
@@ -22,160 +92,4 @@ def get_user_roles(user):
 
 @server.route('/')
 def route_index():
-    return render_template('index.html', title='OTY:n ilmot', page="index")
-
-
-@server.route('/pubivisa', methods=['GET'])
-def route_get_pubivisa():
-    obj = PubiVisaController()
-    return obj.get_request_handler(request)
-
-
-@server.route('/pubivisa', methods=['POST'])
-def route_post_pubivisa():
-    obj = PubiVisaController()
-    return obj.post_request_handler(request)
-
-
-@server.route('/pubivisa_data', methods=['GET'])
-@auth.login_required(role=['admin', 'pubivisa'])
-def route_pubivisa_data():
-    obj = PubiVisaController()
-    return obj.get_data_request_handler(request)
-
-
-@server.route('/pubivisa_data/pubivisa_model_data.csv')
-@auth.login_required(role=['admin', 'pubivisa'])
-def route_pubivisa_csv():
-    obj = PubiVisaController()
-    return obj.get_data_csv_request_handler(request)
-
-
-@server.route('/korttijalautapeliilta', methods=['GET'])
-def route_get_korttijalautapeliilta():
-    obj = KorttiJaLautapeliIltaController()
-    return obj.get_request_handler(request)
-
-
-@server.route('/korttijalautapeliilta', methods=['POST'])
-def route_post_korttijalautapeliilta():
-    obj = KorttiJaLautapeliIltaController()
-    return obj.post_request_handler(request)
-
-
-@server.route('/korttijalautapeliilta_data', methods=['GET'])
-@auth.login_required(role=['admin', 'korttijalautapeliilta'])
-def route_korttijalautapeliilta_data():
-    obj = KorttiJaLautapeliIltaController()
-    return obj.get_data_request_handler(request)
-
-
-@server.route('/korttijalautapeliilta_data/korttijalautapeliilta_model_data.csv')
-@auth.login_required(role=['admin', 'korttijalautapeliilta'])
-def route_korttijalautapeliilta_csv():
-    obj = KorttiJaLautapeliIltaController()
-    return obj.get_data_csv_request_handler(request)
-
-
-@server.route('/fuksilauluilta', methods=['GET'])
-def route_get_fuksilauluilta():
-    obj = FuksiLauluIltaController()
-    return obj.get_request_handler(request)
-
-
-@server.route('/fuksilauluilta', methods=['POST'])
-def route_post_fuksilauluilta():
-    obj = FuksiLauluIltaController()
-    return obj.post_request_handler(request)
-
-
-@server.route('/fuksilauluilta_data', methods=['GET'])
-@auth.login_required(role=['admin', 'fuksilauluilta'])
-def route_fuksilauluilta_data():
-    obj = FuksiLauluIltaController()
-    return obj.get_data_request_handler(request)
-
-
-@server.route('/fuksilauluilta_data/fuksilauluilta_model_data.csv')
-@auth.login_required(role=['admin', 'fuksilauluilta'])
-def route_fuksilauluilta_csv():
-    obj = FuksiLauluIltaController()
-    return obj.get_data_csv_request_handler(request)
-
-
-@server.route('/slumberparty', methods=['GET'])
-def route_get_slumberparty():
-    obj = SlumberPartyController()
-    return obj.get_request_handler(request)
-
-
-@server.route('/slumberparty', methods=['POST'])
-def route_post_slumberparty():
-    obj = SlumberPartyController()
-    return obj.post_request_handler(request)
-
-
-@server.route('/slumberparty_data', methods=['GET'])
-@auth.login_required(role=['admin', 'slumberparty'])
-def route_slumberparty_data():
-    obj = SlumberPartyController()
-    return obj.get_data_request_handler(request)
-
-
-@server.route('/slumberparty_data/slumberparty_model_data.csv')
-@auth.login_required(role=['admin', 'slumberparty'])
-def route_slumberparty_csv():
-    obj = SlumberPartyController()
-    return obj.get_data_csv_request_handler(request)
-
-
-@server.route('/pakohuone', methods=['GET'])
-def route_get_pakohuone():
-    obj = PakoHuoneController()
-    return obj.get_request_handler(request)
-
-
-@server.route('/pakohuone', methods=['POST'])
-def route_post_pakohuone():
-    obj = PakoHuoneController()
-    return obj.post_request_handler(request)
-
-
-@server.route('/pakohuone_data', methods=['GET'])
-@auth.login_required(role=['admin', 'pakohuone'])
-def route_pakohuone_data():
-    obj = PakoHuoneController()
-    return obj.get_data_request_handler(request)
-
-
-@server.route('/pakohuone_data/pakohuone_model_data.csv')
-@auth.login_required(role=['admin', 'pakohuone'])
-def route_pakohuone_csv():
-    obj = PakoHuoneController()
-    return obj.get_data_csv_request_handler(request)
-
-
-@server.route('/kysely_arvonta_juttu', methods=['GET'])
-def route_get_kysely_arvonta_juttu():
-    obj = KyselyArvontaJuttuController()
-    return obj.get_request_handler(request)
-
-
-@server.route('/kysely_arvonta_juttu', methods=['POST'])
-def route_post_kysely_arvonta_juttu():
-    obj = KyselyArvontaJuttuController()
-    return obj.post_request_handler(request)
-
-
-@server.route('/kysely_arvonta_juttu_data', methods=['GET'])
-@auth.login_required(role=['admin', 'kysely_arvonta_juttu'])
-def route_kysely_arvonta_juttu_data():
-    obj = KyselyArvontaJuttuController()
-    return obj.get_data_request_handler(request)
-
-
-@server.route('/kysely_arvonta_juttu_data/kysely_arvonta_juttu_model_data.csv')
-@auth.login_required(role=['admin', 'kysely_arvonta_juttu'])
-def route_kysely_arvonta_juttu_csv():
-    obj = KyselyArvontaJuttuController()
-    return obj.get_data_csv_request_handler(request)
+    return render_template('index.html', title='OTiTin ilmot', page="index")
