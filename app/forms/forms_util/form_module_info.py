@@ -56,4 +56,5 @@ class ModuleInfo:
 
 
 def file_path_to_form_name(path: Union[str, Path]) -> str:
+    # MEMO: Add sanitation if needed
     return splitext(split(path)[1])[0]

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash
+from flask import url_for, redirect, flash
 from wtforms import StringField, BooleanField, SubmitField, RadioField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
@@ -8,14 +8,15 @@ from typing import Any
 
 from app import db
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIfValue, DataTableInfo
+from .forms_util.forms import RequiredIfValue
 from .forms_util.event import Event
-from .forms_util.form_controller import FormController
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
 """Singleton instance containing this form module's information."""
 _form_module = None
+_form_name = file_path_to_form_name(__file__)
 
 
 def get_module_info() -> ModuleInfo:
@@ -24,7 +25,7 @@ def get_module_info() -> ModuleInfo:
     """
     global _form_module
     if _form_module is None:
-        _form_module = ModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+        _form_module = ModuleInfo(_Controller, True, _form_name)
     return _form_module
 
 
@@ -106,7 +107,7 @@ class _Form(FlaskForm):
 
 
 class _Model(db.Model):
-    __tablename__ = 'pakohuone'
+    __tablename__ = _form_name
     id = db.Column(db.Integer, primary_key=True)
 
     aika = db.Column(db.String(16))
@@ -140,28 +141,25 @@ class _Model(db.Model):
 
 class _Controller(FormController):
 
-    def get_request_handler(self, request) -> Any:
-        form = _Form()
-        event = self._get_event()
-        entries = _Model.query.all()
-
-        return self._render_form(entries, len(entries), event, datetime.now(), form)
+    def __init__(self):
+        event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0)
+        super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         form = _Form()
-        event = self._get_event()
+        event = self._context.get_event()
         nowtime = datetime.now()
         entries = _Model.query.all()
         count = len(entries)
 
         if count >= event.get_participant_limit():
             flash('Ilmoittautuminen on jo täynnä')
-            return self._render_form(entries, count, event, nowtime, form)
+            return self._render_index_view(entries, count, event, nowtime, form)
 
         if self._find_from_entries(entries, form):
             flash('Olet jo ilmoittautunut')
-            return self._render_form(entries, count, event, nowtime, form, )
+            return self._render_index_view(entries, count, event, nowtime, form, )
 
         chosen_time = form.aika.data
         early_room = form.huone1800.data
@@ -170,7 +168,7 @@ class _Controller(FormController):
             if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (
                     entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-                return self._render_form(entries, count, event, nowtime, form)
+                return self._render_index_view(entries, count, event, nowtime, form)
 
         if form.validate_on_submit():
             db.session.add(self._form_to_model(form, nowtime))
@@ -183,36 +181,17 @@ class _Controller(FormController):
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-        return self._render_form(entries, count, event, nowtime, form)
+        return self._render_index_view(entries, count, event, nowtime, form)
 
-    def get_data_request_handler(self, request) -> Any:
-        return self._data_view(get_module_info(), _Model)
-
-    def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(_Model.__tablename__)
-
-    def _get_event(self) -> Event:
-        return Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0)
-
-    def _render_form(self, entries, participant_count: int, event: Event, nowtime, form: _Form) -> Any:
+    def _render_index_view(self, entries, event: Event, nowtime, form: _Form, **extra_template_args) -> Any:
         varatut = []
         for entry in entries:
             varatut.append((entry.aika, entry.huone1800, entry.huone1930))
+        return super()._render_index_view(entries, event, nowtime, form, **{
+            'varatut': json.dumps(varatut),
+            **extra_template_args})
 
-        return render_template('pakohuone/index.html',
-                               title='pakohuone ilmoittautuminen',
-                               entrys=entries,
-                               participant_count=participant_count,
-                               starttime=event.get_start_time(),
-                               endtime=event.get_end_time(),
-                               nowtime=nowtime,
-                               limit=event.get_participant_limit(),
-                               form=form,
-                               varatut=json.dumps(varatut),
-                               page="pakohuone",
-                               form_info=get_module_info())
-
-    def _find_from_entries(self, entries, form: FlaskForm) -> bool:
+    def _find_from_entries(self, entries, form: _Form) -> bool:
         firstname = form.etunimi0.data
         lastname = form.sukunimi0.data
         email = form.email0.data
@@ -221,13 +200,10 @@ class _Controller(FormController):
                 return True
         return False
 
-    def _get_email_subject(self) -> str:
-        return "pakopelipäivä ilmoittautuminen"
-
-    def _get_email_recipient(self, form: FlaskForm) -> str:
+    def _get_email_recipient(self, form: _Form) -> str:
         return str(form.email0.data)
 
-    def _get_email_msg(self, form: FlaskForm, reserve: bool) -> str:
+    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
         return ' '.join(["\"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
                          "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
                          "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
@@ -264,10 +240,11 @@ class _Controller(FormController):
             datetime=nowtime
         )
 
-    def _get_data_table_info(self) -> DataTableInfo:
-        # MEMO: Order of these two arrays must sync. Order of _Model attributes matters.
-        table_headers = ['aika', 'huone1800', 'huone1930', 'etunimi0', 'sukunimi0', 'phone0', 'email0', 'etunimi1',
-                         'sukunimi1', 'etunimi2', 'sukunimi2', 'etunimi3', 'sukunimi3', 'etunimi4', 'sukunimi4',
-                         'etunimi5', 'sukunimi5', 'hyväksyn tietosuojaselosteen', 'datetime']
-        model_attributes = _Model.__table__.columns.keys()[1:]
-        return DataTableInfo(table_headers, model_attributes)
+
+def _get_data_table_info() -> DataTableInfo:
+    # MEMO: Order of these two arrays must sync. Order of _Model attributes matters.
+    table_headers = ['aika', 'huone1800', 'huone1930', 'etunimi0', 'sukunimi0', 'phone0', 'email0', 'etunimi1',
+                     'sukunimi1', 'etunimi2', 'sukunimi2', 'etunimi3', 'sukunimi3', 'etunimi4', 'sukunimi4',
+                     'etunimi5', 'sukunimi5', 'hyväksyn tietosuojaselosteen', 'datetime']
+    model_attributes = _Model.__table__.columns.keys()[1:]
+    return DataTableInfo(table_headers, model_attributes)

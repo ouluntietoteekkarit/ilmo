@@ -7,8 +7,7 @@ from typing import Any
 
 from app import db
 from .forms_util.event import Event
-from .forms_util.forms import DataTableInfo
-from .forms_util.form_controller import FormController
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 
 
@@ -16,6 +15,7 @@ from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 
 """Singleton instance containing this form module's information."""
 _form_module = None
+_form_name = file_path_to_form_name(__file__)
 
 
 def get_module_info() -> ModuleInfo:
@@ -24,7 +24,7 @@ def get_module_info() -> ModuleInfo:
     """
     global _form_module
     if _form_module is None:
-        _form_module = ModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+        _form_module = ModuleInfo(_Controller, True, _form_name)
     return _form_module
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
@@ -40,7 +40,7 @@ class _Form(FlaskForm):
 
 
 class _Model(db.Model):
-    __tablename__ = 'kysely_arvonta_juttu'
+    __tablename__ = _form_name
     id = db.Column(db.Integer, primary_key=True)
     etunimi = db.Column(db.String(64))
     sukunimi = db.Column(db.String(64))
@@ -51,32 +51,25 @@ class _Model(db.Model):
 
 class _Controller(FormController):
 
-    def get_request_handler(self, request) -> Any:
-        form = _Form()
-        event = self._get_event()
-        entries = _Model.query.all()
-
-        return self._render_form(entries, len(entries), event, datetime.now(), form)
+    def __init__(self):
+        event = Event('Hyvinvointi- ja etäopiskelukysely arvonta ilmoittautuminen', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000, 0)
+        super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         form = _Form()
-        event = self._get_event()
+        event = self._context.get_event()
         nowtime = datetime.now()
         entries = _Model.query.all()
         count = len(entries)
 
         if count >= event.get_participant_limit():
             flash('Ilmoittautuminen on jo täynnä')
-            return self._render_form(entries, count, event, nowtime, form)
+            return self._render_index_view(entries, event, nowtime, form)
 
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        email = form.email.data
-        for entry in entries:
-            if (entry.etunimi == firstname and entry.sukunimi == lastname) or entry.email == email:
-                flash('Olet jo ilmoittautunut')
-                return self._render_form(entries, count, event, nowtime, form)
+        if self._find_from_entries(entries, form):
+            flash('Olet jo ilmoittautunut')
+            return self._render_index_view(entries, event, nowtime, form)
 
         if form.validate_on_submit():
             db.session.add(self._form_to_model(form, nowtime))
@@ -89,31 +82,9 @@ class _Controller(FormController):
         else:
             flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
 
-        return self._render_form(entries, count, event, nowtime, form)
+        return self._render_index_view(entries, event, nowtime, form)
 
-    def get_data_request_handler(self, request) -> Any:
-        return self._data_view(get_module_info(), _Model)
-
-    def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(_Model.__tablename__)
-
-    def _get_event(self) -> Event:
-        return Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000, 0)
-
-    def _render_form(self, entries, participant_count: int, event: Event, nowtime, form: _Form) -> Any:
-        return render_template('kysely_arvonta_juttu/index.html',
-                               title='kysely_arvonta_juttu ilmoittautuminen',
-                               entrys=entries,
-                               participant_count=participant_count,
-                               starttime=event.get_start_time(),
-                               endtime=event.get_end_time(),
-                               nowtime=nowtime,
-                               limit=event.get_participant_limit(),
-                               form=form,
-                               page="kysely_arvonta_juttu",
-                               form_info=get_module_info())
-
-    def _find_from_entries(self, entries, form: FlaskForm) -> bool:
+    def _find_from_entries(self, entries, form: _Form) -> bool:
         firstname = form.etunimi.data
         lastname = form.sukunimi.data
         email = form.email.data
@@ -122,10 +93,7 @@ class _Controller(FormController):
                 return True
         return False
 
-    def _get_email_subject(self) -> str:
-        return "hyvinvointi- ja etäopiskelukysely"
-
-    def _get_email_recipient(self, form: FlaskForm) -> str:
+    def _get_email_recipient(self, form: _Form) -> str:
         return str(form.email.data)
 
     def _get_email_msg(self, form: _Form, reserve: bool) -> str:
@@ -147,8 +115,9 @@ class _Controller(FormController):
             datetime=nowtime,
         )
 
-    def _get_data_table_info(self) -> DataTableInfo:
-        # MEMO: Order of these two arrays must sync. Order of _Model attributes matters.
-        table_headers = ['etunimi', 'sukunimi', 'email', 'hyväksyn tietosuojaselosteen', 'datetime']
-        model_attributes = _Model.__table__.columns.keys()[1:]
-        return DataTableInfo(table_headers, model_attributes)
+
+def _get_data_table_info() -> DataTableInfo:
+    # MEMO: Order of these two arrays must sync. Order of _Model attributes matters.
+    table_headers = ['etunimi', 'sukunimi', 'email', 'hyväksyn tietosuojaselosteen', 'datetime']
+    model_attributes = _Model.__table__.columns.keys()[1:]
+    return DataTableInfo(table_headers, model_attributes)
