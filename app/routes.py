@@ -6,7 +6,7 @@ from flask import render_template, request, Flask
 import importlib.util
 
 from . import server, auth, users, roles
-from .forms.forms_util.form_module_info import FormModuleInfo
+from .forms.forms_util.form_module_info import ModuleInfo
 
 
 def _find_modules(folder:str, package: str) -> List[str]:
@@ -33,7 +33,7 @@ def load_module(module_name: str) -> ModuleType:
     return importlib.import_module(module_name, package)
 
 
-def register_module_route(server: Flask, form_info: FormModuleInfo):
+def register_module_route(server: Flask, form_info: ModuleInfo):
     if not form_info.is_active():
         return
 

@@ -90,7 +90,7 @@
                     {% endfor %}
 
                     <h5>Ilmoittautuminen päättyy {{ endtime }}</h5>
-                    <h3>Osallistujat: {{ totalcount }}/{{ limit }}</h3>
+                    <h3>Osallistujat: {{ participant_count }}/{{ limit }}</h3>
                     {% for entry in entrys %}
                         {% if entry.consent0 %}
                             <p>{{ entry.etunimi }} {{ entry.sukunimi }}
@@ -105,7 +105,7 @@
                 <h5>Ilmoittautuminen alkaa {{ starttime }}</h5>
             {% else %}
                 <h5>Ilmoittautuminen on päättynyt</h5>
-                <h3>Osallistujat: {{ totalcount }}/{{ limit }}</h3>
+                <h3>Osallistujat: {{ participant_count }}/{{ limit }}</h3>
                 {% for entry in entrys %}
                     {% if entry.consent0 %}
                         <p>{{ entry.etunimi }} {{ entry.sukunimi }}

@@ -4,14 +4,15 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from flask import send_from_directory, abort, render_template, flash
 from typing import Any, Type, TYPE_CHECKING
+from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email
 
 if TYPE_CHECKING:
-    from app import db
     from flask_wtf import FlaskForm
     from .event import Event
-    from .form_module_info import FormModuleInfo
+    from .forms import DataTableInfo
+    from .form_module_info import ModuleInfo
 
 
 class FormController(ABC):
@@ -82,6 +83,10 @@ class FormController(ABC):
     def _form_to_model(self, form: FlaskForm, nowtime) -> db.Model:
         pass
 
+    @abstractmethod
+    def _get_data_table_info(self) -> DataTableInfo:
+        pass
+
     def _post_routine(self, form: FlaskForm, model: Type[db.Model]) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         event = self._get_event()
@@ -89,6 +94,10 @@ class FormController(ABC):
         entries = model.query.all()
         count = len(entries)
         maxlimit = event.get_participant_limit() + event.get_participant_reserve()
+
+        if nowtime < event.get_start_time():
+            flash('Ilmoittautuminen ei ole alkanut')
+            return self._render_form(entries, count, event, nowtime, form)
 
         if nowtime > event.get_end_time():
             flash('Ilmoittautuminen on päättynyt')
@@ -116,11 +125,12 @@ class FormController(ABC):
 
         return self._render_form(entries, count, event, nowtime, form)
 
-    def _data_view(self, form_info: FormModuleInfo, model, **additional_template_args) -> Any:
+    def _data_view(self, form_info: ModuleInfo, model, **additional_template_args) -> Any:
         """
         A helper method to render a data view template.
         """
         event = self._get_event()
+        table_info = self._get_data_table_info()
         limit = event.get_participant_limit()
         entries = model.query.all()
         count = len(entries)
@@ -131,6 +141,7 @@ class FormController(ABC):
             'count': count,
             'limit': limit,
             'form_info': form_info,
+            'table_info': table_info,
             **additional_template_args
         })
 

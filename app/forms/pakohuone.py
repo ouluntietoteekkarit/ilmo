@@ -7,11 +7,10 @@ import json
 from typing import Any
 
 from app import db
-from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIfValue
+from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
+from .forms_util.forms import RequiredIfValue, DataTableInfo
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
-
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -19,14 +18,15 @@ from .forms_util.form_controller import FormController
 _form_module = None
 
 
-def get_form_info() -> FormModuleInfo:
+def get_module_info() -> ModuleInfo:
     """
     Returns this form's module information.
     """
     global _form_module
     if _form_module is None:
-        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+        _form_module = ModuleInfo(_Controller, True, file_path_to_form_name(__file__))
     return _form_module
+
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
@@ -37,16 +37,16 @@ _PAKO_TIME_SECOND = '19:30'
 
 def _get_escape_games():
     return [
-       'Pommi (Uusikatu)',
-       'Kuolleen miehen saari (Uusikatu)',
-       'Temppelin kirous (Uusikatu)',
-       'Velhon perintö (Uusikatu)',
-       'Murhamysteeri (Kajaaninkatu)',
-       'Vankilapako (Kajaaninkatu)',
-       'Professorin arvoitus (Kajaaninkatu)',
-       'The SAW (Kirkkokatu)',
-       'Alcatraz (Kirkkokatu)',
-       'Matka maailman ympäri (Kirkkokatu)',
+        'Pommi (Uusikatu)',
+        'Kuolleen miehen saari (Uusikatu)',
+        'Temppelin kirous (Uusikatu)',
+        'Velhon perintö (Uusikatu)',
+        'Murhamysteeri (Kajaaninkatu)',
+        'Vankilapako (Kajaaninkatu)',
+        'Professorin arvoitus (Kajaaninkatu)',
+        'The SAW (Kirkkokatu)',
+        'Alcatraz (Kirkkokatu)',
+        'Matka maailman ympäri (Kirkkokatu)',
     ]
 
 
@@ -73,8 +73,10 @@ def _get_time_choices():
 
 class _Form(FlaskForm):
     aika = RadioField('Aika *', choices=_get_time_choices(), validators=[DataRequired()])
-    huone1800 = RadioField('Huone (18:00) *', choices=_get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
-    huone1930 = RadioField('Huone (19:30) *', choices=_get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
+    huone1800 = RadioField('Huone (18:00) *', choices=_get_game_choices(),
+                           validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
+    huone1930 = RadioField('Huone (19:30) *', choices=_get_game_choices(),
+                           validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
 
     etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
@@ -159,13 +161,14 @@ class _Controller(FormController):
 
         if self._find_from_entries(entries, form):
             flash('Olet jo ilmoittautunut')
-            return self._render_form(entries, count, event, nowtime, form,)
+            return self._render_form(entries, count, event, nowtime, form, )
 
         chosen_time = form.aika.data
         early_room = form.huone1800.data
         later_room = form.huone1930.data
         for entry in entries:
-            if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
+            if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (
+                    entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
                 return self._render_form(entries, count, event, nowtime, form)
 
@@ -174,7 +177,7 @@ class _Controller(FormController):
             db.session.commit()
 
             flash('Ilmoittautuminen onnistui')
-            form_info = get_form_info()
+            form_info = get_module_info()
             return redirect(url_for(form_info.get_endpoint_get_index()))
 
         else:
@@ -183,7 +186,7 @@ class _Controller(FormController):
         return self._render_form(entries, count, event, nowtime, form)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(get_form_info(), _Model)
+        return self._data_view(get_module_info(), _Model)
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
@@ -191,7 +194,7 @@ class _Controller(FormController):
     def _get_event(self) -> Event:
         return Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0)
 
-    def _render_form(self, entries, count: int, event: Event, nowtime, form: _Form) -> Any:
+    def _render_form(self, entries, participant_count: int, event: Event, nowtime, form: _Form) -> Any:
         varatut = []
         for entry in entries:
             varatut.append((entry.aika, entry.huone1800, entry.huone1930))
@@ -199,7 +202,7 @@ class _Controller(FormController):
         return render_template('pakohuone/index.html',
                                title='pakohuone ilmoittautuminen',
                                entrys=entries,
-                               count=count,
+                               participant_count=participant_count,
                                starttime=event.get_start_time(),
                                endtime=event.get_end_time(),
                                nowtime=nowtime,
@@ -207,7 +210,7 @@ class _Controller(FormController):
                                form=form,
                                varatut=json.dumps(varatut),
                                page="pakohuone",
-                               form_info=get_form_info())
+                               form_info=get_module_info())
 
     def _find_from_entries(self, entries, form: FlaskForm) -> bool:
         firstname = form.etunimi0.data
@@ -226,17 +229,17 @@ class _Controller(FormController):
 
     def _get_email_msg(self, form: FlaskForm, reserve: bool) -> str:
         return ' '.join(["\"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
-                        "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
-                        "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
-                        "\nSähköposti: ", str(form.email0.data),
-                        "\nPuhelinnumero: ", str(form.phone0.data),
-                        "\nMuiden joukkuelaisten nimet: ", str(form.etunimi1.data), str(form.sukunimi1.data),
-                        str(form.etunimi2.data), str(form.sukunimi2.data),
-                        str(form.etunimi3.data), str(form.sukunimi3.data),
-                        str(form.etunimi4.data), str(form.sukunimi4.data),
-                        str(form.etunimi5.data), str(form.sukunimi5.data),
-                        "\n\nÄlä vastaa tähän sähköpostiin",
-                        "\n\nTerveisin: ropottilari\""])
+                         "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
+                         "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
+                         "\nSähköposti: ", str(form.email0.data),
+                         "\nPuhelinnumero: ", str(form.phone0.data),
+                         "\nMuiden joukkuelaisten nimet: ", str(form.etunimi1.data), str(form.sukunimi1.data),
+                         str(form.etunimi2.data), str(form.sukunimi2.data),
+                         str(form.etunimi3.data), str(form.sukunimi3.data),
+                         str(form.etunimi4.data), str(form.sukunimi4.data),
+                         str(form.etunimi5.data), str(form.sukunimi5.data),
+                         "\n\nÄlä vastaa tähän sähköpostiin",
+                         "\n\nTerveisin: ropottilari\""])
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
         return _Model(
@@ -260,3 +263,11 @@ class _Controller(FormController):
             consent0=form.consent0.data,
             datetime=nowtime
         )
+
+    def _get_data_table_info(self) -> DataTableInfo:
+        # MEMO: Order of these two arrays must sync. Order of _Model attributes matters.
+        table_headers = ['aika', 'huone1800', 'huone1930', 'etunimi0', 'sukunimi0', 'phone0', 'email0', 'etunimi1',
+                         'sukunimi1', 'etunimi2', 'sukunimi2', 'etunimi3', 'sukunimi3', 'etunimi4', 'sukunimi4',
+                         'etunimi5', 'sukunimi5', 'hyväksyn tietosuojaselosteen', 'datetime']
+        model_attributes = _Model.__table__.columns.keys()[1:]
+        return DataTableInfo(table_headers, model_attributes)

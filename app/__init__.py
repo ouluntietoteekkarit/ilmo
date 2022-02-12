@@ -15,7 +15,7 @@ def load_forms() -> List:
     module_names = routes.find_form_modules()
     for module_name in module_names:
         module = routes.load_module(module_name)
-        form_info = module.get_form_info()
+        form_info = module.get_module_info()
         routes.register_module_route(server, form_info)
         forms.append(form_info)
     return forms

@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from .form_controller import FormController
 
 
-class FormModuleInfo:
+class ModuleInfo:
     """
     A class to provide a programming interface for form python modules.
     """
@@ -30,30 +30,30 @@ class FormModuleInfo:
     def get_form_name(self) -> str:
         return self._form_name
 
-    def get_endpoint_get_index(self):
+    def get_endpoint_get_index(self) -> str:
         return self._form_endpoint_get_index
 
-    def set_endpoint_get_index(self, path: str):
+    def set_endpoint_get_index(self, path: str) -> None:
         self._form_endpoint_get_index = path
 
-    def get_endpoint_post_index(self):
+    def get_endpoint_post_index(self) -> str:
         return self._form_endpoint_post_index
 
-    def set_endpoint_post_index(self, path: str):
-        self._form_endpoint_post_index = path
+    def set_endpoint_post_index(self, endpoint: str) -> None:
+        self._form_endpoint_post_index = endpoint
 
-    def get_endpoint_get_data(self):
+    def get_endpoint_get_data(self) -> str:
         return self._form_endpoint_get_data
 
-    def set_endpoint_get_data(self, path: str):
-        self._form_endpoint_get_data = path
+    def set_endpoint_get_data(self, endpoint: str) -> None:
+        self._form_endpoint_get_data = endpoint
 
-    def get_endpoint_get_data_csv(self):
+    def get_endpoint_get_data_csv(self) -> str:
         return self._form_endpoint_get_data_csv
 
-    def set_endpoint_get_data_csv(self, path: str):
-        self._form_endpoint_get_data_csv = path
+    def set_endpoint_get_data_csv(self, endpoint: str) -> None:
+        self._form_endpoint_get_data_csv = endpoint
 
 
-def file_path_to_form_name(path: Union[str, Path]):
+def file_path_to_form_name(path: Union[str, Path]) -> str:
     return splitext(split(path)[1])[0]

@@ -7,8 +7,8 @@ from typing import Any
 
 from app import db
 from .forms_util.guilds import *
-from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
-from .forms_util.forms import get_guild_choices
+from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
+from .forms_util.forms import get_guild_choices, DataTableInfo
 from .forms_util.event import Event
 from .forms_util.form_controller import FormController
 
@@ -19,13 +19,13 @@ from .forms_util.form_controller import FormController
 _form_module = None
 
 
-def get_form_info() -> FormModuleInfo:
+def get_module_info() -> ModuleInfo:
     """
     Returns this form's module information.
     """
     global _form_module
     if _form_module is None:
-        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+        _form_module = ModuleInfo(_Controller, True, file_path_to_form_name(__file__))
     return _form_module
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
@@ -38,9 +38,7 @@ class _Form(FlaskForm):
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
     kilta = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()))
     consent0 = BooleanField('Sallin nimeni julkaisemisen osallistujalistassa')
-    consent1 = BooleanField(
-        'Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *',
-        validators=[DataRequired()])
+    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
     consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
     submit = SubmitField('Ilmoittaudu')
 
@@ -72,27 +70,26 @@ class _Controller(FormController):
         return self._post_routine(_Form(), _Model)
 
     def get_data_request_handler(self, request) -> Any:
-        return self._data_view(get_form_info(), _Model)
+        return self._data_view(get_module_info(), _Model)
 
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(_Model.__tablename__)
 
     def _get_event(self) -> Event:
-        return Event('korttijalautapeliilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 50, 0)
+        return Event('kortti_ja_lautapeliilta', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 50, 0)
 
-    def _render_form(self, entries, count: int, event: Event, nowtime, form: _Form) -> Any:
-
-        return render_template('korttijalautapeliilta/index.html',
-                               title='korttijalautapeliilta ilmoittautuminen',
+    def _render_form(self, entries, participant_count: int, event: Event, nowtime, form: _Form) -> Any:
+        return render_template('kortti_ja_lautapeliilta/index.html',
+                               title='kortti_ja_lautapeliilta ilmoittautuminen',
                                entrys=entries,
-                               count=count,
+                               participant_count=participant_count,
                                starttime=event.get_start_time(),
                                endtime=event.get_end_time(),
                                nowtime=nowtime,
                                limit=event.get_participant_limit(),
                                form=form,
-                               page="korttijalautapeliilta",
-                               form_info=get_form_info())
+                               page="kortti_ja_lautapeliilta",
+                               form_info=get_module_info())
 
     def _find_from_entries(self, entries, form: _Form) -> bool:
         firstname = form.etunimi.data
@@ -132,3 +129,10 @@ class _Controller(FormController):
             consent2=form.consent2.data,
             datetime=nowtime
         )
+
+    def _get_data_table_info(self) -> DataTableInfo:
+        # MEMO: Order of these two arrays must sync. Order of _Model attributes matters.
+        table_headers = ['etunimi', 'sukunimi', 'phone', 'email', 'kilta', 'hyväksyn nimen julkaisemisen',
+                         'hyväksyn tietosuojaselosteen', 'ymmärrän että ilmoittautuminen on sitova', 'datetime']
+        model_attributes = _Model.__table__.columns.keys()[1:]
+        return DataTableInfo(table_headers, model_attributes)

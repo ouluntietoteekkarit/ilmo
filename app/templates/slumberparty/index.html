@@ -79,7 +79,7 @@
                 <p>Ilmoittautuminen on päättynyt</p>
             {% endif %}
 
-            <h3>Osallistujat: {{ count }}/{{ limit }}</h3>
+            <h3>Osallistujat: {{ participant_count }}/{{ limit }}</h3>
             {% for entry in entrys %}
                 {% if entry.consent0 %}
                     <p>{{ entry.etunimi }} {{ entry.sukunimi }}

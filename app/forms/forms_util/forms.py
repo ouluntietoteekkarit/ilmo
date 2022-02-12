@@ -58,3 +58,16 @@ def get_guild_choices(guilds: Iterable[Guild]) -> list:
     for guild in guilds:
         choices.append((guild.get_name(), guild.get_name()))
     return choices
+
+
+class DataTableInfo:
+
+    def __init__(self, table_headers, attribute_names):
+        self._table_headers = table_headers
+        self._attribute_names = attribute_names
+
+    def get_header_names(self):
+        return self._table_headers
+
+    def get_attribute_names(self):
+        return self._attribute_names

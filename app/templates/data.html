@@ -1,0 +1,39 @@
+{% extends "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+    <div class="container p-3">
+        <h1>{{ title }}</h1>
+
+        <a href="{{ url_for(form_info.get_endpoint_get_data_csv()) }}">
+            <button class="btn btn-info">Lataa CSV</button>
+        </a>
+        <div>
+            <h2>Osallistujat</h2>
+            <h3>{{ count }}/{{ limit }}</h3>
+            <table class="table" rules="all">
+                <thead>
+                <tr>
+                    <td>N</td>
+                    {% for header in table_info.get_header_names() %}
+                        <td>{{ header }}</td>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for entry in entries %}
+                    <tr>
+                        <td>{{ loop.index }}.
+                            {% if loop.index > limit %}
+                                (Vara)
+                            {% endif %}</td>
+                        {% for attribute in table_info.get_attribute_names() %}
+                            <td>{{ entry|attr(attribute) }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
