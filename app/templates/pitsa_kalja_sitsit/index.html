@@ -5,32 +5,31 @@
 {% block extra_styles %}
     <style>
         body {
-            background-image: url("{{ url_for('static',filename='img/bus3_.jpg') }}");
-            background-position: center;
-            background-size: 150%;
-            background-repeat: repeat;
+            background-image: url("{{ url_for('static', filename='img/pitsakalja.jpg') }}");
         }
 
         div.container:nth-child(1) {
             max-width: 800px;
             background-color: white;
-            opacity: 0.9;
         }
     </style>
 {% endblock %}
 
+{% block extra_js %}
+    <script src="{{ url_for('static',filename='js/pitsakaljasitsit.js') }}"></script>
+{% endblock %}
+
 {% block event_info %}
-    <h2>Fuksicursio ilmoittautuminen</h2>
-    <p><strong>Fukseille ilmainen, muille maksaa 10 euroa.</strong></p>
-    <p>Perjantaina 5.11.2021 kello 9:00 alkaen</p>
-    <p>Lähtöajat:</p>
-    <ul>
-        <li>Yliopisto 09:00</li>
-        <li>Tuiran bussipysäkki (Merikoskenkatu) 09:15</li>
-        <li>Linja-autoasema 09:30</li>
-    </ul>
-    <p><strong>Ole hyvissä ajoin paikalla! Bussi ei voi odottaa myöhästyjiä</strong></p>
-    <p>Paluu Ouluun lauantaina noin 06:00 - 07:00</p>
+    <h1>Pitsakalja Sitsit</h1>
+
+    <p>Pitsakalja Sitsit 18.11. @Teekkaritalo</p>
+    <p><strong>Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman kanssa 17€. Maksu tapahtuu
+        tilisiirrolla Oulun
+        Tietoteekkarit ry:n tilille FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, Pitsakalja-sitsit sekä
+        alkoholiton tai alkoholillinen valintasi mukaan.</strong></p>
+
+    <p>60 ensimmäisen jälkeen ilmoittautuneet ovat varasijoilla.</p>
+    <p>Jos on kysyttävää niin voit olla yhteydessä sähköpostitse pepeministeri@otit.fi</p>
 {% endblock %}
 
 {% block registration_form %}
@@ -40,9 +39,12 @@
             {{ macros.form_field(form.etunimi) }}
             {{ macros.form_field(form.sukunimi) }}
             {{ macros.form_field(form.email) }}
-            {{ macros.form_field(form.puh) }}
-            {{ macros.form_field(form.lahtopaikka) }}
-            {{ macros.form_field(form.kiintio) }}
+            {{ macros.form_field(form.alkoholi) }}
+            <div id="mieto" style="display: none;">
+                {{ macros.form_field(form.mieto) }}
+            </div>
+            {{ macros.form_field(form.pitsa) }}
+            {{ macros.form_field(form.allergiat) }}
             {{ macros.form_field(form.consent0) }}
             {{ macros.form_field(form.consent1) }}
             <button class="btn btn-info">

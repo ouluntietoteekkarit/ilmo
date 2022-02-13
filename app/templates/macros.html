@@ -12,8 +12,8 @@
 {% endmacro %}
 
 
-{% macro privacy_statement(filename) %}
-    <h6><a href="{{ url_for('static',filename=filename) }}">Tietosuojaseloste</a></h6>
+{% macro privacy_statement(module_info) %}
+    <a href="{{ url_for('static',filename='privacy_statements/' ~ module_info.get_form_name()) }}">Tietosuojaseloste</a>
 {% endmacro %}
 
 

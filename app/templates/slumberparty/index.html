@@ -1,48 +1,40 @@
-{% extends "header.html" %}
+{% extends "form.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 {% import "macros.html" as macros %}
 
-{% block content %}
-    <div class="container p-3">
+{% block event_info %}
+    <h1>Slumberparty</h1>
 
-        <h1>Slumberparty</h1>
+    <p>Slumberparty 27.10 klo. 18-> @Teekkaritalo</p>
+    <p><strong>Mikäli olet sairas etkä pääsekään paikalle, ole yhteydessä Riina Annuseen 044 2370526 (Whatsapp,
+        Telegram tai tekstiviesti)
+    </strong></p>
 
-        <p>Slumberparty 27.10 klo. 18-> @Teekkaritalo</p>
-        <p><strong>Mikäli olet sairas etkä pääsekään paikalle, ole yhteydessä Riina Annuseen 044 2370526 (Whatsapp,
-            Telegram tai tekstiviesti)
-        </strong></p>
+    <p>Ilmoittautuminen aukeaa 21.10. klo 12:00</p>
+{% endblock %}
 
-        <p>Ilmoittautuminen aukeaa 21.10. klo 12:00</p>
-
-        <div class="container p-3">
-            <div>
-                <h4>{{ event.get_title() }}</h4>
-                <h6>* merkityt kohdat pakollisia</h6>
-                {{ macros.privacy_statement('tietosuojaseloste_slumberparty.pdf') }}
-            </div>
-            {% if event.get_start_time() < nowtime < event.get_end_time() %}
-                <form class="form form-horizontal" method="post" role="form">
-                    {{ form.hidden_tag() }}
-                    {{ macros.form_field(form.etunimi) }}
-                    {{ macros.form_field(form.sukunimi) }}
-                    {{ macros.form_field(form.phone) }}
-                    {{ macros.form_field(form.email) }}
-                    {{ macros.form_field(form.kilta) }}
-                    {{ macros.form_field(form.consent0) }}
-                    {{ macros.form_field(form.consent1) }}
-                    {{ macros.form_field(form.consent2) }}
-                    <button class="btn btn-info">
-                        {{ macros.form_field(form.submit) }}
-                    </button>
-                    <p>Ilmoittautuminen päättyy {{ event.get_end_time() }}</p>
-                </form>
-            {% elif nowtime < event.get_start_time() %}
-                <p>Ilmoittautuminen alkaa {{ event.get_start_time() }}</p>
-            {% else %}
-                <p>Ilmoittautuminen on päättynyt</p>
-            {% endif %}
-            {{ macros.participant_count(entries|length, event) }}
-            {{ macros.participant_list(entries, event) }}
-        </div>
-    </div>
+{% block registration_form %}
+    {% if event.get_start_time() < nowtime < event.get_end_time() %}
+        <form class="form form-horizontal" method="post" role="form">
+            {{ form.hidden_tag() }}
+            {{ macros.form_field(form.etunimi) }}
+            {{ macros.form_field(form.sukunimi) }}
+            {{ macros.form_field(form.phone) }}
+            {{ macros.form_field(form.email) }}
+            {{ macros.form_field(form.kilta) }}
+            {{ macros.form_field(form.consent0) }}
+            {{ macros.form_field(form.consent1) }}
+            {{ macros.form_field(form.consent2) }}
+            <button class="btn btn-info">
+                {{ macros.form_field(form.submit) }}
+            </button>
+            <p>Ilmoittautuminen päättyy {{ event.get_end_time() }}</p>
+        </form>
+    {% elif nowtime < event.get_start_time() %}
+        <p>Ilmoittautuminen alkaa {{ event.get_start_time() }}</p>
+    {% else %}
+        <p>Ilmoittautuminen on päättynyt</p>
+    {% endif %}
+    {{ macros.participant_count(entries|length, event) }}
+    {{ macros.participant_list(entries, event) }}
 {% endblock %}

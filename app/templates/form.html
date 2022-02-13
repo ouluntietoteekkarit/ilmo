@@ -1,0 +1,17 @@
+{% extends "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "macros.html" as macros %}
+
+{% block content %}
+    <div class="container p-3" style="max-width: 800px; background-color: white;">
+        {% block event_info %}{% endblock %}
+        <div class="container p-3">
+            <div>
+                <h4>{{ event.get_title() }}</h4>
+                <h5>* merkityt kohdat pakollisia</h5>
+                <h6>{{ macros.privacy_statement(module_info) }}</h6>
+            </div>
+            {% block registration_form %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}
