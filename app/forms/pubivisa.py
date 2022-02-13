@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from flask import url_for, redirect, flash
+from flask import flash
 from wtforms import StringField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
@@ -9,6 +9,7 @@ from app import db
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.guilds import *
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.models import BasicModel, BindingRegistrationConsentMixin
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -58,22 +59,17 @@ class _Form(FlaskForm):
     kilta3 = SelectField('Kilta', choices=get_guild_choices(get_all_guilds()))
 
     consent0 = BooleanField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *',
-                            validators=[DataRequired()])
+    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
     consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
 
     submit = SubmitField('Ilmoittaudu')
 
 
-class _Model(db.Model):
+class _Model(BasicModel, BindingRegistrationConsentMixin):
     __tablename__ = _form_name
-    id = db.Column(db.Integer, primary_key=True)
     teamname = db.Column(db.String(128))
 
-    etunimi0 = db.Column(db.String(64))
-    sukunimi0 = db.Column(db.String(64))
     phone0 = db.Column(db.String(32))
-    email0 = db.Column(db.String(128))
     kilta0 = db.Column(db.String(16))
 
     etunimi1 = db.Column(db.String(64))
@@ -94,25 +90,7 @@ class _Model(db.Model):
     email3 = db.Column(db.String(128))
     kilta3 = db.Column(db.String(16))
 
-    consent0 = db.Column(db.Boolean())
-    consent1 = db.Column(db.Boolean())
-    consent2 = db.Column(db.Boolean())
-
-    datetime = db.Column(db.DateTime())
-
     personcount = db.Column(db.Integer())
-
-    def get_firstname(self) -> str:
-        return self.etunimi0
-
-    def get_lastname(self) -> str:
-        return self.sukunimi0
-
-    def get_email(self) -> str:
-        return self.email0
-
-    def get_show_name_consent(self) -> bool:
-        return self.consent0
 
 
 class _Controller(FormController):
@@ -188,29 +166,29 @@ class _Controller(FormController):
         members = self._count_members(form)
         return _Model(
             teamname=form.teamname.data,
-            etunimi0=form.etunimi0.data,
-            sukunimi0=form.sukunimi0.data,
+            firstname=form.etunimi0.data,
+            lastname=form.sukunimi0.data,
+            email=form.email0.data,
             phone0=form.phone0.data,
-            email0=form.email0.data,
             kilta0=form.kilta0.data,
             etunimi1=form.etunimi1.data,
             sukunimi1=form.sukunimi1.data,
-            phone1=form.phone1.data,
             email1=form.email1.data,
+            phone1=form.phone1.data,
             kilta1=form.kilta1.data,
             etunimi2=form.etunimi2.data,
             sukunimi2=form.sukunimi2.data,
-            phone2=form.phone2.data,
             email2=form.email2.data,
+            phone2=form.phone2.data,
             kilta2=form.kilta2.data,
             etunimi3=form.etunimi3.data,
             sukunimi3=form.sukunimi3.data,
-            phone3=form.phone3.data,
             email3=form.email3.data,
+            phone3=form.phone3.data,
             kilta3=form.kilta3.data,
-            consent0=form.consent0.data,
-            consent1=form.consent1.data,
-            consent2=form.consent2.data,
+            show_name_consent=form.consent0.data,
+            privacy_consent=form.consent1.data,
+            binding_registration_consent=form.consent2.data,
             personcount=members,
             datetime=nowtime
         )
@@ -228,29 +206,29 @@ def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
     # MEMO: Exclude id, teamname and person count
     table_structure = [
-        ('etunimi0', 'etunimi0'),
-        ('sukunimi0', 'sukunimi0'),
+        ('firstname', 'etunimi0'),
+        ('lastname', 'sukunimi0'),
+        ('email', 'email0'),
         ('phone0', 'phone0'),
-        ('email0', 'email0'),
         ('kilta0', 'kilta0'),
         ('etunimi1', 'etunimi1'),
         ('sukunimi1', 'sukunimi1'),
-        ('phone1', 'phone1'),
         ('email1', 'email1'),
+        ('phone1', 'phone1'),
         ('kilta1', 'kilta1'),
         ('etunimi2', 'etunimi2'),
         ('sukunimi2', 'sukunimi2'),
-        ('phone2', 'phone2'),
         ('email2', 'email2'),
+        ('phone2', 'phone2'),
         ('kilta2', 'kilta2'),
         ('etunimi3', 'etunimi3'),
         ('sukunimi3', 'sukunimi3'),
-        ('phone3', 'phone3'),
         ('email3', 'email3'),
+        ('phone3', 'phone3'),
         ('kilta3', 'kilta3'),
-        ('consent0', 'hyväksyn nimen julkaisemisen'),
-        ('consent1', 'hyväksyn tietosuojaselosteen'),
-        ('consent2', 'ymmärrän että ilmoittautuminen on sitova'),
+        ('show_name_consent', 'hyväksyn nimen julkaisemisen'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
+        ('binding_registration_consent', 'ymmärrän että ilmoittautuminen on sitova'),
         ('datetime', 'datetime')
     ]
     return DataTableInfo(table_structure)

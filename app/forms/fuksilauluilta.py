@@ -7,6 +7,7 @@ from typing import Any
 from app import db
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
+from .forms_util.models import BasicModel
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -31,32 +32,12 @@ class _Form(FlaskForm):
     etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    consent1 = BooleanField(
-        'Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *',
-        validators=[DataRequired()])
+    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
     submit = SubmitField('Ilmoittaudu')
 
 
-class _Model(db.Model):
+class _Model(BasicModel):
     __tablename__ = _form_name
-    id = db.Column(db.Integer, primary_key=True)
-    etunimi = db.Column(db.String(64))
-    sukunimi = db.Column(db.String(64))
-    email = db.Column(db.String(128))
-    consent1 = db.Column(db.Boolean())
-    datetime = db.Column(db.DateTime())
-
-    def get_firstname(self) -> str:
-        return self.etunimi
-
-    def get_lastname(self) -> str:
-        return self.sukunimi
-
-    def get_email(self) -> str:
-        return self.email
-
-    def get_show_name_consent(self) -> bool:
-        return False
 
 
 class _Controller(FormController):
@@ -72,7 +53,7 @@ class _Controller(FormController):
         firstname = form.etunimi.data
         lastname = form.sukunimi.data
         for entry in entries:
-            if entry.etunimi == firstname and entry.sukunimi == lastname:
+            if entry.firstname == firstname and entry.lastname == lastname:
                 return True
         return False
 
@@ -91,10 +72,10 @@ class _Controller(FormController):
 
     def _form_to_model(self, form: _Form, nowtime) -> db.Model:
         return _Model(
-            etunimi=form.etunimi.data,
-            sukunimi=form.sukunimi.data,
+            firstname=form.etunimi.data,
+            lastname=form.sukunimi.data,
             email=form.email.data,
-            consent1=form.consent1.data,
+            privacy_consent=form.consent1.data,
             datetime=nowtime,
         )
 
@@ -102,10 +83,10 @@ class _Controller(FormController):
 def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
     table_structure = [
-        ('etunimi', 'etunimi'),
-        ('sukunimi', 'sukunimi'),
+        ('firstname', 'etunimi'),
+        ('lastname', 'sukunimi'),
         ('email', 'email'),
-        ('consent1', 'hyväksyn tietosuojaselosteen'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
         ('datetime', 'datetime')
     ]
     return DataTableInfo(table_structure)

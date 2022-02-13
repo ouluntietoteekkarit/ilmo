@@ -4,11 +4,12 @@ from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 from typing import Any
 
-from app import db
 from .forms_util.guilds import *
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.guilds import get_guild_choices
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.models import BasicModel, PhoneNumberMixin, GuildMixin
+from .forms_util.models import BindingRegistrationConsentMixin
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -41,30 +42,8 @@ class _Form(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class _Model(db.Model):
+class _Model(BasicModel, PhoneNumberMixin, GuildMixin, BindingRegistrationConsentMixin):
     __tablename__ = _form_name
-    id = db.Column(db.Integer, primary_key=True)
-    etunimi = db.Column(db.String(64))
-    sukunimi = db.Column(db.String(64))
-    phone = db.Column(db.String(32))
-    email = db.Column(db.String(128))
-    kilta = db.Column(db.String(16))
-    consent0 = db.Column(db.Boolean())
-    consent1 = db.Column(db.Boolean())
-    consent2 = db.Column(db.Boolean())
-    datetime = db.Column(db.DateTime())
-
-    def get_firstname(self) -> str:
-        return self.etunimi
-
-    def get_lastname(self) -> str:
-        return self.sukunimi
-
-    def get_email(self) -> str:
-        return self.email
-
-    def get_show_name_consent(self) -> bool:
-        return self.consent0
 
 
 class _Controller(FormController):
@@ -80,7 +59,7 @@ class _Controller(FormController):
         firstname = form.etunimi.data
         lastname = form.sukunimi.data
         for entry in entries:
-            if entry.etunimi == firstname and entry.sukunimi == lastname:
+            if entry.firstname == firstname and entry.lastname == lastname:
                 return True
         return False
 
@@ -101,14 +80,14 @@ class _Controller(FormController):
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
         return _Model(
-            etunimi=form.etunimi.data,
-            sukunimi=form.sukunimi.data,
-            phone=form.phone.data,
+            firstname=form.etunimi.data,
+            lastname=form.sukunimi.data,
+            phone_number=form.phone.data,
             email=form.email.data,
-            kilta=form.kilta.data,
-            consent0=form.consent0.data,
-            consent1=form.consent1.data,
-            consent2=form.consent2.data,
+            guild_name=form.kilta.data,
+            show_name_consent=form.consent0.data,
+            privacy_consent=form.consent1.data,
+            binding_registration_consent=form.consent2.data,
             datetime=nowtime
         )
 
@@ -116,14 +95,14 @@ class _Controller(FormController):
 def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
     table_structure = [
-        ('etunimi', 'etunimi'),
-        ('sukunimi', 'sukunimi'),
-        ('phone', 'phone'),
+        ('firstname', 'etunimi'),
+        ('lastname', 'sukunimi'),
+        ('phone_number', 'phone'),
         ('email', 'email'),
-        ('kilta', 'kilta'),
-        ('consent0', 'hyväksyn nimen julkaisemisen'),
-        ('consent1', 'hyväksyn tietosuojaselosteen'),
-        ('consent2', 'ymmärrän että ilmoittautuminen on sitova'),
+        ('guild_name', 'kilta'),
+        ('show_name_consent', 'hyväksyn nimen julkaisemisen'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
+        ('binding_registration_consent', 'ymmärrän että ilmoittautuminen on sitova'),
         ('datetime', 'datetime')
     ]
     return DataTableInfo(table_structure)

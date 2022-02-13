@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from flask import url_for, redirect, flash
+from flask import flash
 from wtforms import StringField, BooleanField, SubmitField, RadioField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
@@ -10,6 +10,7 @@ from app import db
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIfValue
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.models import BasicModel, PhoneNumberMixin
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -105,18 +106,11 @@ class _Form(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class _Model(db.Model):
+class _Model(BasicModel, PhoneNumberMixin):
     __tablename__ = _form_name
-    id = db.Column(db.Integer, primary_key=True)
-
     aika = db.Column(db.String(16))
     huone1800 = db.Column(db.String(128))
     huone1930 = db.Column(db.String(128))
-
-    etunimi0 = db.Column(db.String(64))
-    sukunimi0 = db.Column(db.String(64))
-    phone0 = db.Column(db.String(32))
-    email0 = db.Column(db.String(128))
 
     etunimi1 = db.Column(db.String(64))
     sukunimi1 = db.Column(db.String(64))
@@ -132,22 +126,6 @@ class _Model(db.Model):
 
     etunimi5 = db.Column(db.String(64))
     sukunimi5 = db.Column(db.String(64))
-
-    consent0 = db.Column(db.Boolean())
-
-    datetime = db.Column(db.DateTime())
-
-    def get_firstname(self) -> str:
-        return self.etunimi0
-
-    def get_lastname(self) -> str:
-        return self.sukunimi0
-
-    def get_email(self) -> str:
-        return self.email0
-
-    def get_show_name_consent(self) -> bool:
-        return False
 
 
 class _Controller(FormController):
@@ -222,10 +200,10 @@ class _Controller(FormController):
             aika=form.aika.data,
             huone1800=form.huone1800.data,
             huone1930=form.huone1930.data,
-            etunimi0=form.etunimi0.data,
-            sukunimi0=form.sukunimi0.data,
-            phone0=form.phone0.data,
-            email0=form.email0.data,
+            firstname=form.etunimi0.data,
+            lastname=form.sukunimi0.data,
+            phone_number=form.phone0.data,
+            email=form.email0.data,
             etunimi1=form.etunimi1.data,
             sukunimi1=form.sukunimi1.data,
             etunimi2=form.etunimi2.data,
@@ -236,7 +214,7 @@ class _Controller(FormController):
             sukunimi4=form.sukunimi4.data,
             etunimi5=form.etunimi5.data,
             sukunimi5=form.sukunimi5.data,
-            consent0=form.consent0.data,
+            privacy_consent=form.consent0.data,
             datetime=nowtime
         )
 
@@ -247,10 +225,10 @@ def _get_data_table_info() -> DataTableInfo:
         ('aika', 'aika'),
         ('huone1800', 'huone1800'),
         ('huone1930', 'huone1930'),
-        ('etunimi0', 'etunimi0'),
-        ('sukunimi0', 'sukunimi0'),
-        ('phone0', 'phone0'),
-        ('email0', 'email0'),
+        ('firstname', 'etunimi0'),
+        ('lastname', 'sukunimi0'),
+        ('phone_number', 'phone0'),
+        ('email', 'email0'),
         ('etunimi1', 'etunimi1'),
         ('sukunimi1', 'sukunimi1'),
         ('etunimi2', 'etunimi2'),
@@ -261,7 +239,7 @@ def _get_data_table_info() -> DataTableInfo:
         ('sukunimi4', 'sukunimi4'),
         ('etunimi5', 'etunimi5'),
         ('sukunimi5', 'sukunimi5'),
-        ('consent0', 'hyväksyn tietosuojaselosteen'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
         ('datetime', 'datetime')
     ]
     return DataTableInfo(table_structure)

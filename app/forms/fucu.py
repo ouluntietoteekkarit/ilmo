@@ -7,7 +7,7 @@ from typing import Any, List, Iterable, Tuple
 from app import db
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
-from .forms_util.models import BasicModel
+from .forms_util.models import BasicModel, PhoneNumberMixin, DepartureBusstopMixin
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -77,36 +77,15 @@ class _Form(FlaskForm):
     submit = SubmitField('Ilmoittaudu')
 
 
-class _Model(db.Model):
+class _Model(BasicModel, PhoneNumberMixin, DepartureBusstopMixin):
     __tablename__ = _form_name
-    id = db.Column(db.Integer, primary_key=True)
-    etunimi = db.Column(db.String(64))
-    sukunimi = db.Column(db.String(64))
-    email = db.Column(db.String(128))
-    puh = db.Column(db.String(32))
-    lahtopaikka = db.Column(db.String(32))
     kiintio = db.Column(db.String(32))
-    consent0 = db.Column(db.Boolean())
-    consent1 = db.Column(db.Boolean())
-    datetime = db.Column(db.DateTime())
-
-    def get_firstname(self) -> str:
-        return self.etunimi
-
-    def get_lastname(self) -> str:
-        return self.sukunimi
-
-    def get_email(self) -> str:
-        return self.email
-
-    def get_show_name_consent(self) -> bool:
-        return self.consent0
 
 
 class _Controller(FormController):
 
     def __init__(self):
-        event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2025, 11, 4, 21, 00, 00), 5, 20)
+        event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2021, 11, 4, 21, 00, 00), 5, 20)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
     def post_request_handler(self, request) -> Any:
@@ -117,7 +96,7 @@ class _Controller(FormController):
         firstname = form.etunimi.data
         lastname = form.sukunimi.data
         for entry in entries:
-            if entry.etunimi == firstname and entry.sukunimi == lastname:
+            if entry.firstname == firstname and entry.lastname == lastname:
                 return True
         return False
 
@@ -150,14 +129,14 @@ class _Controller(FormController):
 
     def _form_to_model(self, form, nowtime):
         return _Model(
-            etunimi=form.etunimi.data,
-            sukunimi=form.sukunimi.data,
+            firstname=form.etunimi.data,
+            lastname=form.sukunimi.data,
             email=form.email.data,
-            puh=form.puh.data,
-            lahtopaikka=form.lahtopaikka.data,
+            phone_number=form.puh.data,
+            departure_busstop=form.lahtopaikka.data,
             kiintio=form.kiintio.data,
-            consent0=form.consent0.data,
-            consent1=form.consent1.data,
+            show_name_consent=form.consent0.data,
+            privacy_consent=form.consent1.data,
             datetime=nowtime
         )
 
@@ -165,14 +144,14 @@ class _Controller(FormController):
 def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
     table_structure = [
-        ('etunimi', 'etunimi'),
-        ('sukunimi', 'sukunimi'),
+        ('firstname', 'etunimi'),
+        ('lastname', 'sukunimi'),
         ('email', 'email'),
-        ('puh', 'puhelinnumero'),
-        ('lahtopaikka', 'lahtopaikka'),
+        ('phone_number', 'puhelinnumero'),
+        ('departure_busstop', 'lahtopaikka'),
         ('kiintio', 'kiintio'),
-        ('consent0', 'hyväksyn nimeni julkaisemisen'),
-        ('consent1', 'hyväksyn tietosuojaselosteen'),
+        ('show_name_consent', 'hyväksyn nimeni julkaisemisen'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
         ('datetime', 'datetime')
     ]
     return DataTableInfo(table_structure)
