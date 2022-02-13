@@ -1,0 +1,12 @@
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% macro form_field_errors(errors) %}
+    {% for e in errors %}
+        <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}</p>
+    {% endfor %}
+{% endmacro %}
+
+{% macro form_field(field) %}
+    {{ wtf.form_field(field) }}
+
+{% endmacro %}
