@@ -99,14 +99,12 @@ class FormController(ABC):
             flash(error_msg)
             return self._render_index_view(entries, event, nowtime, form)
 
-        db.session.add(self._form_to_model(form, nowtime))
-        db.session.commit()
-
-        reserve = count >= event.get_participant_limit()
-        msg = self._get_email_msg(form, reserve)
-        subject = self._context.get_event().get_title()
-        flash(_make_success_msg(reserve))
-        send_email(msg, subject, self._get_email_recipient(form))
+        if self._insert_model(form, nowtime):
+            reserve = count >= event.get_participant_limit()
+            msg = self._get_email_msg(form, reserve)
+            subject = self._context.get_event().get_title()
+            flash(_make_success_msg(reserve))
+            send_email(msg, subject, self._get_email_recipient(form))
 
         return self._render_index_view(entries, event, nowtime, form)
 
@@ -130,6 +128,18 @@ class FormController(ABC):
 
         return ""
 
+    def _insert_model(self, form: FlaskForm, nowtime) -> bool:
+        try:
+            db.session.add(self._form_to_model(form, nowtime))
+            db.session.commit()
+            return True
+
+        except Exception as e:
+            db.session.rollback()
+            flash('Tietokanta virhe. Yritä uudestaan.')
+            print(e)
+
+        return False
 
     def _render_index_view(self, entries, event: Event, nowtime, form: FlaskForm, **extra_template_args) -> Any:
         """

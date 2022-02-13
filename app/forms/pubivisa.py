@@ -138,10 +138,9 @@ class _Controller(FormController):
             return self._render_index_view(entries, event, nowtime, form,
                                            participant_count=totalcount)
 
-        db.session.add(self._form_to_model(form, nowtime))
-        db.session.commit()
+        if self._insert_model(form, nowtime):
+            flash('Ilmoittautuminen onnistui')
 
-        flash('Ilmoittautuminen onnistui')
         return self._render_index_view(entries, event, nowtime, form, participant_count=totalcount)
 
     def _render_index_view(self, entries, event: Event, nowtime, form: _Form, **extra_template_args) -> Any:

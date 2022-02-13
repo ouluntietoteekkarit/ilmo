@@ -106,7 +106,7 @@ class _Model(db.Model):
 class _Controller(FormController):
 
     def __init__(self):
-        event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2021, 11, 4, 21, 00, 00), 5, 20)
+        event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2025, 11, 4, 21, 00, 00), 5, 20)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
     def post_request_handler(self, request) -> Any:

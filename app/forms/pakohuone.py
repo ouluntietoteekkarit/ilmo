@@ -178,10 +178,9 @@ class _Controller(FormController):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
                 return self._render_index_view(entries, count, event, nowtime, form)
 
-        db.session.add(self._form_to_model(form, nowtime))
-        db.session.commit()
+        if self._insert_model(form, nowtime):
+            flash('Ilmoittautuminen onnistui')
 
-        flash('Ilmoittautuminen onnistui')
         return self._render_index_view(entries, count, event, nowtime, form)
 
     def _render_index_view(self, entries, event: Event, nowtime, form: _Form, **extra_template_args) -> Any:
