@@ -8,8 +8,7 @@ from typing import Any
 from app import db
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.guilds import *
-from .forms_util.event import Event
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -103,6 +102,17 @@ class _Model(db.Model):
 
     personcount = db.Column(db.Integer())
 
+    def get_firstname(self) -> str:
+        return self.etunimi0
+
+    def get_lastname(self) -> str:
+        return self.sukunimi0
+
+    def get_email(self) -> str:
+        return self.email0
+
+    def get_show_name_consent(self) -> bool:
+        return self.consent0
 
 class _Controller(FormController):
 
@@ -233,13 +243,32 @@ class _Controller(FormController):
 
 
 def _get_data_table_info() -> DataTableInfo:
-    # MEMO: Order of these two arrays must sync. Order of _Model attributes matters.
-    table_headers = ['etunimi0', 'sukunimi0', 'phone0', 'email0', 'kilta0',
-                     'etunimi1', 'sukunimi1', 'phone1', 'email1', 'kilta1',
-                     'etunimi2', 'sukunimi2', 'phone2', 'email2', 'kilta2',
-                     'etunimi3', 'sukunimi3', 'phone3', 'email3', 'kilta3',
-                     'hyväksyn nimen julkaisemisen', 'hyväksyn tietosuojaselosteen',
-                     'ymmärrän että ilmoittautuminen on sitova', 'datetime']
+    # MEMO: (attribute, header_text)
     # MEMO: Exclude id, teamname and person count
-    model_attributes = _Model.__table__.columns.keys()[2:-1]
-    return DataTableInfo(table_headers, model_attributes)
+    table_structure = [
+        ('etunimi0', 'etunimi0'),
+        ('sukunimi0', 'sukunimi0'),
+        ('phone0', 'phone0'),
+        ('email0', 'email0'),
+        ('kilta0', 'kilta0'),
+        ('etunimi1', 'etunimi1'),
+        ('sukunimi1', 'sukunimi1'),
+        ('phone1', 'phone1'),
+        ('email1', 'email1'),
+        ('kilta1', 'kilta1'),
+        ('etunimi2', 'etunimi2'),
+        ('sukunimi2', 'sukunimi2'),
+        ('phone2', 'phone2'),
+        ('email2', 'email2'),
+        ('kilta2', 'kilta2'),
+        ('etunimi3', 'etunimi3'),
+        ('sukunimi3', 'sukunimi3'),
+        ('phone3', 'phone3'),
+        ('email3', 'email3'),
+        ('kilta3', 'kilta3'),
+        ('consent0', 'hyväksyn nimen julkaisemisen'),
+        ('consent1', 'hyväksyn tietosuojaselosteen'),
+        ('consent2', 'ymmärrän että ilmoittautuminen on sitova'),
+        ('datetime', 'datetime')
+    ]
+    return DataTableInfo(table_structure)

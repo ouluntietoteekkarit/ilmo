@@ -3,9 +3,7 @@
 {% import "macros.html" as macros %}
 
 {% block content %}
-
     <script src="{{ url_for('static',filename='pakohuone.js') }}"></script>
-
     <script type="text/javascript">
         var varatut = myFunc({{ varatut | tojson }});
     </script>
@@ -19,13 +17,11 @@
 
         <div class="container p-3">
             <div>
-                <h4>{{ title }}</h4>
+                <h4>{{ event.get_title() }}</h4>
                 <h6>* merkityt kohdat pakollisia</h6>
-                <h6>
-                    <a href="{{ url_for('static',filename='tietosuojaseloste_pakohuone.pdf') }}">Tietosuojaseloste</a>
-                </h6>
+                {{ macros.privacy_statement('tietosuojaseloste_pakohuone.pdf') }}
             </div>
-            {% if starttime < nowtime < endtime %}
+            {% if event.get_start_time() < nowtime < event.get_end_time() %}
                 <form class="form form-horizontal" method="post" role="form">
                     {{ form.hidden_tag() }}
                     {{ macros.form_field(form.aika) }}
@@ -53,24 +49,23 @@
                     <button class="btn btn-info">
                         {{ macros.form_field(form.submit) }}
                     </button>
-                    <p>Ilmoittautuminen päättyy {{ endtime }}</p>
-
+                    <p>Ilmoittautuminen päättyy {{ event.get_end_time() }}</p>
                 </form>
-            {% elif nowtime < starttime %}
-                <p>Ilmoittautuminen alkaa {{ starttime }}</p>
+            {% elif nowtime < event.get_start_time() %}
+                <p>Ilmoittautuminen alkaa {{ event.get_start_time() }}</p>
             {% else %}
                 <p>Ilmoittautuminen on päättynyt</p>
             {% endif %}
 
-            <h3>Osallistujat: {{ entrys|length }}/{{ limit }}</h3>
-            <!--{% for entry in entrys %}
-                    {% if entry.consent0 %}
-                        <p>{{ entry.teamname }}
-                        {% if loop.index > limit %}
-                            (Varasijalla)
-                        {% endif %}</p>
-                    {% endif %}
-                {% endfor %}-->
+            {{ macros.participant_count(entries|length, event) }}
+            {#
+            {% call(entry) macros.participant_list_routine(entries, event, 0, event.get_participant_limit()) %}
+                <p>{{ entry.teamname }}</p>
+            {% endcall %}
+            {% call(entry) macros.participant_list_routine(entries, event, event.get_participant_limit(), event.get_max_limit()) %}
+                <p>{{ entry.teamname }} (Varasijalla)</p>
+            {% endcall %}
+            #}
         </div>
     </div>
 {% endblock %}

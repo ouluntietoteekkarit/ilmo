@@ -6,7 +6,40 @@
     {% endfor %}
 {% endmacro %}
 
+
 {% macro form_field(field) %}
     {{ wtf.form_field(field) }}
+{% endmacro %}
 
+
+{% macro privacy_statement(filename) %}
+    <h6><a href="{{ url_for('static',filename=filename) }}">Tietosuojaseloste</a></h6>
+{% endmacro %}
+
+
+{% macro participant_list_routine(entries, event, start, end) %}
+    {% for entry in entries[start:end] %}
+        {% if entry.get_show_name_consent() %}
+            {{ caller(entry) }}
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
+
+{% macro participant_list(entries, event) %}
+    {% set limit = event.get_participant_limit() %}
+    {% set maxlimit = event.get_max_limit() %}
+
+    {% call(entry) participant_list_routine(entries, event, 0, limit) %}
+        <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }}</p>
+    {% endcall %}
+
+    {% call(entry) participant_list_routine(entries, event, limit, maxlimit) %}
+        <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }} (Varasijalla)</p>
+    {% endcall %}
+{% endmacro %}
+
+
+{% macro participant_count(count, event) %}
+    <h3>Osallistujat: {{ count }}/{{ event.get_participant_limit() }}</h3>
 {% endmacro %}

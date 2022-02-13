@@ -3,14 +3,13 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from flask import send_from_directory, abort, render_template, flash
-from typing import Any, Type, TYPE_CHECKING
+from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email
 
 if TYPE_CHECKING:
     from flask_wtf import FlaskForm
-    from .event import Event
     from .form_module_info import ModuleInfo
 
 
@@ -133,12 +132,9 @@ class FormController(ABC):
         module_info = self._context.get_module_info()
         form_name = module_info.get_form_name()
         return render_template('{}/index.html'.format(form_name), **{
-                                   'title': event.get_title(),
-                                   'entrys': entries,
-                                   'starttime': event.get_start_time(),
-                                   'endtime': event.get_end_time(),
+                                   'entries': entries,
+                                   'event': event,
                                    'nowtime': nowtime,
-                                   'limit': event.get_participant_limit(),
                                    'form': form,
                                    'module_info': module_info,
                                    **extra_template_args})
@@ -147,7 +143,6 @@ class FormController(ABC):
         """
         A helper method to render a data view template.
         """
-
         module_info = self._context.get_module_info()
         model = self._context.get_model_type()
         event = self._context.get_event()
@@ -185,12 +180,39 @@ def _make_success_msg(reserve: bool):
 
 class DataTableInfo:
 
-    def __init__(self, table_headers, attribute_names):
-        self._table_headers = table_headers
-        self._attribute_names = attribute_names
+    def __init__(self, table_structure: Iterable[Tuple[str, str]]):
+        (self._attribute_names, self._table_headers) = list(zip(*table_structure))
 
     def get_header_names(self):
         return self._table_headers
 
     def get_attribute_names(self):
         return self._attribute_names
+
+
+class Event(object):
+
+    def __init__(self, title: str, start_time, end_time, participant_limit: int, participant_reserve: int):
+        self.title = title
+        self._start_time = start_time
+        self._end_time = end_time
+        self._participant_limit = participant_limit
+        self._participant_reserve = participant_reserve
+
+    def get_title(self) -> str:
+        return self.title
+
+    def get_start_time(self):
+        return self._start_time
+
+    def get_end_time(self):
+        return self._end_time
+
+    def get_participant_limit(self) -> int:
+        return self._participant_limit
+
+    def get_participant_reserve(self) -> int:
+        return self._participant_reserve
+
+    def get_max_limit(self) -> int:
+        return self._participant_limit + self._participant_reserve

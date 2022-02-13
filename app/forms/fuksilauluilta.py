@@ -5,8 +5,7 @@ from datetime import datetime
 from typing import Any
 
 from app import db
-from .forms_util.event import Event
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
@@ -46,6 +45,18 @@ class _Model(db.Model):
     email = db.Column(db.String(128))
     consent1 = db.Column(db.Boolean())
     datetime = db.Column(db.DateTime())
+
+    def get_firstname(self) -> str:
+        return self.etunimi
+
+    def get_lastname(self) -> str:
+        return self.sukunimi
+
+    def get_email(self) -> str:
+        return self.email
+
+    def get_show_name_consent(self) -> bool:
+        return False
 
 
 class _Controller(FormController):
@@ -89,7 +100,12 @@ class _Controller(FormController):
 
 
 def _get_data_table_info() -> DataTableInfo:
-    # MEMO: Order of these two arrays must sync. Order of _Model attributes matters.
-    table_headers = ['etunimi', 'sukunimi', 'email', 'hyväksyn tietosuojaselosteen', 'datetime']
-    model_attributes = _Model.__table__.columns.keys()[1:]
-    return DataTableInfo(table_headers, model_attributes)
+    # MEMO: (attribute, header_text)
+    table_structure = [
+        ('etunimi', 'etunimi'),
+        ('sukunimi', 'sukunimi'),
+        ('email', 'email'),
+        ('consent1', 'hyväksyn tietosuojaselosteen'),
+        ('datetime', 'datetime')
+    ]
+    return DataTableInfo(table_structure)

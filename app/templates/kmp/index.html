@@ -3,9 +3,7 @@
 {% import "macros.html" as macros %}
 
 {% block content %}
-
     <!--<script src="{{ url_for('static',filename='kmp.js') }}"></script>-->
-
     <div class="container p-3" style="max-width: 800px; background-color: white; opacity: 0.9;">
 
         <h4>KMP ilmoittautuminen</h4>
@@ -14,13 +12,11 @@
 
         <div class="container p-3">
             <div>
-                <h5>{{ title }}</h5>
+                <h5>{{ event.get_title() }}</h5>
                 <h6>* merkityt kohdat pakollisia</h6>
-                <h6>
-                    <a href="{{ url_for('static',filename='kmp_tietosuojaseloste.pdf') }}">Tietosuojaseloste</a>
-                </h6>
+                {{ macros.privacy_statement('kmp_tietosuojaseloste.pdf') }}
             </div>
-            {% if starttime < nowtime < endtime %}
+            {% if event.get_start_time() < nowtime < event.get_end_time() %}
                 <form class="form form-horizontal" method="post" role="form">
                     {{ form.hidden_tag() }}
                     {{ macros.form_field(form.etunimi) }}
@@ -34,33 +30,17 @@
                     <button class="btn btn-info">
                         {{ macros.form_field(form.submit) }}
                     </button>
-                    <h5>Ilmoittautuminen päättyy {{ endtime }}</h5>
-                    <h3>Osallistujat: {{ entrys|length }}/{{ limit }}</h3>
-                    {% for entry in entrys %}
-                        {% if entry.consent0 %}
-                            <p>{{ entry.etunimi }} {{ entry.sukunimi }}
-                                {% if loop.index > limit %}
-                                    (Varasijalla)
-                                {% endif %}
-                            </p>
-                        {% endif %}
-                    {% endfor %}
+                    <h5>Ilmoittautuminen päättyy {{ event.get_end_time() }}</h5>
+                    {{ macros.participant_count(entries|length, event) }}
+                    {{ macros.participant_list(entries, event) }}
 
                 </form>
-            {% elif nowtime < starttime %}
-                <h5>Ilmoittautuminen alkaa {{ starttime }}</h5>
+            {% elif nowtime < event.get_start_time() %}
+                <h5>Ilmoittautuminen alkaa {{ event.get_start_time() }}</h5>
             {% else %}
                 <h5>Ilmoittautuminen on päättynyt</h5>
-                <h3>Osallistujat: {{ entries|length }}/{{ limit }}</h3>
-                {% for entry in entrys %}
-                    {% if entry.consent0 %}
-                        <p>{{ entry.etunimi }} {{ entry.sukunimi }}
-                            {% if loop.index > limit %}
-                                (Varasijalla)
-                            {% endif %}
-                        </p>
-                    {% endif %}
-                {% endfor %}
+                {{ macros.participant_count(entries|length, event) }}
+                {{ macros.participant_list(entries, event) }}
             {% endif %}
         </div>
     </div>
