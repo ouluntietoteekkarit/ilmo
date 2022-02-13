@@ -3,7 +3,7 @@
 {% import "macros.html" as macros %}
 
 {% block content %}
-    <script src="{{ url_for('static',filename='pakohuone.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/pakohuone.js') }}"></script>
     <script type="text/javascript">
         var varatut = myFunc({{ varatut | tojson }});
     </script>
