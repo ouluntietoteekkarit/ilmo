@@ -47,18 +47,19 @@ class FormController(ABC):
     def get_request_handler(self, request) -> Any:
         """
         Render the requested form for this event.
+        Can be overridden in inheriting class to alter the behaviour.
         """
         form = self._context.get_form_type()()
         event = self._context.get_event()
         entries = self._context.get_model_type().query.all()
         return self._render_index_view(entries, event, datetime.now(), form)
 
-    @abstractmethod
     def post_request_handler(self, request) -> Any:
         """
         Handle the submitted form for this event.
+        Can be overridden in inheriting class to alter the behaviour.
         """
-        pass
+        return self._post_routine(self._context.get_form_type()(), self._context.get_model_type())
 
     @abstractmethod
     def _find_from_entries(self, entries, form: FlaskForm) -> bool:
@@ -92,38 +93,43 @@ class FormController(ABC):
         nowtime = datetime.now()
         entries = model.query.all()
         count = len(entries)
-        maxlimit = event.get_participant_limit() + event.get_participant_reserve()
 
-        if nowtime < event.get_start_time():
-            flash('Ilmoittautuminen ei ole alkanut')
+        error_msg = self._check_form_submit(event, form, entries, nowtime, count)
+        if len(error_msg) != 0:
+            flash(error_msg)
             return self._render_index_view(entries, event, nowtime, form)
 
-        if nowtime > event.get_end_time():
-            flash('Ilmoittautuminen on päättynyt')
-            return self._render_index_view(entries, event, nowtime, form)
+        db.session.add(self._form_to_model(form, nowtime))
+        db.session.commit()
 
-        if count >= maxlimit:
-            flash('Ilmoittautuminen on jo täynnä')
-            return self._render_index_view(entries, event, nowtime, form)
-
-        if self._find_from_entries(entries, form):
-            flash('Olet jo ilmoittautunut')
-            return self._render_index_view(entries, event, nowtime, form)
-
-        if form.validate_on_submit():
-            db.session.add(self._form_to_model(form, nowtime))
-            db.session.commit()
-
-            reserve = count >= event.get_participant_limit()
-            msg = self._get_email_msg(form, reserve)
-            subject = self._context.get_event().get_title()
-            flash(_make_success_msg(reserve))
-            send_email(msg, subject, self._get_email_recipient(form))
-
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+        reserve = count >= event.get_participant_limit()
+        msg = self._get_email_msg(form, reserve)
+        subject = self._context.get_event().get_title()
+        flash(_make_success_msg(reserve))
+        send_email(msg, subject, self._get_email_recipient(form))
 
         return self._render_index_view(entries, event, nowtime, form)
+
+    def _check_form_submit(self, event: Event, form: FlaskForm, entries,
+                           nowtime, participant_count: int) -> str:
+
+        if not form.validate_on_submit():
+            return 'Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot'
+
+        if nowtime < event.get_start_time():
+            return 'Ilmoittautuminen ei ole alkanut'
+
+        if nowtime > event.get_end_time():
+            return 'Ilmoittautuminen on päättynyt'
+
+        if participant_count >= event.get_max_limit():
+            return 'Ilmoittautuminen on jo täynnä'
+
+        if self._find_from_entries(entries, form):
+            return 'Olet jo ilmoittautunut'
+
+        return ""
+
 
     def _render_index_view(self, entries, event: Event, nowtime, form: FlaskForm, **extra_template_args) -> Any:
         """

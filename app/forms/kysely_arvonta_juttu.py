@@ -59,6 +59,7 @@ class _Model(db.Model):
     def get_show_name_consent(self) -> bool:
         return False
 
+
 class _Controller(FormController):
 
     def __init__(self):
@@ -73,26 +74,17 @@ class _Controller(FormController):
         entries = _Model.query.all()
         count = len(entries)
 
-        if count >= event.get_participant_limit():
-            flash('Ilmoittautuminen on jo täynnä')
+        error_msg = self._check_form_submit(event, form, entries, nowtime, count)
+        if len(error_msg) != 0:
+            flash(error_msg)
             return self._render_index_view(entries, event, nowtime, form)
 
-        if self._find_from_entries(entries, form):
-            flash('Olet jo ilmoittautunut')
-            return self._render_index_view(entries, event, nowtime, form)
+        db.session.add(self._form_to_model(form, nowtime))
+        db.session.commit()
 
-        if form.validate_on_submit():
-            db.session.add(self._form_to_model(form, nowtime))
-            db.session.commit()
-
-            flash('Ilmoittautuminen onnistui')
-            # return redirect(url_for('route_get_kysely_arvonta_juttu'))
-            return render_template('kysely_arvonta_juttu/redirect.html')
-
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
-
-        return self._render_index_view(entries, event, nowtime, form)
+        flash('Ilmoittautuminen onnistui')
+        return render_template('kysely_arvonta_juttu/redirect.html')
+        #return self._render_index_view(entries, event, nowtime, form)
 
     def _find_from_entries(self, entries, form: _Form) -> bool:
         firstname = form.etunimi.data

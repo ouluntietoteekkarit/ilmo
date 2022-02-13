@@ -114,6 +114,7 @@ class _Model(db.Model):
     def get_show_name_consent(self) -> bool:
         return self.consent0
 
+
 class _Controller(FormController):
 
     def __init__(self):
@@ -131,35 +132,17 @@ class _Controller(FormController):
         group_size = self._count_members(form)
         totalcount += group_size
 
-        if nowtime > event.get_end_time():
-            flash('Ilmoittautuminen on päättynyt')
+        error_msg = self._check_form_submit(event, form, entries, nowtime, totalcount)
+        if len(error_msg) != 0:
+            flash(error_msg)
             return self._render_index_view(entries, event, nowtime, form,
                                            participant_count=totalcount)
 
-        if totalcount >= event.get_participant_limit():
-            flash('Ilmoittautuminen on jo täynnä')
-            totalcount -= group_size
-            return self._render_index_view(entries, event, nowtime, form,
-                                           participant_count=totalcount)
+        db.session.add(self._form_to_model(form, nowtime))
+        db.session.commit()
 
-        if self._find_from_entries(entries, form):
-            flash('Olet jo ilmoittautunut')
-            return self._render_index_view(entries, event, nowtime, form,
-                                           participant_count=totalcount)
-
-        if form.validate_on_submit():
-            db.session.add(self._form_to_model(form, nowtime))
-            db.session.commit()
-
-            flash('Ilmoittautuminen onnistui')
-            form_info = get_module_info()
-            return redirect(url_for(form_info.get_endpoint_get_index()))
-
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
-
-        return self._render_index_view(entries, event, nowtime, form,
-                                       participant_count=totalcount)
+        flash('Ilmoittautuminen onnistui')
+        return self._render_index_view(entries, event, nowtime, form, participant_count=totalcount)
 
     def _render_index_view(self, entries, event: Event, nowtime, form: _Form, **extra_template_args) -> Any:
         participant_count = self._count_participants(entries)

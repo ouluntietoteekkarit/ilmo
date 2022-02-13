@@ -164,13 +164,10 @@ class _Controller(FormController):
         entries = _Model.query.all()
         count = len(entries)
 
-        if count >= event.get_participant_limit():
-            flash('Ilmoittautuminen on jo täynnä')
-            return self._render_index_view(entries, count, event, nowtime, form)
-
-        if self._find_from_entries(entries, form):
-            flash('Olet jo ilmoittautunut')
-            return self._render_index_view(entries, count, event, nowtime, form, )
+        error_msg = self._check_form_submit(event, form, entries, nowtime, count)
+        if len(error_msg) != 0:
+            flash(error_msg)
+            return self._render_index_view(entries, event, nowtime, form)
 
         chosen_time = form.aika.data
         early_room = form.huone1800.data
@@ -181,17 +178,10 @@ class _Controller(FormController):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
                 return self._render_index_view(entries, count, event, nowtime, form)
 
-        if form.validate_on_submit():
-            db.session.add(self._form_to_model(form, nowtime))
-            db.session.commit()
+        db.session.add(self._form_to_model(form, nowtime))
+        db.session.commit()
 
-            flash('Ilmoittautuminen onnistui')
-            form_info = get_module_info()
-            return redirect(url_for(form_info.get_endpoint_get_index()))
-
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
-
+        flash('Ilmoittautuminen onnistui')
         return self._render_index_view(entries, count, event, nowtime, form)
 
     def _render_index_view(self, entries, event: Event, nowtime, form: _Form, **extra_template_args) -> Any:

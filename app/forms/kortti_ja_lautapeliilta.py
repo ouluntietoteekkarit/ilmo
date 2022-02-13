@@ -66,6 +66,7 @@ class _Model(db.Model):
     def get_show_name_consent(self) -> bool:
         return self.consent0
 
+
 class _Controller(FormController):
 
     def __init__(self):

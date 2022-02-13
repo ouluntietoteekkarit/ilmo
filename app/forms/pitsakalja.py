@@ -127,6 +127,7 @@ class _Controller(FormController):
                 return True
         return False
 
+    # MEMO: "Evil" Covariant parameter
     def _get_email_recipient(self, form: _Form) -> str:
         return str(form.email.data)
 
