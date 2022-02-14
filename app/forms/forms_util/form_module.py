@@ -56,12 +56,11 @@ class ModuleInfo:
 
 
 def file_path_to_form_name(path: Union[str, Path]) -> str:
+    """Reduces a file path plain filename"""
     # MEMO: Add sanitation if needed
     return splitext(split(path)[1])[0]
 
 
 def init_module(file_path: str) -> Tuple[None, str]:
-    """
-    Returns initial values for a form module's global variables.
-    """
+    """Returns initial values for a form module's global variables."""
     return None, file_path_to_form_name(file_path)

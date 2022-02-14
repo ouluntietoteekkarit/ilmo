@@ -8,8 +8,8 @@ from typing import Any
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_module import ModuleInfo, init_module
-from .forms_util.forms import RequiredIfValue, basic_form, PhoneNumberField, get_str_choices
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.forms import RequiredIfValue, PhoneNumberField, get_str_choices, BasicForm
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
 from .forms_util.models import BasicModel, PhoneNumberColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
@@ -50,7 +50,8 @@ def _get_game_times():
     ]
 
 
-class _Form(basic_form(), PhoneNumberField):
+@PhoneNumberField()
+class _Form(BasicForm):
     aika = RadioField('Aika *', choices=get_str_choices(_get_game_times()), validators=[DataRequired()])
     huone1800 = RadioField('Huone (18:00) *', choices=get_str_choices(_get_escape_games()),
                            validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
@@ -95,7 +96,7 @@ class _Model(BasicModel, PhoneNumberColumn):
     sukunimi5 = db.Column(db.String(64))
 
 
-_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0, False)
+_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0, _Form.asks_name_consent)
 
 
 class _Controller(FormController):
@@ -106,15 +107,14 @@ class _Controller(FormController):
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         form = _Form()
-        event = self._context.get_event()
         nowtime = datetime.now()
         entries = _Model.query.all()
-        count = len(entries)
+        registrations = EventRegistrations(entries, self._count_participants(entries))
 
-        error_msg = self._check_form_submit(event, form, entries, nowtime, count)
+        error_msg = self._check_form_submit(registrations, form, nowtime)
         if len(error_msg) != 0:
             flash(error_msg)
-            return self._render_index_view(entries, event, nowtime, form)
+            return self._render_index_view(registrations, form, nowtime)
 
         chosen_time = form.aika.data
         early_room = form.huone1800.data
@@ -123,19 +123,19 @@ class _Controller(FormController):
             if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (
                     entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-                return self._render_index_view(entries, count, event, nowtime, form)
+                return self._render_index_view(registrations, form, nowtime)
 
         model = self._form_to_model(form, nowtime)
         if self._insert_model(model):
             flash('Ilmoittautuminen onnistui')
 
-        return self._render_index_view(entries, count, event, nowtime, form)
+        return self._render_index_view(registrations, form, nowtime)
 
-    def _render_index_view(self, entries, event: Event, nowtime, form: _Form, **extra_template_args) -> Any:
+    def _render_index_view(self, registrations: EventRegistrations, form: _Form, nowtime, **extra_template_args) -> Any:
         varatut = []
-        for entry in entries:
+        for entry in registrations.get_entries():
             varatut.append((entry.aika, entry.huone1800, entry.huone1930))
-        return super()._render_index_view(entries, event, nowtime, form, **{
+        return super()._render_index_view(registrations, form, nowtime, **{
             'varatut': json.dumps(varatut),
             **extra_template_args})
 

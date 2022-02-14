@@ -1,7 +1,7 @@
-{% extends "form.html" %}
-{% import "macros.html" as macros %}
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
 
-{% block extra_styles %}
+{%- block extra_styles-%}
     <style>
         body {
             background-image: url("{{ url_for('static', filename='img/pitsakalja.jpg') }}");
@@ -12,13 +12,13 @@
             background-color: white;
         }
     </style>
-{% endblock %}
+{%- endblock -%}
 
-{% block extra_js %}
+{%- block extra_js -%}
     <script src="{{ url_for('static',filename='js/pitsakaljasitsit.js') }}"></script>
-{% endblock %}
+{%- endblock -%}
 
-{% block event_info %}
+{%- block event_info -%}
     <h1>Pitsakalja Sitsit</h1>
 
     <p>Pitsakalja Sitsit 18.11. @Teekkaritalo</p>
@@ -29,34 +29,20 @@
 
     <p>60 ensimmäisen jälkeen ilmoittautuneet ovat varasijoilla.</p>
     <p>Jos on kysyttävää niin voit olla yhteydessä sähköpostitse pepeministeri@otit.fi</p>
-{% endblock %}
+{%- endblock -%}
 
-{% block registration_form %}
-    {% if event.get_start_time() < nowtime < event.get_end_time() %}
-        <form class="form form-horizontal" method="post" role="form">
-            {{ form.hidden_tag() }}
-            {{ macros.form_field(form.firstname) }}
-            {{ macros.form_field(form.lastname) }}
-            {{ macros.form_field(form.email) }}
-            {{ macros.form_field(form.alkoholi) }}
-            <div id="mieto" style="display: none;">
-                {{ macros.form_field(form.mieto) }}
-            </div>
-            {{ macros.form_field(form.pitsa) }}
-            {{ macros.form_field(form.allergiat) }}
-            {{ macros.form_field(form.show_name_consent) }}
-            {{ macros.form_field(form.privacy_consent) }}
-            {{ macros.form_submit_button() }}
-
-            <h5>Ilmoittautuminen päättyy {{ event.get_end_time() }}</h5>
-            {{ macros.participant_count(entries|length, event) }}
-            {{ macros.participant_list(entries, event) }}
-        </form>
-    {% elif nowtime < event.get_start_time() %}
-        <h5>Ilmoittautuminen alkaa {{ event.get_start_time() }}</h5>
-    {% else %}
-        <h5>Ilmoittautuminen on päättynyt</h5>
-        {{ macros.participant_count(entries|length, event) }}
-        {{ macros.participant_list(entries, event) }}
-    {% endif %}
-{% endblock %}
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ macros.form_field(form.firstname) }}
+        {{ macros.form_field(form.lastname) }}
+        {{ macros.form_field(form.email) }}
+        {{ macros.form_field(form.alkoholi) }}
+        <div id="mieto" style="display: none;">
+            {{ macros.form_field(form.mieto) }}
+        </div>
+        {{ macros.form_field(form.pitsa) }}
+        {{ macros.form_field(form.allergiat) }}
+        {{ macros.form_field(form.show_name_consent) }}
+        {{ macros.form_field(form.privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}

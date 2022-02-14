@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from .forms_util.forms import basic_form, show_name_consent_field, binding_registration_consent_field
-from .forms_util.forms import guild_field, PhoneNumberField
+from .forms_util.forms import ShowNameConsentField, BindingRegistrationConsentField, BasicForm
+from .forms_util.forms import GuildField, PhoneNumberField
 from .forms_util.guilds import *
 from .forms_util.form_module import ModuleInfo, init_module
 from .forms_util.guilds import get_guild_choices
@@ -22,12 +22,11 @@ def get_module_info() -> ModuleInfo:
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
-_name_consent_type = show_name_consent_field()
-class _Form(basic_form(),
-            PhoneNumberField,
-            guild_field(get_guild_choices(get_all_guilds())),
-            _name_consent_type,
-            binding_registration_consent_field()):
+@BindingRegistrationConsentField()
+@ShowNameConsentField()
+@GuildField(get_guild_choices(get_all_guilds()))
+@PhoneNumberField()
+class _Form(BasicForm):
     pass
 
 
@@ -35,7 +34,7 @@ class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationCons
     __tablename__ = _form_name
 
 
-_event = Event('Kortti- ja lautapeli-ilta ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 50, 0, issubclass(_Form, _name_consent_type))
+_event = Event('Kortti- ja lautapeli-ilta ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 50, 0, _Form.asks_name_consent)
 
 
 class _Controller(FormController):

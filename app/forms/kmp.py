@@ -4,8 +4,8 @@ from typing import List, Iterable, Tuple
 from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_controller import FormController, DataTableInfo, Event
 from .forms_util.form_module import ModuleInfo, init_module
-from .forms_util.forms import basic_form, show_name_consent_field, PhoneNumberField, departure_busstop_field, \
-    binding_registration_consent_field
+from .forms_util.forms import PhoneNumberField, DepartureBusstopField, ShowNameConsentField, \
+    BindingRegistrationConsentField, BasicForm
 from .forms_util.models import BasicModel, DepartureBusstopColumn, PhoneNumberColumn
 from .forms_util.models import BindingRegistrationConsentColumn
 
@@ -41,13 +41,11 @@ def _get_choise(values: Iterable[str]) -> List[Tuple[str, str]]:
     return choices
 
 
-registration_txt = 'Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *'
-_name_consent_type = show_name_consent_field()
-class _Form(basic_form(),
-            PhoneNumberField,
-            departure_busstop_field(_get_choise(_get_departure_stops())),
-            _name_consent_type,
-            binding_registration_consent_field(registration_txt)):
+@BindingRegistrationConsentField('Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *')
+@ShowNameConsentField()
+@DepartureBusstopField(_get_choise(_get_departure_stops()))
+@PhoneNumberField()
+class _Form(BasicForm):
     pass
 
 
@@ -56,7 +54,7 @@ class _Model(BasicModel, DepartureBusstopColumn, PhoneNumberColumn, BindingRegis
 
 
 _event = Event('OTiT KMP ilmoittautuminen', datetime(2021, 11, 19, 13, 37, 37), datetime(2021, 12, 3, 2, 00, 00),
-               15, 15, issubclass(_Form, _name_consent_type))
+               15, 15, _Form.asks_name_consent)
 
 
 class _Controller(FormController):

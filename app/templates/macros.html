@@ -1,21 +1,24 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
-{% macro form_field_errors(errors) %}
-    {% for e in errors %}
-        <p class="alert alert-primary alert-dismissible" role="alert">{{ e }}</p>
-    {% endfor %}
-{% endmacro %}
 
-
-{% macro registration_form(form) %}
+{% macro registration_form_routine(form) %}
     <form class="form form-horizontal" method="post" role="form">
-        {{ form.hidden_tag() }}
-        {%- for field in form -%}
-            {{ form_field(field) }}
-        {%- endfor -%}
-        {{ form_submit_button() }}
+        {{- form.hidden_tag() -}}
+        {{- caller() -}}
+        {{- form_submit_button() -}}
     </form>
 {% endmacro %}
+
+
+{% macro basic_registration_form(form) %}
+    {%- call registration_form_routine(form) -%}
+        {{ form_field(form.firstname) }}
+        {{ form_field(form.lastname) }}
+        {{ form_field(form.email) }}
+        {{ form_field(form.privacy_consent) }}
+    {%- endcall -%}
+{% endmacro %}
+
 
 {% macro form_field(field) %}
     {#
@@ -34,8 +37,23 @@
 {% endmacro %}
 
 
+{% macro registration_begins(event) %}
+    <h5>Ilmoittautuminen alkaa {{ event.get_start_time() }}</h5>
+{% endmacro %}
+
+
+{% macro registration_ends(event) %}
+    <h5>Ilmoittautuminen päättyy {{ event.get_end_time() }}</h5>
+{% endmacro %}
+
+
+{% macro registration_ended(event) %}
+    <h5>Ilmoittautuminen on päättynyt</h5>
+{% endmacro %}
+
+
 {% macro privacy_statement(module_info) %}
-    <a href="{{ url_for('static',filename='privacy_statements/' ~ module_info.get_form_name()) }}">Tietosuojaseloste</a>
+    <a href="{{ url_for('static',filename='privacy_statements/' ~ module_info.get_form_name() ~ '.pdf') }}">Tietosuojaseloste</a>
 {% endmacro %}
 
 

@@ -1,7 +1,7 @@
-{% extends "form.html" %}
-{% import "macros.html" as macros %}
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
 
-{% block extra_styles %}
+{%- block extra_styles -%}
     <style>
         body {
             background-image: url("{{ url_for('static',filename='img/bus3_.jpg') }}");
@@ -10,15 +10,15 @@
             background-repeat: repeat;
         }
 
-        div.container:nth-child(1) {
+        div.container.p-3 {
             max-width: 800px;
             background-color: white;
             opacity: 0.9;
         }
     </style>
-{% endblock %}
+{%- endblock -%}
 
-{% block event_info %}
+{%- block event_info -%}
     <h2>Fuksicursio ilmoittautuminen</h2>
     <p><strong>Fukseille ilmainen, muille maksaa 10 euroa.</strong></p>
     <p>Perjantaina 5.11.2021 kello 9:00 alkaen</p>
@@ -30,33 +30,18 @@
     </ul>
     <p><strong>Ole hyvissä ajoin paikalla! Bussi ei voi odottaa myöhästyjiä</strong></p>
     <p>Paluu Ouluun lauantaina noin 06:00 - 07:00</p>
-{% endblock %}
+{%- endblock -%}
 
-{% block registration_form %}
-    {%- if event.get_start_time() < nowtime < event.get_end_time() -%}
-        {{ macros.registration_form(form) }}
-        {#
-        <form class="form form-horizontal" method="post" role="form">
-            {{ form.hidden_tag() }}
-            {{ macros.form_field(form.firstname) }}
-            {{ macros.form_field(form.lastname) }}
-            {{ macros.form_field(form.email) }}
-            {{ macros.form_field(form.phone_number) }}
-            {{ macros.form_field(form.departure_busstop) }}
-            {{ macros.form_field(form.kiintio) }}
-            {{ macros.form_field(form.show_name_consent) }}
-            {{ macros.form_field(form.privacy_consent) }}
-            {{ macros.form_submit_button() }}
-        </form>
-        #}
-        <h5>Ilmoittautuminen päättyy {{ event.get_end_time() }}</h5>
-        {{ macros.participant_count(entries|length, event) }}
-        {{ macros.participant_list(entries, event) }}
-    {%- elif nowtime < event.get_start_time() -%}
-        <h5>Ilmoittautuminen alkaa {{ event.get_start_time() }}</h5>
-    {%- else -%}
-        <h5>Ilmoittautuminen on päättynyt</h5>
-        {{ macros.participant_count(entries|length, event) }}
-        {{ macros.participant_list(entries, event) }}
-    {% endif -%}
-{% endblock %}
+{%- block registration_form -%}
+    {% call macros.registration_form_routine(form) %}
+        {{ macros.form_field(form.firstname) }}
+        {{ macros.form_field(form.lastname) }}
+        {{ macros.form_field(form.email) }}
+        {{ macros.form_field(form.phone_number) }}
+        {{ macros.form_field(form.departure_busstop) }}
+        {{ macros.form_field(form.kiintio) }}
+        {{ macros.form_field(form.show_name_consent) }}
+        {{ macros.form_field(form.privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
+

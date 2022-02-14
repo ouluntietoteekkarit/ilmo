@@ -1,35 +1,22 @@
-{% extends "form.html" %}
-{% import "macros.html" as macros %}
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
 
-{% block event_info %}
+{%- block event_info -%}
     <h1>Kortti- ja lautapeli-ilta</h1>
 
     <p><strong>Mikäli olet sairas etkä pääsekään paikalle, ole yhteydessä Riikka Haatajaan 0442828255 (Whatsapp,
         Telegram tai tekstiviesti)</strong></p>
-{% endblock %}
+{%- endblock -%}
 
-{% block registration_form %}
-    {% if event.get_start_time() < nowtime < event.get_end_time() %}
-        <form class="form form-horizontal" method="post" role="form">
-            {{ form.hidden_tag() }}
-            {{ macros.form_field(form.firstname) }}
-            {{ macros.form_field(form.lastname) }}
-            {{ macros.form_field(form.phone_number) }}
-            {{ macros.form_field(form.email) }}
-            {{ macros.form_field(form.guild_name) }}
-            {{ macros.form_field(form.show_name_consent) }}
-            {{ macros.form_field(form.privacy_consent) }}
-            {{ macros.form_field(form.binding_registration_consent) }}
-            {{ macros.form_submit_button() }}
-
-            <p>Ilmoittautuminen päättyy {{ event.get_end_time() }}</p>
-        </form>
-    {% elif nowtime < event.get_start_time() %}
-        <p>Ilmoittautuminen alkaa {{ event.get_start_time() }}</p>
-    {% else %}
-        <p>Ilmoittautuminen on päättynyt</p>
-    {% endif %}
-
-    {{ macros.participant_count(entries|length, event) }}
-    {{ macros.participant_list(entries, event) }}
-{% endblock %}
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ macros.form_field(form.firstname) }}
+        {{ macros.form_field(form.lastname) }}
+        {{ macros.form_field(form.phone_number) }}
+        {{ macros.form_field(form.email) }}
+        {{ macros.form_field(form.guild_name) }}
+        {{ macros.form_field(form.show_name_consent) }}
+        {{ macros.form_field(form.privacy_consent) }}
+        {{ macros.form_field(form.binding_registration_consent) }}
+    {%- endcall -%}
+{%- endblock -%}

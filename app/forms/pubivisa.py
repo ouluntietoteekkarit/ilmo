@@ -7,9 +7,9 @@ from typing import Any, List
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line, make_fullname_line
 from .forms_util.form_module import ModuleInfo, init_module
-from .forms_util.forms import basic_form, show_name_consent_field, binding_registration_consent_field
+from .forms_util.forms import ShowNameConsentField, BindingRegistrationConsentField, BasicForm
 from .forms_util.guilds import *
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
 from .forms_util.models import BasicModel, BindingRegistrationConsentColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
@@ -23,11 +23,10 @@ def get_module_info() -> ModuleInfo:
     return _form_module
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
-_name_consent_txt = 'Sallin joukkueen nimen julkaisemisen osallistujalistassa'
-_name_consent_type = show_name_consent_field(_name_consent_txt)
-class _Form(basic_form(),
-            _name_consent_type,
-            binding_registration_consent_field()):
+
+@BindingRegistrationConsentField()
+@ShowNameConsentField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
+class _Form(BasicForm):
     teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
 
     phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
@@ -81,7 +80,7 @@ class _Model(BasicModel, BindingRegistrationConsentColumn):
 
 
 _event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
-               datetime(2020, 10, 10, 23, 59, 59), 50, 0, issubclass(_Form, _name_consent_type))
+               datetime(2020, 10, 10, 23, 59, 59), 50, 0, _Form.asks_name_consent)
 
 
 class _Controller(FormController):
@@ -92,30 +91,20 @@ class _Controller(FormController):
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         form = _Form()
-        event = self._context.get_event()
         nowtime = datetime.now()
         entries = _Model.query.all()
-        totalcount = self._count_participants(entries)
-        group_size = self._count_members(form)
-        totalcount += group_size
+        registrations = EventRegistrations(entries, self._count_participants(entries) + self._count_group_members(form))
 
-        error_msg = self._check_form_submit(event, form, entries, nowtime, totalcount)
+        error_msg = self._check_form_submit(registrations, form, nowtime)
         if len(error_msg) != 0:
             flash(error_msg)
-            return self._render_index_view(entries, event, nowtime, form,
-                                           participant_count=totalcount)
+            return self._render_index_view(registrations, form, nowtime)
 
         model = self._form_to_model(form, nowtime)
         if self._insert_model(model):
             flash('Ilmoittautuminen onnistui')
 
-        return self._render_index_view(entries, event, nowtime, form, participant_count=totalcount)
-
-    def _render_index_view(self, entries, event: Event, nowtime, form: _Form, **extra_template_args) -> Any:
-        participant_count = self._count_participants(entries)
-        return super()._render_index_view(entries, event, nowtime, form, **{
-            'participant_count': participant_count,
-            **extra_template_args})
+        return self._render_index_view(registrations, form, nowtime)
 
     def _count_participants(self, entries) -> int:
         total_count = 0
@@ -150,11 +139,11 @@ class _Controller(FormController):
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
         model = super()._form_to_model(form, nowtime)
-        members = self._count_members(form)
+        members = self._count_group_members(form)
         model.personcount = members
         return model
 
-    def _count_members(self, form: _Form) -> int:
+    def _count_group_members(self, form: _Form) -> int:
         members = 0
         members += int(form.etunimi0.data and form.sukunimi0.data)
         members += int(form.etunimi1.data and form.sukunimi1.data)

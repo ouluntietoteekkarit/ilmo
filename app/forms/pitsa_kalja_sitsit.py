@@ -6,7 +6,7 @@ from typing import List
 from app import db
 from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_module import ModuleInfo, init_module
-from .forms_util.forms import RequiredIf, basic_form, show_name_consent_field, get_str_choices
+from .forms_util.forms import RequiredIf, get_str_choices, BasicForm, ShowNameConsentField
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.models import BasicModel
 
@@ -55,8 +55,8 @@ def _get_pizzas() -> List[str]:
     ]
 
 
-_name_consent_type = show_name_consent_field()
-class _Form(basic_form(), _name_consent_type):
+@ShowNameConsentField()
+class _Form(BasicForm):
     alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
     mieto = SelectField('Mieto juoma *', choices=get_str_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value=_DRINK_ALCOHOLIC)])
     pitsa = SelectField('Pitsa *', choices=get_str_choices(_get_pizzas()), validators=[DataRequired()])
@@ -71,7 +71,7 @@ class _Model(BasicModel):
     allergiat = db.Column(db.String(256))
 
 
-_event = Event('OTiT Pitsakaljasitsit ilmoittautuminen', datetime(2021, 10, 26, 12, 00, 00), datetime(2021, 11, 9, 23, 59, 59), 60, 30, issubclass(_Form, _name_consent_type))
+_event = Event('OTiT Pitsakaljasitsit ilmoittautuminen', datetime(2021, 10, 26, 12, 00, 00), datetime(2021, 11, 9, 23, 59, 59), 60, 30, _Form.asks_name_consent)
 
 
 class _Controller(FormController):

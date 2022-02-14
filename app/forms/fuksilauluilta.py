@@ -3,7 +3,7 @@ from datetime import datetime
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module import ModuleInfo, init_module
-from .forms_util.forms import basic_form
+from .forms_util.forms import BasicForm
 from .forms_util.models import BasicModel
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
@@ -18,7 +18,7 @@ def get_module_info() -> ModuleInfo:
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
-class _Form(basic_form()):
+class _Form(BasicForm):
     pass
 
 
@@ -26,7 +26,7 @@ class _Model(BasicModel):
     __tablename__ = _form_name
 
 
-_event = Event('Fuksilauluilta ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 70, 0, False)
+_event = Event('Fuksilauluilta ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00), datetime(2026, 10, 13, 23, 59, 59), 70, 0, _Form.asks_name_consent)
 
 
 class _Controller(FormController):

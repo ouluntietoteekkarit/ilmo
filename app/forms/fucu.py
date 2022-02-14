@@ -1,13 +1,13 @@
 from wtforms import SelectField
 from wtforms.validators import DataRequired
 from datetime import datetime
-from typing import List, Iterable, Tuple
+from typing import List
 
 from app import db
 from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module import ModuleInfo, init_module
-from .forms_util.forms import basic_form, PhoneNumberField, departure_busstop_field, show_name_consent_field
+from .forms_util.forms import PhoneNumberField, DepartureBusstopField, BasicForm, ShowNameConsentField, get_str_choices
 from .forms_util.models import BasicModel, PhoneNumberColumn, DepartureBusstopColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
@@ -49,18 +49,11 @@ def _get_participants() -> List[str]:
     ]
 
 
-def _get_choise(values: Iterable[str]) -> List[Tuple[str, str]]:
-    choices = []
-    for val in values:
-        choices.append((val, val))
-    return choices
-
-_name_consent_type = show_name_consent_field()
-class _Form(basic_form(),
-            PhoneNumberField,
-            departure_busstop_field(_get_choise(_get_departure_stops())),
-            _name_consent_type):
-    kiintio = SelectField('Kiintiö *', choices=_get_choise(_get_participants()), validators=[DataRequired()])
+@ShowNameConsentField()
+@DepartureBusstopField(get_str_choices(_get_departure_stops()))
+@PhoneNumberField()
+class _Form(BasicForm):
+    kiintio = SelectField('Kiintiö *', choices=get_str_choices(_get_participants()), validators=[DataRequired()])
 
 
 class _Model(BasicModel, PhoneNumberColumn, DepartureBusstopColumn):
@@ -68,7 +61,7 @@ class _Model(BasicModel, PhoneNumberColumn, DepartureBusstopColumn):
     kiintio = db.Column(db.String(32))
 
 
-_event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2024, 11, 4, 21, 00, 00), 5, 20, issubclass(_Form, _name_consent_type))
+_event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2024, 11, 4, 21, 00, 00), 5, 20, _Form.asks_name_consent)
 
 
 class _Controller(FormController):

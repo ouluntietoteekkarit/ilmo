@@ -3,9 +3,9 @@ from datetime import datetime
 from typing import Any
 
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
 from .forms_util.form_module import ModuleInfo, init_module
-from .forms_util.forms import basic_form
+from .forms_util.forms import BasicForm
 from .forms_util.models import BasicModel
 
 
@@ -21,7 +21,7 @@ def get_module_info() -> ModuleInfo:
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
-class _Form(basic_form()):
+class _Form(BasicForm):
     pass
 
 
@@ -29,7 +29,7 @@ class _Model(BasicModel):
     __tablename__ = _form_name
 
 
-_event = Event('Hyvinvointi- ja etäopiskelukysely arvonta ilmoittautuminen', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000, 0, False)
+_event = Event('Hyvinvointi- ja etäopiskelukysely arvonta ilmoittautuminen', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000, 0, _Form.asks_name_consent)
 
 
 class _Controller(FormController):
@@ -37,7 +37,7 @@ class _Controller(FormController):
     def __init__(self):
         super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
-    def _post_routine_output(self, entries, event: Event, nowtime, form: _Form) -> Any:
+    def _post_routine_output(self, registrations: EventRegistrations, form: _Form, nowtime) -> Any:
         return render_template('kysely_arvonta_juttu/redirect.html')
 
     # MEMO: "Evil" Covariant parameter
@@ -48,7 +48,7 @@ class _Controller(FormController):
             make_greet_line(recipient),
             "\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
             "\n'Nimi: ", firstname, " ", lastname,
-            "\nSähköposti: ", recipient.get_email(),
+            "\nSähköposti: ", recipient.get_email_address(),
             "\n\n", make_signature_line()
         ])
 

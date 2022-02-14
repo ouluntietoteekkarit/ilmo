@@ -62,80 +62,75 @@ def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
     return choices
 
 
-def basic_form():
-    if not hasattr(basic_form, 'type'):
-        # MEMO: Must have same attribute names as BasicModel
-        class BasicForm(FlaskForm):
-            firstname = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-            lastname = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-            email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-            privacy_consent = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
+# MEMO: Must have same attribute names as BasicModel
+class BasicForm(FlaskForm):
+    firstname = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
+    lastname = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
+    email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
+    privacy_consent = BooleanField(
+        'Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *',
+        validators=[DataRequired()])
+    asks_name_consent = False
 
-            def get_firstname(self) -> str:
-                return self.firstname.data
+    def get_firstname(self) -> str:
+        return self.firstname.data
 
-            def get_lastname(self) -> str:
-                return self.lastname.data
+    def get_lastname(self) -> str:
+        return self.lastname.data
 
-            def get_email(self) -> str:
-                return self.email.data
+    def get_email(self) -> str:
+        return self.email.data
 
-            def get_privacy_consent(self) -> bool:
-                return self.privacy_consent.data
-
-        basic_form.type = BasicForm
-
-    return basic_form.type
+    def get_privacy_consent(self) -> bool:
+        return self.privacy_consent.data
 
 
-def show_name_consent_field(name_consent_txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla'):
-    if not hasattr(show_name_consent_field, 'type'):
+class ShowNameConsentField:
+    def __init__(self, txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla'):
+        self._txt = txt
+
+    def __call__(self, form: BasicForm):
         # MEMO: Must have same attribute name as the correspoding one in BasicModel
-        class ShowNameConsentField:
-            show_name_consent = BooleanField(name_consent_txt)
-
-        show_name_consent_field.type = ShowNameConsentField
-
-    return show_name_consent_field.type
+        form.show_name_consent = BooleanField(self._txt)
+        form.asks_name_consent = True
+        return form
 
 
-# MEMO: Must have same attribute names as PhoneNumberColumn
 class PhoneNumberField:
-    phone_number = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
+    def __init__(self):
+        pass
+
+    def __call__(self, form: BasicForm):
+        # MEMO: Must have same attribute names as PhoneNumberColumn
+        form.phone_number = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
+        return form
 
 
-def departure_busstop_field(choices: List[Tuple[str, str]]):
-    """
-    MEMO: Choices of departure_busstop must be set dynamically.
-          See https://wtforms.readthedocs.io/en/3.0.x/fields/#wtforms.fields.SelectField
-    """
-    if not hasattr(departure_busstop_field, 'type'):
+class DepartureBusstopField:
+    def __init__(self, choices: List[Tuple[str, str]]):
+        self._choices = choices
+
+    def __call__(self, form: BasicForm):
         # MEMO: Must have same attribute names as DepartureBusstopColumn
-        class DepartureBusstopField:
-            departure_busstop = SelectField('Kilta *', choices=choices, validators=[DataRequired()])
-
-        departure_busstop_field.type = DepartureBusstopField
-
-    return departure_busstop_field.type
+        form.departure_busstop = SelectField('Lähtöpaikka *', choices=self._choices, validators=[DataRequired()])
+        return form
 
 
-def guild_field(choices: List[Tuple[str, str]]):
-    if not hasattr(guild_field, 'type'):
+class GuildField:
+    def __init__(self, choices: List[Tuple[str, str]]):
+        self._choices = choices
+
+    def __call__(self, form: BasicForm):
         # MEMO: Must have same attribute names as GuildColumn
-        class GuildField:
-            guild_name = SelectField('Kilta *', choices=choices, validators=[DataRequired()])
-
-        guild_field.type = GuildField
-
-    return guild_field.type
+        form.guild_name = SelectField('Kilta *', choices=self._choices, validators=[DataRequired()])
+        return form
 
 
-def binding_registration_consent_field(txt: str = 'Ymmärrän, että ilmoittautuminen on sitova *'):
-    if not hasattr(binding_registration_consent_field, 'type'):
+class BindingRegistrationConsentField:
+    def __init__(self, txt: str = 'Ymmärrän, että ilmoittautuminen on sitova *'):
+        self._txt = txt
+
+    def __call__(self, form: BasicForm):
         # MEMO: Must have same attribute names as BindingRegistrationConsentColumn
-        class BindingRegistrationConsentField:
-            binding_registration_consent = BooleanField(txt, validators=[DataRequired()])
-
-        binding_registration_consent_field.type = BindingRegistrationConsentField
-
-    return binding_registration_consent_field.type
+        form.binding_registration_consent = BooleanField(self._txt, validators=[DataRequired()])
+        return form
