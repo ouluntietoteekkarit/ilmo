@@ -1,7 +1,4 @@
-from flask import render_template
 from datetime import datetime
-from typing import Any
-
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
@@ -20,25 +17,13 @@ class _Model(BasicModel):
 
 
 class _Controller(FormController):
-
-    def _post_routine_output(self, registrations: EventRegistrations, form: _Form, nowtime) -> Any:
-        return render_template('kysely_arvonta_juttu/redirect.html')
-
     # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
-        firstname = recipient.get_firstname()
-        lastname = recipient.get_lastname()
-        return ' '.join([
-            make_greet_line(recipient),
-            "\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
-            "\n'Nimi: ", firstname, " ", lastname,
-            "\nSähköposti: ", recipient.get_email_address(),
-            "\n\n", make_signature_line()
-        ])
+        return ""
 
 
 _data_table_info = DataTableInfo(basic_model_csv_map())
-_event = Event('Hyvinvointi- ja etäopiskelukysely arvonta ilmoittautuminen', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000, 0, _Form.asks_name_consent)
+_event = Event(, _Form.asks_name_consent)
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
