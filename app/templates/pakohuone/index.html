@@ -27,10 +27,10 @@
             <div id="huone1930" style="display: none;">
                 {{ macros.form_field(form.huone1930) }}
             </div>
-            {{ macros.form_field(form.etunimi0) }}
-            {{ macros.form_field(form.sukunimi0) }}
+            {{ macros.form_field(form.firstname) }}
+            {{ macros.form_field(form.lastname) }}
             {{ macros.form_field(form.phone0) }}
-            {{ macros.form_field(form.email0) }}
+            {{ macros.form_field(form.email) }}
             {{ macros.form_field(form.etunimi1) }}
             {{ macros.form_field(form.sukunimi1) }}
             {{ macros.form_field(form.etunimi2) }}
@@ -41,10 +41,9 @@
             {{ macros.form_field(form.sukunimi4) }}
             {{ macros.form_field(form.etunimi5) }}
             {{ macros.form_field(form.sukunimi5) }}
-            {{ macros.form_field(form.consent0) }}
-            <button class="btn btn-info">
-                {{ macros.form_field(form.submit) }}
-            </button>
+            {{ macros.form_field(form.privacy_consent) }}
+            {{ macros.form_submit_button() }}
+
             <p>Ilmoittautuminen päättyy {{ event.get_end_time() }}</p>
         </form>
     {% elif nowtime < event.get_start_time() %}

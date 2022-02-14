@@ -1,16 +1,15 @@
-from flask_wtf import FlaskForm
 from flask import flash
-from wtforms import StringField, BooleanField, SubmitField, RadioField
-from wtforms.validators import DataRequired, Email, length
+from wtforms import StringField, RadioField
+from wtforms.validators import DataRequired, length
 from datetime import datetime
 import json
 from typing import Any
 
 from app import db
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIfValue
+from .forms_util.forms import RequiredIfValue, basic_form, PhoneNumberField
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
-from .forms_util.models import BasicModel, PhoneNumberMixin
+from .forms_util.models import BasicModel, PhoneNumberColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -72,17 +71,12 @@ def _get_time_choices():
     return choices
 
 
-class _Form(FlaskForm):
+class _Form(basic_form(), PhoneNumberField):
     aika = RadioField('Aika *', choices=_get_time_choices(), validators=[DataRequired()])
     huone1800 = RadioField('Huone (18:00) *', choices=_get_game_choices(),
                            validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
     huone1930 = RadioField('Huone (19:30) *', choices=_get_game_choices(),
                            validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
-
-    etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    email0 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi1 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
@@ -99,14 +93,8 @@ class _Form(FlaskForm):
     etunimi5 = StringField('Etunimi', validators=[length(max=50)])
     sukunimi5 = StringField('Sukunimi', validators=[length(max=50)])
 
-    consent0 = BooleanField(
-        'Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *',
-        validators=[DataRequired()])
 
-    submit = SubmitField('Ilmoittaudu')
-
-
-class _Model(BasicModel, PhoneNumberMixin):
+class _Model(BasicModel, PhoneNumberColumn):
     __tablename__ = _form_name
     aika = db.Column(db.String(16))
     huone1800 = db.Column(db.String(128))
@@ -194,29 +182,6 @@ class _Controller(FormController):
                          str(form.etunimi5.data), str(form.sukunimi5.data),
                          "\n\nÄlä vastaa tähän sähköpostiin",
                          "\n\nTerveisin: ropottilari\""])
-
-    def _form_to_model(self, form: _Form, nowtime) -> _Model:
-        return _Model(
-            aika=form.aika.data,
-            huone1800=form.huone1800.data,
-            huone1930=form.huone1930.data,
-            firstname=form.etunimi0.data,
-            lastname=form.sukunimi0.data,
-            phone_number=form.phone0.data,
-            email=form.email0.data,
-            etunimi1=form.etunimi1.data,
-            sukunimi1=form.sukunimi1.data,
-            etunimi2=form.etunimi2.data,
-            sukunimi2=form.sukunimi2.data,
-            etunimi3=form.etunimi3.data,
-            sukunimi3=form.sukunimi3.data,
-            etunimi4=form.etunimi4.data,
-            sukunimi4=form.sukunimi4.data,
-            etunimi5=form.etunimi5.data,
-            sukunimi5=form.sukunimi5.data,
-            privacy_consent=form.consent0.data,
-            datetime=nowtime
-        )
 
 
 def _get_data_table_info() -> DataTableInfo:

@@ -1,15 +1,15 @@
-from flask_wtf import FlaskForm
 from flask import flash
-from wtforms import StringField, BooleanField, SubmitField, SelectField
+from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 from typing import Any
 
 from app import db
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
+from .forms_util.forms import basic_form, show_name_consent_field, binding_registration_consent_field
 from .forms_util.guilds import *
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
-from .forms_util.models import BasicModel, BindingRegistrationConsentMixin
+from .forms_util.models import BasicModel, BindingRegistrationConsentColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -30,14 +30,11 @@ def get_module_info() -> ModuleInfo:
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
-
-class _Form(FlaskForm):
+name_consent_txt = 'Sallin joukkueen nimen julkaisemisen osallistujalistassa'
+class _Form(basic_form(), show_name_consent_field(name_consent_txt), binding_registration_consent_field()):
     teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
 
-    etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    email0 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
     kilta0 = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()), validators=[DataRequired()])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
@@ -58,14 +55,8 @@ class _Form(FlaskForm):
     email3 = StringField('Sähköposti', validators=[length(max=100)])
     kilta3 = SelectField('Kilta', choices=get_guild_choices(get_all_guilds()))
 
-    consent0 = BooleanField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
-    consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
 
-    submit = SubmitField('Ilmoittaudu')
-
-
-class _Model(BasicModel, BindingRegistrationConsentMixin):
+class _Model(BasicModel, BindingRegistrationConsentColumn):
     __tablename__ = _form_name
     teamname = db.Column(db.String(128))
 
@@ -163,35 +154,10 @@ class _Controller(FormController):
                          "\n\nTerveisin: ropottilari\""])
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
+        model = super()._form_to_model(form, nowtime)
         members = self._count_members(form)
-        return _Model(
-            teamname=form.teamname.data,
-            firstname=form.etunimi0.data,
-            lastname=form.sukunimi0.data,
-            email=form.email0.data,
-            phone0=form.phone0.data,
-            kilta0=form.kilta0.data,
-            etunimi1=form.etunimi1.data,
-            sukunimi1=form.sukunimi1.data,
-            email1=form.email1.data,
-            phone1=form.phone1.data,
-            kilta1=form.kilta1.data,
-            etunimi2=form.etunimi2.data,
-            sukunimi2=form.sukunimi2.data,
-            email2=form.email2.data,
-            phone2=form.phone2.data,
-            kilta2=form.kilta2.data,
-            etunimi3=form.etunimi3.data,
-            sukunimi3=form.sukunimi3.data,
-            email3=form.email3.data,
-            phone3=form.phone3.data,
-            kilta3=form.kilta3.data,
-            show_name_consent=form.consent0.data,
-            privacy_consent=form.consent1.data,
-            binding_registration_consent=form.consent2.data,
-            personcount=members,
-            datetime=nowtime
-        )
+        model.personcount = members
+        return model
 
     def _count_members(self, form: _Form) -> int:
         members = 0

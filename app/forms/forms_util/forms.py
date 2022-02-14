@@ -1,4 +1,8 @@
-from wtforms.validators import InputRequired, Optional
+from typing import List, Tuple
+
+from flask_wtf import FlaskForm
+from wtforms import StringField, BooleanField, SelectField
+from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
 
 
 class RequiredIf(InputRequired):
@@ -49,3 +53,70 @@ class RequiredIfValue(InputRequired):
             super(RequiredIfValue, self).__call__(form, field)
         else:
             Optional().__call__(form, field)
+
+
+def basic_form():
+    if not hasattr(basic_form, 'type'):
+        # MEMO: Must have same attribute names as BasicModel
+        class BasicForm(FlaskForm):
+            firstname = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
+            lastname = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
+            email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
+            privacy_consent = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
+
+        basic_form.type = BasicForm
+
+    return basic_form.type
+
+
+def show_name_consent_field(name_consent_txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla'):
+    if not hasattr(show_name_consent_field, 'type'):
+        # MEMO: Must have same attribute name as the correspoding one in BasicModel
+        class ShowNameConsentField:
+            show_name_consent = BooleanField(name_consent_txt)
+
+        show_name_consent_field.type = ShowNameConsentField
+
+    return show_name_consent_field.type
+
+
+# MEMO: Must have same attribute names as PhoneNumberColumn
+class PhoneNumberField:
+    phone_number = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
+
+
+def departure_busstop_field(choices: List[Tuple[str, str]]):
+    """
+    MEMO: Choices of departure_busstop must be set dynamically.
+          See https://wtforms.readthedocs.io/en/3.0.x/fields/#wtforms.fields.SelectField
+    """
+    if not hasattr(departure_busstop_field, 'type'):
+        # MEMO: Must have same attribute names as DepartureBusstopColumn
+        class DepartureBusstopField:
+            departure_busstop = SelectField('Kilta *', choices=choices, validators=[DataRequired()])
+
+        departure_busstop_field.type = DepartureBusstopField
+
+    return departure_busstop_field.type
+
+
+def guild_field(choices: List[Tuple[str, str]]):
+    if not hasattr(guild_field, 'type'):
+        # MEMO: Must have same attribute names as GuildColumn
+        class GuildField:
+            guild_name = SelectField('Kilta *', choices=choices, validators=[DataRequired()])
+
+        guild_field.type = GuildField
+
+    return guild_field.type
+
+
+def binding_registration_consent_field(txt: str = 'Ymmärrän, että ilmoittautuminen on sitova *'):
+    if not hasattr(binding_registration_consent_field, 'type'):
+        # MEMO: Must have same attribute names as BindingRegistrationConsentColumn
+        class BindingRegistrationConsentField:
+            binding_registration_consent = BooleanField(txt, validators=[DataRequired()])
+
+        binding_registration_consent_field.type = BindingRegistrationConsentField
+
+    return binding_registration_consent_field.type

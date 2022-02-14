@@ -1,6 +1,7 @@
 from app import db
 
 
+# MEMO: Must have same attribute names as BasicForm
 class BasicModel(db.Model):
     __abstract__ = True
 
@@ -31,28 +32,31 @@ class BasicModel(db.Model):
         return self.datetime
 
 
-class PhoneNumberMixin:
+class PhoneNumberColumn:
     phone_number = db.Column(db.String(32))
 
     def get_phone_number(self) -> str:
         return self.phone_number
 
 
-class DepartureBusstopMixin:
+# MEMO: Must have same attribute names as DepartureBusstopField
+class DepartureBusstopColumn:
     departure_busstop = db.Column(db.String(64))
 
     def get_departure_busstop(self) -> str:
         return self.departure_busstop
 
 
-class GuildMixin:
+# MEMO: Must have same attribute names as GuildField
+class GuildColumn:
     guild_name = db.Column(db.String(16))
 
     def get_guild_name(self) -> str:
         return self.guild_name
 
 
-class BindingRegistrationConsentMixin:
+# MEMO: Must have same attribute names as BindingRegistrationConsentField
+class BindingRegistrationConsentColumn:
     binding_registration_consent = db.Column(db.Boolean())
 
     def get_binding_registration_consent(self) -> bool:

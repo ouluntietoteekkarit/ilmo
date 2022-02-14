@@ -1,12 +1,11 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, RadioField, SelectField
-from wtforms.validators import DataRequired, Email, length
+from wtforms import StringField, RadioField, SelectField
+from wtforms.validators import DataRequired, length
 from datetime import datetime
 from typing import Any, List, Iterable, Tuple
 
 from app import db
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIf
+from .forms_util.forms import RequiredIf, basic_form, show_name_consent_field
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.models import BasicModel
 
@@ -70,17 +69,11 @@ def _get_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
     return choices
 
 
-class _Form(FlaskForm):
-    etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
+class _Form(basic_form(), show_name_consent_field()):
     alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=_get_choices(_get_drinks()), validators=[DataRequired()])
     mieto = SelectField('Mieto juoma *', choices=_get_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value="Alkoholillinen")])
     pitsa = SelectField('Pitsa *', choices=_get_choices(_get_pizzas()), validators=[DataRequired()])
     allergiat = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
-    consent0 = BooleanField('Hyväksyn nimeni julkaisemisen tällä sivulla')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
-    submit = SubmitField('Ilmoittaudu')
 
 
 class _Model(BasicModel):
@@ -135,21 +128,6 @@ class _Controller(FormController):
                 "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
                 "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""])
-
-    # MEMO: "Evil" Covariant parameters
-    def _form_to_model(self, form: _Form, nowtime) -> _Model:
-        return _Model(
-            firstname=form.etunimi.data,
-            lastname=form.sukunimi.data,
-            email=form.email.data,
-            alkoholi=form.alkoholi.data,
-            mieto=form.mieto.data,
-            pitsa=form.pitsa.data,
-            allergiat=form.allergiat.data,
-            show_name_consent=form.consent0.data,
-            privacy_consent=form.consent1.data,
-            datetime=nowtime
-        )
 
 
 def _get_data_table_info() -> DataTableInfo:

@@ -1,13 +1,13 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Email, length
+from wtforms import SelectField
+from wtforms.validators import DataRequired
 from datetime import datetime
 from typing import Any, List, Iterable, Tuple
 
 from app import db
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
-from .forms_util.models import BasicModel, PhoneNumberMixin, DepartureBusstopMixin
+from .forms_util.forms import basic_form, PhoneNumberField, departure_busstop_field, show_name_consent_field
+from .forms_util.models import BasicModel, PhoneNumberColumn, DepartureBusstopColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -63,21 +63,14 @@ def _get_choise(values: Iterable[str]) -> List[Tuple[str, str]]:
     return choices
 
 
-class _Form(FlaskForm):
-    etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    puh = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    lahtopaikka = SelectField('Lähtöpaikka *', choices=_get_choise(_get_departure_stops()), validators=[DataRequired()])
+class _Form(basic_form(),
+            PhoneNumberField,
+            departure_busstop_field(_get_choise(_get_departure_stops())),
+            show_name_consent_field()):
     kiintio = SelectField('Kiintiö *', choices=_get_choise(_get_participants()), validators=[DataRequired()])
-    consent0 = BooleanField('Hyväksyn nimeni julkaisemisen tällä sivulla')
-    consent1 = BooleanField(
-        'Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *',
-        validators=[DataRequired()])
-    submit = SubmitField('Ilmoittaudu')
 
 
-class _Model(BasicModel, PhoneNumberMixin, DepartureBusstopMixin):
+class _Model(BasicModel, PhoneNumberColumn, DepartureBusstopColumn):
     __tablename__ = _form_name
     kiintio = db.Column(db.String(32))
 
@@ -85,7 +78,7 @@ class _Model(BasicModel, PhoneNumberMixin, DepartureBusstopMixin):
 class _Controller(FormController):
 
     def __init__(self):
-        event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2021, 11, 4, 21, 00, 00), 5, 20)
+        event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2024, 11, 4, 21, 00, 00), 5, 20)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
     def post_request_handler(self, request) -> Any:
@@ -93,8 +86,8 @@ class _Controller(FormController):
 
     # MEMO: "Evil" Covariant parameter
     def _find_from_entries(self, entries, form: _Form) -> bool:
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
+        firstname = form.firstname.data
+        lastname = form.lastname.data
         for entry in entries:
             if entry.firstname == firstname and entry.lastname == lastname:
                 return True
@@ -104,10 +97,10 @@ class _Controller(FormController):
         return str(form.email.data)
 
     def _get_email_msg(self, form: _Form, reserve: bool) -> str:
-        firstname = str(form.etunimi.data)
-        lastname = str(form.sukunimi.data)
+        firstname = str(form.firstname.data)
+        lastname = str(form.lastname.data)
         email = str(form.email.data)
-        phone_number = str(form.puh.data)
+        phone_number = str(form.phone_number.data)
         departure_location = str(form.lahtopaikka.data)
         quota = str(form.kiintio.data)
         if reserve:
@@ -126,19 +119,6 @@ class _Controller(FormController):
                 "\nLähtöpaikka: ", departure_location, "\nKiintiö: ", quota,
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
             ])
-
-    def _form_to_model(self, form, nowtime):
-        return _Model(
-            firstname=form.etunimi.data,
-            lastname=form.sukunimi.data,
-            email=form.email.data,
-            phone_number=form.puh.data,
-            departure_busstop=form.lahtopaikka.data,
-            kiintio=form.kiintio.data,
-            show_name_consent=form.consent0.data,
-            privacy_consent=form.consent1.data,
-            datetime=nowtime
-        )
 
 
 def _get_data_table_info() -> DataTableInfo:

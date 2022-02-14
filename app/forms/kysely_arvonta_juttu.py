@@ -1,13 +1,10 @@
-from flask_wtf import FlaskForm
 from flask import render_template, flash
-from wtforms import StringField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 from typing import Any
 
-from app import db
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
+from .forms_util.forms import basic_form
 from .forms_util.models import BasicModel
 
 
@@ -30,12 +27,8 @@ def get_module_info() -> ModuleInfo:
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
-class _Form(FlaskForm):
-    etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    consent0 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön *', validators=[DataRequired()])
-    submit = SubmitField('Submit')
+class _Form(basic_form()):
+    pass
 
 
 class _Model(BasicModel):
@@ -88,15 +81,6 @@ class _Controller(FormController):
                          "\nSähköposti: ", str(form.email.data),
                          "\n\nÄlä vastaa tähän sähköpostiin",
                          "\n\nTerveisin: ropottilari\""])
-
-    def _form_to_model(self, form: _Form, nowtime) -> _Model:
-        return _Model(
-            firstname=form.etunimi.data,
-            lastname=form.sukunimi.data,
-            email=form.email.data,
-            privacy_consent=form.consent0.data,
-            datetime=nowtime,
-        )
 
 
 def _get_data_table_info() -> DataTableInfo:

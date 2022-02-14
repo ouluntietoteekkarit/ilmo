@@ -8,7 +8,18 @@
 
 
 {% macro form_field(field) %}
+    {#
+        TODO: wtf.form_field is poorly made and needs to be replaced.
+              Look into replacing it and keep it bootstrap compatible.
+    #}
     {{ wtf.form_field(field) }}
+{% endmacro %}
+
+
+{% macro form_submit_button() %}
+    <button class="btn btn-info">
+        <input class="btn btn-default" value="Ilmoittaudu" type="submit">
+    </button>
 {% endmacro %}
 
 

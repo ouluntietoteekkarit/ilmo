@@ -1,14 +1,12 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 from typing import Any, List, Iterable, Tuple
 
-from app import db
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
-from .forms_util.models import BasicModel, DepartureBusstopMixin, PhoneNumberMixin
-from .forms_util.models import BindingRegistrationConsentMixin
+from .forms_util.forms import basic_form, show_name_consent_field, PhoneNumberField, departure_busstop_field, \
+    binding_registration_consent_field
+from .forms_util.models import BasicModel, DepartureBusstopColumn, PhoneNumberColumn
+from .forms_util.models import BindingRegistrationConsentColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -50,26 +48,21 @@ def _get_choise(values: Iterable[str]) -> List[Tuple[str, str]]:
     return choices
 
 
-class _Form(FlaskForm):
-    etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    puh = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    lahtopaikka = SelectField('Lähtöpaikka *', choices=_get_choise(_get_departure_stops()), validators=[DataRequired()])
-    consent0 = BooleanField('Hyväksyn nimeni julkaisemisen tällä sivulla')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
-    consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *', validators=[DataRequired()])
-    submit = SubmitField('Ilmoittaudu')
+registration_txt = 'Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *'
+class _Form(basic_form(), show_name_consent_field(), departure_busstop_field(_get_choise(_get_departure_stops())),
+            PhoneNumberField, binding_registration_consent_field(registration_txt)):
+    pass
 
 
-class _Model(BasicModel, DepartureBusstopMixin, PhoneNumberMixin, BindingRegistrationConsentMixin):
+class _Model(BasicModel, DepartureBusstopColumn, PhoneNumberColumn, BindingRegistrationConsentColumn):
     __tablename__ = _form_name
 
 
 class _Controller(FormController):
 
     def __init__(self):
-        event = Event('OTiT KMP ilmoittautuminen', datetime(2021, 11, 19, 13, 37, 37), datetime(2021, 12, 3, 2, 00, 00), 15, 15)
+        event = Event('OTiT KMP ilmoittautuminen', datetime(2021, 11, 19, 13, 37, 37), datetime(2021, 12, 3, 2, 00, 00),
+                      15, 15)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
     def post_request_handler(self, request) -> Any:
@@ -114,19 +107,6 @@ class _Controller(FormController):
                 "\nViestiksi \"KMP + etunimi ja sukunimi\"",
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
             ])
-
-    def _form_to_model(self, form: _Form, nowtime) -> _Model:
-        return _Model(
-            firstname=form.etunimi.data,
-            lastname=form.sukunimi.data,
-            email=form.email.data,
-            phone_number=form.puh.data,
-            departure_busstop=form.lahtopaikka.data,
-            show_name_consent=form.consent0.data,
-            privacy_consent=form.consent1.data,
-            binding_registration_consent=form.consent2.data,
-            datetime=nowtime
-        )
 
 
 def _get_data_table_info() -> DataTableInfo:

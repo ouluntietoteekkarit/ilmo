@@ -1,14 +1,12 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
 from typing import Any
 
-from app import db
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
+from .forms_util.forms import basic_form, PhoneNumberField, guild_field, show_name_consent_field, \
+    binding_registration_consent_field
 from .forms_util.guilds import *
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
-from .forms_util.models import BasicModel, GuildMixin, BindingRegistrationConsentMixin, PhoneNumberMixin
+from .forms_util.models import BasicModel, GuildColumn, BindingRegistrationConsentColumn, PhoneNumberColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
@@ -30,19 +28,12 @@ def get_module_info() -> ModuleInfo:
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
-class _Form(FlaskForm):
-    etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    phone = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()))
-    consent0 = BooleanField('Sallin nimeni julkaisemisen osallistujalistassa')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
-    consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
-    submit = SubmitField('Ilmoittaudu')
+class _Form(basic_form(), PhoneNumberField, guild_field(get_guild_choices(get_all_guilds())),
+            show_name_consent_field(), binding_registration_consent_field()):
+    pass
 
 
-class _Model(BasicModel, PhoneNumberMixin, GuildMixin, BindingRegistrationConsentMixin):
+class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
     __tablename__ = _form_name
 
 
@@ -77,19 +68,6 @@ class _Controller(FormController):
                          "\nKilta: ", str(form.kilta.data),
                          "\n\nÄlä vastaa tähän sähköpostiin",
                          "\n\nTerveisin: ropottilari\""])
-
-    def _form_to_model(self, form: _Form, nowtime) -> db.Model:
-        return _Model(
-            firstname=form.etunimi.data,
-            lastname=form.sukunimi.data,
-            phone_number=form.phone.data,
-            email=form.email.data,
-            guild_name=form.kilta.data,
-            show_name_consent=form.consent0.data,
-            privacy_consent=form.consent1.data,
-            binding_registration_consent=form.consent2.data,
-            datetime=nowtime
-        )
 
 
 def _get_data_table_info() -> DataTableInfo:

@@ -7,15 +7,16 @@ from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email
+from .forms import basic_form
+from .models import BasicModel
 
 if TYPE_CHECKING:
-    from flask_wtf import FlaskForm
     from .form_module_info import ModuleInfo
 
 
 class FormContext:
 
-    def __init__(self, event: Event, form: Type[FlaskForm], model: Type[db.Model],
+    def __init__(self, event: Event, form: Type[basic_form()], model: Type[BasicModel],
                  module_info: ModuleInfo, data_table_info: DataTableInfo):
         self._event = event
         self._form = form
@@ -26,10 +27,10 @@ class FormContext:
     def get_event(self) -> Event:
         return self._event
 
-    def get_form_type(self) -> Type[FlaskForm]:
+    def get_form_type(self) -> Type[Type[basic_form()]]:
         return self._form
 
-    def get_model_type(self) -> Type[db.Model]:
+    def get_model_type(self) -> Type[BasicModel]:
         return self._model
 
     def get_module_info(self) -> ModuleInfo:
@@ -62,7 +63,7 @@ class FormController(ABC):
         return self._post_routine(self._context.get_form_type()(), self._context.get_model_type())
 
     @abstractmethod
-    def _find_from_entries(self, entries, form: FlaskForm) -> bool:
+    def _find_from_entries(self, entries, form: Type[basic_form()]) -> bool:
         """
         A method to find if the individual described by the form is
         found in the entries
@@ -70,16 +71,21 @@ class FormController(ABC):
         pass
 
     @abstractmethod
-    def _get_email_recipient(self, form: FlaskForm) -> str:
+    def _get_email_recipient(self, form: Type[basic_form()]) -> str:
         pass
 
     @abstractmethod
-    def _get_email_msg(self, form: FlaskForm, reserve: bool) -> str:
+    def _get_email_msg(self, form: Type[basic_form()], reserve: bool) -> str:
         pass
 
-    @abstractmethod
-    def _form_to_model(self, form: FlaskForm, nowtime) -> db.Model:
-        pass
+    def _form_to_model(self, form: Type[basic_form()], nowtime) -> BasicModel:
+        """
+        A method to convert form into a model.
+        Can be overridden in inheriting classes to alter behaviour.
+        """
+        model = self._context.get_model_type()(datetime=nowtime)
+        form.populate_obj(model)
+        return model
 
     def get_data_request_handler(self, request) -> Any:
         return self._render_data_view()
@@ -87,7 +93,7 @@ class FormController(ABC):
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(self._context.get_model_type().__tablename__)
 
-    def _post_routine(self, form: FlaskForm, model: Type[db.Model]) -> Any:
+    def _post_routine(self, form: Type[basic_form()], model: Type[BasicModel]) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         event = self._context.get_event()
         nowtime = datetime.now()
@@ -108,7 +114,7 @@ class FormController(ABC):
 
         return self._render_index_view(entries, event, nowtime, form)
 
-    def _check_form_submit(self, event: Event, form: FlaskForm, entries,
+    def _check_form_submit(self, event: Event, form: Type[basic_form()], entries,
                            nowtime, participant_count: int) -> str:
 
         if not form.validate_on_submit():
@@ -128,7 +134,7 @@ class FormController(ABC):
 
         return ""
 
-    def _insert_model(self, form: FlaskForm, nowtime) -> bool:
+    def _insert_model(self, form: Type[basic_form()], nowtime) -> bool:
         try:
             db.session.add(self._form_to_model(form, nowtime))
             db.session.commit()
@@ -141,7 +147,7 @@ class FormController(ABC):
 
         return False
 
-    def _render_index_view(self, entries, event: Event, nowtime, form: FlaskForm, **extra_template_args) -> Any:
+    def _render_index_view(self, entries, event: Event, nowtime, form: basic_form(), **extra_template_args) -> Any:
         """
         A method to render the index.html template of this event.
         """

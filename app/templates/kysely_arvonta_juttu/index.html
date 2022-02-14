@@ -11,13 +11,12 @@
     {% if event.get_start_time() < nowtime < event.get_end_time() %}
         <form class="form form-horizontal" method="post" role="form">
             {{ form.hidden_tag() }}
-            {{ macros.form_field(form.etunimi) }}
-            {{ macros.form_field(form.sukunimi) }}
+            {{ macros.form_field(form.firstname) }}
+            {{ macros.form_field(form.lastname) }}
             {{ macros.form_field(form.email) }}
-            {{ macros.form_field(form.consent0) }}
-            <button class="btn btn-info">
-                {{ macros.form_field(form.submit) }}
-            </button>
+            {{ macros.form_field(form.privacy_consent) }}
+            {{ macros.form_submit_button() }}
+
             <p>Ilmoittautuminen päättyy {{ event.get_end_time() }}</p>
         </form>
     {% elif nowtime < event.get_start_time() %}
