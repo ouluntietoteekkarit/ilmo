@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Type, Union, TYPE_CHECKING
+from typing import Type, Union, TYPE_CHECKING, Tuple
 from os.path import split, splitext
 
 if TYPE_CHECKING:
@@ -58,3 +58,10 @@ class ModuleInfo:
 def file_path_to_form_name(path: Union[str, Path]) -> str:
     # MEMO: Add sanitation if needed
     return splitext(split(path)[1])[0]
+
+
+def init_module(file_path: str) -> Tuple[None, str]:
+    """
+    Returns initial values for a form module's global variables.
+    """
+    return None, file_path_to_form_name(file_path)

@@ -4,25 +4,22 @@ from typing import Any
 
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
-from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
+from .forms_util.form_module import ModuleInfo, init_module
 from .forms_util.forms import basic_form
 from .forms_util.models import BasicModel
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
-"""Singleton instance containing this form module's information."""
-_form_module = None
-_form_name = file_path_to_form_name(__file__)
+(_form_module, _form_name) = init_module(__file__)
 
 
 def get_module_info() -> ModuleInfo:
     """
-    Returns this form's module information.
+    Returns a singleton object containing this form's module information.
     """
     global _form_module
-    if _form_module is None:
-        _form_module = ModuleInfo(_Controller, True, _form_name)
+    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D

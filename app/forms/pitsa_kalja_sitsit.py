@@ -1,31 +1,27 @@
 from wtforms import StringField, RadioField, SelectField
 from wtforms.validators import DataRequired, length
 from datetime import datetime
-from typing import List, Iterable, Tuple
+from typing import List
 
 from app import db
 from app.email import EmailRecipient, make_greet_line
-from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIf, basic_form, show_name_consent_field
+from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.forms import RequiredIf, basic_form, show_name_consent_field, get_str_choices
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.models import BasicModel
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
-"""Singleton instance containing this form module's information."""
-_form_module = None
-_form_name = file_path_to_form_name(__file__)
+(_form_module, _form_name) = init_module(__file__)
 
 
 def get_module_info() -> ModuleInfo:
     """
-    Returns this form's module information.
+    Returns a singleton object containing this form's module information.
     """
     global _form_module
-    if _form_module is None:
-        _form_module = ModuleInfo(_Controller, True, _form_name)
+    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
@@ -63,17 +59,10 @@ def _get_pizzas() -> List[str]:
     ]
 
 
-def _get_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
-    choices = []
-    for val in values:
-        choices.append((val, val))
-    return choices
-
-
 class _Form(basic_form(), show_name_consent_field()):
-    alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=_get_choices(_get_drinks()), validators=[DataRequired()])
-    mieto = SelectField('Mieto juoma *', choices=_get_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value="Alkoholillinen")])
-    pitsa = SelectField('Pitsa *', choices=_get_choices(_get_pizzas()), validators=[DataRequired()])
+    alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
+    mieto = SelectField('Mieto juoma *', choices=get_str_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value=_DRINK_ALCOHOLIC)])
+    pitsa = SelectField('Pitsa *', choices=get_str_choices(_get_pizzas()), validators=[DataRequired()])
     allergiat = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
 
 

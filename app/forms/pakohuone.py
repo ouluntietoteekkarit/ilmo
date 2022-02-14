@@ -7,27 +7,23 @@ from typing import Any
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIfValue, basic_form, PhoneNumberField
+from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.forms import RequiredIfValue, basic_form, PhoneNumberField, get_str_choices
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.models import BasicModel, PhoneNumberColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 
-"""Singleton instance containing this form module's information."""
-_form_module = None
-_form_name = file_path_to_form_name(__file__)
+(_form_module, _form_name) = init_module(__file__)
 
 
 def get_module_info() -> ModuleInfo:
     """
-    Returns this form's module information.
+    Returns a singleton object containing this form's module information.
     """
     global _form_module
-    if _form_module is None:
-        _form_module = ModuleInfo(_Controller, True, _form_name)
+    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
@@ -51,13 +47,6 @@ def _get_escape_games():
     ]
 
 
-def _get_game_choices():
-    choices = []
-    for game in _get_escape_games():
-        choices.append((game, game))
-    return choices
-
-
 def _get_game_times():
     return [
         _PAKO_TIME_FIRST,
@@ -65,18 +54,11 @@ def _get_game_times():
     ]
 
 
-def _get_time_choices():
-    choices = []
-    for time in _get_game_times():
-        choices.append((time, time))
-    return choices
-
-
 class _Form(basic_form(), PhoneNumberField):
-    aika = RadioField('Aika *', choices=_get_time_choices(), validators=[DataRequired()])
-    huone1800 = RadioField('Huone (18:00) *', choices=_get_game_choices(),
+    aika = RadioField('Aika *', choices=get_str_choices(_get_game_times()), validators=[DataRequired()])
+    huone1800 = RadioField('Huone (18:00) *', choices=get_str_choices(_get_escape_games()),
                            validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
-    huone1930 = RadioField('Huone (19:30) *', choices=_get_game_choices(),
+    huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_escape_games()),
                            validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])

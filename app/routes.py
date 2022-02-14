@@ -6,7 +6,7 @@ from flask import render_template, request, Flask
 import importlib.util
 
 from . import server, auth, users, roles
-from .forms.forms_util.form_module_info import ModuleInfo
+from .forms.forms_util.form_module import ModuleInfo
 
 
 def _find_modules(folder:str, package: str) -> List[str]:

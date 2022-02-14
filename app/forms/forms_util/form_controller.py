@@ -11,7 +11,7 @@ from .forms import basic_form
 from .models import BasicModel
 
 if TYPE_CHECKING:
-    from .form_module_info import ModuleInfo
+    from .form_module import ModuleInfo
 
 
 class FormContext:

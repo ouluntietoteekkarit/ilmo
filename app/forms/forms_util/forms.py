@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Iterable
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SelectField
@@ -53,6 +53,13 @@ class RequiredIfValue(InputRequired):
             super(RequiredIfValue, self).__call__(form, field)
         else:
             Optional().__call__(form, field)
+
+
+def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
+    choices = []
+    for val in values:
+        choices.append((val, val))
+    return choices
 
 
 def basic_form():
