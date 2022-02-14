@@ -107,7 +107,8 @@ class _Controller(FormController):
             return self._render_index_view(entries, event, nowtime, form,
                                            participant_count=totalcount)
 
-        if self._insert_model(form, nowtime):
+        model = self._form_to_model(form, nowtime)
+        if self._insert_model(model):
             flash('Ilmoittautuminen onnistui')
 
         return self._render_index_view(entries, event, nowtime, form, participant_count=totalcount)
@@ -124,15 +125,9 @@ class _Controller(FormController):
             total_count += entry.personcount
         return total_count
 
-    def _find_from_entries(self, entries, form: _Form) -> bool:
-        teamname = form.teamname.data
-        for entry in entries:
-            if entry.teamname == teamname:
-                return True
-        return False
-
-    def _get_email_recipient(self, form: _Form) -> str:
-        return str(form.email0.data)
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_recipient(self, model: _Model) -> str:
+        return model.get_email()
 
     def _pubi_visa_mail(form):
         # pubi_visa_mail_to(form, str(form.email0.data))
@@ -141,15 +136,18 @@ class _Controller(FormController):
         # pubi_visa_mail_to(form, str(form.email3.data))
         pass
 
-    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
-        return ' '.join(["\"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
+        firstname = model.get_firstname()
+        lastname = model.get_lastname()
+        return ' '.join(["\"Hei", firstname, " ", lastname,
                          "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                         "\n'Joukkueen nimi: ", str(form.teamname.data),
+                         "\n'Joukkueen nimi: ", model.teamname,
                          "\n'Osallistujien nimet:\n",
-                         str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                         str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                         str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                         str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
+                         firstname, " ", lastname, "\n",
+                         model.etunimi1, " ", model.sukunimi1, "\n",
+                         model.etunimi2, " ", model.sukunimi2, "\n",
+                         model.etunimi3, " ", model.sukunimi3, "\n",
                          "\n\nÄlä vastaa tähän sähköpostiin",
                          "\n\nTerveisin: ropottilari\""])
 

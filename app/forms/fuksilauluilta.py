@@ -39,27 +39,16 @@ class _Controller(FormController):
         event = Event('Fuksilauluilta ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 13, 23, 59, 59), 70, 0)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
-    def post_request_handler(self, request) -> Any:
-        return self._post_routine(self._context.get_form_type()(), self._context.get_model_type())
+    def _get_email_recipient(self, model: _Model) -> str:
+        return model.get_email()
 
-    def _find_from_entries(self, entries, form: _Form) -> bool:
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        for entry in entries:
-            if entry.firstname == firstname and entry.lastname == lastname:
-                return True
-        return False
-
-    def _get_email_recipient(self, form: _Form) -> str:
-        return str(form.email.data)
-
-    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
-        firstname = str(form.etunimi.data)
-        lastname = str(form.sukunimi.data)
+    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
+        firstname = model.get_firstname()
+        lastname = model.get_lastname()
         return ' '.join(["\"Hei", firstname, " ", lastname,
                          "\n\nOlet ilmoittautunut fuksilauluiltaan. Syötit seuraavia tietoja: ",
                          "\n'Nimi: ", firstname, " ", lastname,
-                         "\nSähköposti: ", str(form.email.data),
+                         "\nSähköposti: ", model.get_email(),
                          "\n\nÄlä vastaa tähän sähköpostiin",
                          "\n\nTerveisin: ropottilari\""])
 

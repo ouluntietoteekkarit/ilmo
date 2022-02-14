@@ -62,23 +62,29 @@ class FormController(ABC):
         """
         return self._post_routine(self._context.get_form_type()(), self._context.get_model_type())
 
-    @abstractmethod
-    def _find_from_entries(self, entries, form: Type[basic_form()]) -> bool:
+    def _find_from_entries(self, entries: Iterable[BasicModel], form: basic_form()) -> bool:
         """
         A method to find if the individual described by the form is
-        found in the entries
+        found in the entries. Can be overridden in inheriting classes
+        to alter behaviour.
         """
+        firstname = form.get_firstname()
+        lastname = form.get_lastname()
+        email = form.get_email()
+        for entry in entries:
+            if (entry.get_firstname() == firstname and entry.get_lastname() == lastname) or entry.get_email() == email:
+                return True
+        return False
+
+    @abstractmethod
+    def _get_email_recipient(self, model: BasicModel) -> str:
         pass
 
     @abstractmethod
-    def _get_email_recipient(self, form: Type[basic_form()]) -> str:
+    def _get_email_msg(self, model: BasicModel, reserve: bool) -> str:
         pass
 
-    @abstractmethod
-    def _get_email_msg(self, form: Type[basic_form()], reserve: bool) -> str:
-        pass
-
-    def _form_to_model(self, form: Type[basic_form()], nowtime) -> BasicModel:
+    def _form_to_model(self, form: basic_form(), nowtime) -> BasicModel:
         """
         A method to convert form into a model.
         Can be overridden in inheriting classes to alter behaviour.
@@ -93,7 +99,7 @@ class FormController(ABC):
     def get_data_csv_request_handler(self, request) -> Any:
         return self._export_to_csv(self._context.get_model_type().__tablename__)
 
-    def _post_routine(self, form: Type[basic_form()], model: Type[BasicModel]) -> Any:
+    def _post_routine(self, form: basic_form(), model: Type[BasicModel]) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         event = self._context.get_event()
         nowtime = datetime.now()
@@ -105,16 +111,24 @@ class FormController(ABC):
             flash(error_msg)
             return self._render_index_view(entries, event, nowtime, form)
 
-        if self._insert_model(form, nowtime):
+        model = self._form_to_model(form, nowtime)
+        if self._insert_model(model):
             reserve = count >= event.get_participant_limit()
-            msg = self._get_email_msg(form, reserve)
+            msg = self._get_email_msg(model, reserve)
             subject = self._context.get_event().get_title()
             flash(_make_success_msg(reserve))
-            send_email(msg, subject, self._get_email_recipient(form))
+            send_email(msg, subject, self._get_email_recipient(model))
 
+        return self._post_routine_output(entries, event, nowtime, form)
+
+    def _post_routine_output(self, entries, event: Event, nowtime, form: basic_form()) -> Any:
+        """
+        A method that handles post request output rendering.
+        Can be overridden in inheriting classes to alter behaviour.
+        """
         return self._render_index_view(entries, event, nowtime, form)
 
-    def _check_form_submit(self, event: Event, form: Type[basic_form()], entries,
+    def _check_form_submit(self, event: Event, form: basic_form(), entries,
                            nowtime, participant_count: int) -> str:
 
         if not form.validate_on_submit():
@@ -134,9 +148,9 @@ class FormController(ABC):
 
         return ""
 
-    def _insert_model(self, form: Type[basic_form()], nowtime) -> bool:
+    def _insert_model(self, model: BasicModel) -> bool:
         try:
-            db.session.add(self._form_to_model(form, nowtime))
+            db.session.add(model)
             db.session.commit()
             return True
 

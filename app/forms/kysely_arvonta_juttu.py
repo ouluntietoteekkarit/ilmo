@@ -1,4 +1,4 @@
-from flask import render_template, flash
+from flask import render_template
 from datetime import datetime
 from typing import Any
 
@@ -41,44 +41,21 @@ class _Controller(FormController):
         event = Event('Hyvinvointi- ja etäopiskelukysely arvonta ilmoittautuminen', datetime(2020, 11, 2, 12, 00, 00), datetime(2020, 11, 23, 23, 59, 59), 4000, 0)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
-    def post_request_handler(self, request) -> Any:
-        # MEMO: This routine is prone to data race since it does not use transactions
-        form = _Form()
-        event = self._context.get_event()
-        nowtime = datetime.now()
-        entries = _Model.query.all()
-        count = len(entries)
-
-        error_msg = self._check_form_submit(event, form, entries, nowtime, count)
-        if len(error_msg) != 0:
-            flash(error_msg)
-            return self._render_index_view(entries, event, nowtime, form)
-
-        if self._insert_model(form, nowtime):
-            flash('Ilmoittautuminen onnistui')
-
+    def _post_routine_output(self, entries, event: Event, nowtime, form: _Form) -> Any:
         return render_template('kysely_arvonta_juttu/redirect.html')
-        #return self._render_index_view(entries, event, nowtime, form)
 
-    def _find_from_entries(self, entries, form: _Form) -> bool:
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        email = form.email.data
-        for entry in entries:
-            if (entry.firstname == firstname and entry.lastname == lastname) or entry.email == email:
-                return True
-        return False
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_recipient(self, model: _Model) -> str:
+        return model.get_email()
 
-    def _get_email_recipient(self, form: _Form) -> str:
-        return str(form.email.data)
-
-    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
-        firstname = str(form.etunimi.data)
-        lastname = str(form.sukunimi.data)
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
+        firstname = model.get_firstname()
+        lastname = model.get_lastname()
         return ' '.join(["\"Hei", firstname, " ", lastname,
                          "\n\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
                          "\n'Nimi: ", firstname, " ", lastname,
-                         "\nSähköposti: ", str(form.email.data),
+                         "\nSähköposti: ", model.get_email(),
                          "\n\nÄlä vastaa tähän sähköpostiin",
                          "\n\nTerveisin: ropottilari\""])
 

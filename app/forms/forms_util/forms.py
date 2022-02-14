@@ -64,6 +64,18 @@ def basic_form():
             email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
             privacy_consent = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
 
+            def get_firstname(self) -> str:
+                return self.firstname.data
+
+            def get_lastname(self) -> str:
+                return self.lastname.data
+
+            def get_email(self) -> str:
+                return self.email.data
+
+            def get_privacy_consent(self) -> bool:
+                return self.privacy_consent.data
+
         basic_form.type = BasicForm
 
     return basic_form.type

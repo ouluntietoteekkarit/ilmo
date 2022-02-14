@@ -90,26 +90,14 @@ class _Controller(FormController):
         event = Event('OTiT Pitsakaljasitsit ilmoittautuminen', datetime(2021, 10, 26, 12, 00, 00), datetime(2021, 11, 9, 23, 59, 59), 60, 30)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
-    def post_request_handler(self, request) -> Any:
-        return self._post_routine(self._context.get_form_type()(), self._context.get_model_type())
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_recipient(self, model: _Model) -> str:
+        return model.get_email()
 
     # MEMO: "Evil" Covariant parameter
-    def _find_from_entries(self, entries, form: _Form) -> bool:
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        for entry in entries:
-            if entry.get_firstname() == firstname and entry.get_lastname() == lastname:
-                return True
-        return False
-
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_recipient(self, form: _Form) -> str:
-        return str(form.email.data)
-
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, form: _Form, reserve: bool):
-        firstname = str(form.etunimi.data)
-        lastname = str(form.sukunimi.data)
+    def _get_email_msg(self, model: _Model, reserve: bool):
+        firstname = model.firstname
+        lastname = model.lastname
         if reserve:
             return ' '.join([
                 "\"Hei", firstname, " ", lastname,

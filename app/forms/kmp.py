@@ -65,26 +65,15 @@ class _Controller(FormController):
                       15, 15)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
-    def post_request_handler(self, request) -> Any:
-        return self._post_routine(self._context.get_form_type()(), self._context.get_model_type())
+    def _get_email_recipient(self, model: _Model) -> str:
+        return model.get_email()
 
-    def _find_from_entries(self, entries, form: _Form) -> bool:
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        for entry in entries:
-            if entry.firstname == firstname and entry.lastname == lastname:
-                return True
-        return False
-
-    def _get_email_recipient(self, form: _Form) -> str:
-        return str(form.email.data)
-
-    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
-        firstname = str(form.etunimi.data)
-        lastname = str(form.sukunimi.data)
-        email = str(form.email.data)
-        phone_number = str(form.puh.data)
-        departure_location = str(form.lahtopaikka.data)
+    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
+        firstname = model.get_firstname()
+        lastname = model.get_lastname()
+        email = model.get_email()
+        phone_number = model.get_phone_number()
+        departure_location = model.get_departure_busstop()
         if reserve:
             return ' '.join([
                 "\"Hei", firstname, " ", lastname,

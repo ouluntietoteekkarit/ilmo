@@ -144,7 +144,8 @@ class _Controller(FormController):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
                 return self._render_index_view(entries, count, event, nowtime, form)
 
-        if self._insert_model(form, nowtime):
+        model = self._form_to_model(form, nowtime)
+        if self._insert_model(model):
             flash('Ilmoittautuminen onnistui')
 
         return self._render_index_view(entries, count, event, nowtime, form)
@@ -157,29 +158,25 @@ class _Controller(FormController):
             'varatut': json.dumps(varatut),
             **extra_template_args})
 
-    def _find_from_entries(self, entries, form: _Form) -> bool:
-        firstname = form.etunimi0.data
-        lastname = form.sukunimi0.data
-        email = form.email0.data
-        for entry in entries:
-            if (entry.etunimi0 == firstname and entry.sukunimi0 == lastname) or entry.email0 == email:
-                return True
-        return False
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_recipient(self, model: _Model) -> str:
+        return model.get_email()
 
-    def _get_email_recipient(self, form: _Form) -> str:
-        return str(form.email0.data)
-
-    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
-        return ' '.join(["\"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
+        firstname = model.get_firstname()
+        lastname = model.get_lastname()
+        return ' '.join(["\"Hei", firstname, " ", lastname,
                          "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
-                         "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
-                         "\nSähköposti: ", str(form.email0.data),
-                         "\nPuhelinnumero: ", str(form.phone0.data),
-                         "\nMuiden joukkuelaisten nimet: ", str(form.etunimi1.data), str(form.sukunimi1.data),
-                         str(form.etunimi2.data), str(form.sukunimi2.data),
-                         str(form.etunimi3.data), str(form.sukunimi3.data),
-                         str(form.etunimi4.data), str(form.sukunimi4.data),
-                         str(form.etunimi5.data), str(form.sukunimi5.data),
+                         "\n'Nimi: ", firstname, " ", lastname,
+                         "\nSähköposti: ", model.get_email(),
+                         "\nPuhelinnumero: ", model.get_phone_number(),
+                         "\nMuiden joukkuelaisten nimet: ",
+                         "\n", model.etunimi1, " ", model.sukunimi1,
+                         "\n", model.etunimi2, " ", model.sukunimi2,
+                         "\n", model.etunimi3, " ", model.sukunimi3,
+                         "\n", model.etunimi4, " ", model.sukunimi4,
+                         "\n", model.etunimi5, " ", model.sukunimi5,
                          "\n\nÄlä vastaa tähän sähköpostiin",
                          "\n\nTerveisin: ropottilari\""])
 
