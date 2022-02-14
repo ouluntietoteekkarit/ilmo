@@ -81,6 +81,9 @@ class FormController(ABC):
         """
         Handle the submitted form for this event.
         Can be overridden in inheriting class to alter the behaviour.
+        Although overriding of this method should be avoided and other
+        methods that are used during the post routine should be
+        preferred for overriding.
         """
         return self._post_routine(self._context.get_form_type()(), self._context.get_model_type())
 
@@ -162,6 +165,12 @@ class FormController(ABC):
         return self._render_index_view(registrations, form, nowtime)
 
     def _check_form_submit(self, registrations: EventRegistrations, form: BasicForm, nowtime) -> str:
+        """
+        Checks that the submitted form is correctly filled
+        and that all registration conditions are met.
+        Can be overridden in inheriting classes to alter behaviour.
+        Overriding methods should call this method first.
+        """
         event = self._context.get_event()
 
         if not form.validate_on_submit():

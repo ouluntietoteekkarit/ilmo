@@ -104,32 +104,21 @@ class _Controller(FormController):
     def __init__(self):
         super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
-    def post_request_handler(self, request) -> Any:
-        # MEMO: This routine is prone to data race since it does not use transactions
-        form = _Form()
-        nowtime = datetime.now()
-        entries = _Model.query.all()
-        registrations = EventRegistrations(entries, self._count_participants(entries))
-
-        error_msg = self._check_form_submit(registrations, form, nowtime)
+    def _check_form_submit(self, registrations: EventRegistrations, form: BasicForm, nowtime) -> str:
+        error_msg = super()._check_form_submit(registrations, form, nowtime)
         if len(error_msg) != 0:
-            flash(error_msg)
-            return self._render_index_view(registrations, form, nowtime)
+            return error_msg
 
+        # Check escape room availability
         chosen_time = form.aika.data
         early_room = form.huone1800.data
         later_room = form.huone1930.data
-        for entry in entries:
+        for entry in registrations.get_entries():
             if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (
                     entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
-                flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-                return self._render_index_view(registrations, form, nowtime)
+                return 'Valisemasi huone on jo varattu valitsemanasi aikana'
 
-        model = self._form_to_model(form, nowtime)
-        if self._insert_model(model):
-            flash('Ilmoittautuminen onnistui')
-
-        return self._render_index_view(registrations, form, nowtime)
+        return error_msg
 
     def _render_index_view(self, registrations: EventRegistrations, form: _Form, nowtime, **extra_template_args) -> Any:
         varatut = []
