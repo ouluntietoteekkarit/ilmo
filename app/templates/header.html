@@ -22,6 +22,17 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
 
+    <style>
+        /* Form error message styles */
+        .form-group.has-error .help-block {
+            margin-top: 1em;
+            padding: 0.2em;
+            color: #084298;
+            background-color: #cfe2ff;
+            border-color: #b6d4fe;
+        }
+    </style>
+
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
@@ -31,14 +42,12 @@
             <ul class="alert alert-primary alert-dismissible" role="alert">
                 {% for message in messages %}
                     <h2>{{ message|safe }}</h2>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
                 {% endfor %}
             </ul>
         </div>
     {% endif %}
 {% endwith %}
 {% block content %}{% endblock %}
+{% block extra_js %}{% endblock %}
 </body>
 </html>

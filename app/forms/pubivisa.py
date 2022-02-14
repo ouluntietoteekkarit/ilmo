@@ -1,43 +1,35 @@
-from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash
-from wtforms import StringField, BooleanField, SubmitField, SelectField
+from flask import flash
+from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from typing import Any
+from typing import Any, List
 
 from app import db
-from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
-from .forms_util.forms import get_guild_choices
+from app.email import EmailRecipient, make_greet_line, make_signature_line, make_fullname_line
+from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.forms import ShowNameConsentField, BindingRegistrationConsentField, BasicForm
 from .forms_util.guilds import *
-from .forms_util.event import Event
-from .forms_util.form_controller import FormController
-
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
+from .forms_util.models import BasicModel, BindingRegistrationConsentColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-
-"""Singleton instance containing this form module's information."""
-_form_module = None
+(_form_module, _form_name) = init_module(__file__)
 
 
-def get_form_info() -> FormModuleInfo:
-    """
-    Returns this form's module information.
-    """
+def get_module_info() -> ModuleInfo:
+    """Returns a singleton object containing this form's module information."""
     global _form_module
-    if _form_module is None:
-        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
-class _Form(FlaskForm):
+@BindingRegistrationConsentField()
+@ShowNameConsentField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
+class _Form(BasicForm):
     teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
 
-    etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
     phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    email0 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
     kilta0 = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()), validators=[DataRequired()])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
@@ -58,22 +50,12 @@ class _Form(FlaskForm):
     email3 = StringField('Sähköposti', validators=[length(max=100)])
     kilta3 = SelectField('Kilta', choices=get_guild_choices(get_all_guilds()))
 
-    consent0 = BooleanField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
-    consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
 
-    submit = SubmitField('Ilmoittaudu')
-
-
-class _Model(db.Model):
-    __tablename__ = 'pubivisa'
-    id = db.Column(db.Integer, primary_key=True)
+class _Model(BasicModel, BindingRegistrationConsentColumn):
+    __tablename__ = _form_name
     teamname = db.Column(db.String(128))
 
-    etunimi0 = db.Column(db.String(64))
-    sukunimi0 = db.Column(db.String(64))
     phone0 = db.Column(db.String(32))
-    email0 = db.Column(db.String(128))
     kilta0 = db.Column(db.String(16))
 
     etunimi1 = db.Column(db.String(64))
@@ -94,152 +76,74 @@ class _Model(db.Model):
     email3 = db.Column(db.String(128))
     kilta3 = db.Column(db.String(16))
 
-    consent0 = db.Column(db.Boolean())
-    consent1 = db.Column(db.Boolean())
-    consent2 = db.Column(db.Boolean())
-
-    datetime = db.Column(db.DateTime())
-
     personcount = db.Column(db.Integer())
+
+
+_event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
+               datetime(2020, 10, 10, 23, 59, 59), 50, 0, _Form.asks_name_consent)
 
 
 class _Controller(FormController):
 
-    def get_request_handler(self, request) -> Any:
-        form = _Form()
-        event = self._get_event()
-        entries = _Model.query.all()
-        totalcount = 0
-        for entry in entries:
-            totalcount += entry.personcount
-
-        return self._render_form(entries, totalcount, event, datetime.now(), form)
+    def __init__(self):
+        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         form = _Form()
-        event = self._get_event()
         nowtime = datetime.now()
         entries = _Model.query.all()
-        totalcount = 0
-        for entry in entries:
-            totalcount += entry.personcount
+        registrations = EventRegistrations(entries, self._count_participants(entries) + self._count_group_members(form))
 
-        group_size = self._count_members(form)
-        totalcount += group_size
+        error_msg = self._check_form_submit(registrations, form, nowtime)
+        if len(error_msg) != 0:
+            flash(error_msg)
+            return self._render_index_view(registrations, form, nowtime)
 
-        if nowtime > event.get_end_time():
-            flash('Ilmoittautuminen on päättynyt')
-            return self._render_form(entries, totalcount, event, nowtime, form)
-
-        if totalcount >= event.get_participant_limit():
-            flash('Ilmoittautuminen on jo täynnä')
-            totalcount -= group_size
-            return self._render_form(entries, totalcount, event, nowtime, form)
-
-        if self._find_from_entries(entries, form):
-            flash('Olet jo ilmoittautunut')
-            return self._render_form(entries, totalcount, event, nowtime, form)
-
-        if form.validate_on_submit():
-            db.session.add(self._form_to_model(form, nowtime))
-            db.session.commit()
-
+        model = self._form_to_model(form, nowtime)
+        if self._insert_model(model):
             flash('Ilmoittautuminen onnistui')
-            form_info = get_form_info()
-            return redirect(url_for(form_info.get_endpoint_get_index()))
 
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+        return self._render_index_view(registrations, form, nowtime)
 
-        return self._render_form(entries, totalcount, event, nowtime, form)
-
-    def get_data_request_handler(self, request) -> Any:
-        return self._data_view(get_form_info(), _Model)
-
-    def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(_Model.__tablename__)
-
-    def _get_event(self) -> Event:
-        return Event('Pubivisa', datetime(2020, 10, 7, 12, 00, 00), datetime(2020, 10, 10, 23, 59, 59), 50, 0)
-
-    def _render_form(self, entries, count: int, event: Event, nowtime, form: _Form) -> Any:
-        return render_template('pubivisa/index.html',
-                               title='pubivisa ilmoittautuminen',
-                               entrys=entries,
-                               count=count,
-                               starttime=event.get_start_time(),
-                               endtime=event.get_end_time(),
-                               nowtime=nowtime,
-                               limit=event.get_participant_limit(),
-                               form=form,
-                               page="pubivisa",
-                               form_info=get_form_info())
-
-    def _find_from_entries(self, entries, form: _Form) -> bool:
-        teamname = form.teamname.data
+    def _count_participants(self, entries) -> int:
+        total_count = 0
         for entry in entries:
-            if entry.teamname == teamname:
-                return True
-        return False
+            total_count += entry.personcount
+        return total_count
 
-    def _get_email_subject(self) -> str:
-        return "pubivisa ilmoittautuminen"
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_recipient(self, recipient, model: _Model) -> List[EmailRecipient]:
+        return [
+            EmailRecipient(model.get_firstname(), model.get_lastname(), model.get_email()),
+            EmailRecipient(model.etunimi1, model.sukunimi1, model.email1),
+            EmailRecipient(model.etunimi2, model.sukunimi2, model.email2),
+            EmailRecipient(model.etunimi3, model.sukunimi3, model.email3)
+        ]
 
-    def _get_email_recipient(self, form: _Form) -> str:
-        return str(form.email0.data)
-
-    def _pubi_visa_mail(form):
-        #pubi_visa_mail_to(form, str(form.email0.data))
-        #pubi_visa_mail_to(form, str(form.email1.data))
-        #pubi_visa_mail_to(form, str(form.email2.data))
-        #pubi_visa_mail_to(form, str(form.email3.data))
-        pass
-
-    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
-        return ' '.join(["\"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
-                        "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                        "\n'Joukkueen nimi: ", str(form.teamname.data),
-                        "\n'Osallistujien nimet:\n",
-                        str(form.etunimi0.data), str(form.sukunimi0.data), "\n",
-                        str(form.etunimi1.data), str(form.sukunimi1.data), "\n",
-                        str(form.etunimi2.data), str(form.sukunimi2.data), "\n",
-                        str(form.etunimi3.data), str(form.sukunimi3.data), "\n",
-                        "\n\nÄlä vastaa tähän sähköpostiin",
-                        "\n\nTerveisin: ropottilari\""])
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
+        return ' '.join([
+            make_greet_line(recipient),
+            "\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
+            "\n'Joukkueen nimi: ", model.teamname,
+            "\n'Osallistujien nimet:\n",
+            make_fullname_line(model.get_firstname(), model.get_lastname()),
+            make_fullname_line(model.etunimi1, model.sukunimi1),
+            make_fullname_line(model.etunimi2, model.sukunimi2),
+            make_fullname_line(model.etunimi3, model.sukunimi3), "\n",
+            "\n\n", make_signature_line()
+        ])
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
-        members = self._count_members(form)
-        return _Model(
-            teamname=form.teamname.data,
-            etunimi0=form.etunimi0.data,
-            sukunimi0=form.sukunimi0.data,
-            phone0=form.phone0.data,
-            email0=form.email0.data,
-            kilta0=form.kilta0.data,
-            etunimi1=form.etunimi1.data,
-            sukunimi1=form.sukunimi1.data,
-            phone1=form.phone1.data,
-            email1=form.email1.data,
-            kilta1=form.kilta1.data,
-            etunimi2=form.etunimi2.data,
-            sukunimi2=form.sukunimi2.data,
-            phone2=form.phone2.data,
-            email2=form.email2.data,
-            kilta2=form.kilta2.data,
-            etunimi3=form.etunimi3.data,
-            sukunimi3=form.sukunimi3.data,
-            phone3=form.phone3.data,
-            email3=form.email3.data,
-            kilta3=form.kilta3.data,
-            consent0=form.consent0.data,
-            consent1=form.consent1.data,
-            consent2=form.consent2.data,
-            personcount=members,
-            datetime=nowtime
-        )
+        model = super()._form_to_model(form, nowtime)
+        members = self._count_group_members(form)
+        model.personcount = members
+        return model
 
-    def _count_members(self, form: _Form) -> int:
+    def _count_group_members(self, form: _Form) -> int:
         members = 0
         members += int(form.etunimi0.data and form.sukunimi0.data)
         members += int(form.etunimi1.data and form.sukunimi1.data)
@@ -247,3 +151,33 @@ class _Controller(FormController):
         members += int(form.etunimi3.data and form.sukunimi3.data)
         return members
 
+
+def _get_data_table_info() -> DataTableInfo:
+    # MEMO: (attribute, header_text)
+    # MEMO: Exclude id, teamname and person count
+    return DataTableInfo([
+        ('firstname', 'etunimi0'),
+        ('lastname', 'sukunimi0'),
+        ('email', 'email0'),
+        ('phone0', 'phone0'),
+        ('kilta0', 'kilta0'),
+        ('etunimi1', 'etunimi1'),
+        ('sukunimi1', 'sukunimi1'),
+        ('email1', 'email1'),
+        ('phone1', 'phone1'),
+        ('kilta1', 'kilta1'),
+        ('etunimi2', 'etunimi2'),
+        ('sukunimi2', 'sukunimi2'),
+        ('email2', 'email2'),
+        ('phone2', 'phone2'),
+        ('kilta2', 'kilta2'),
+        ('etunimi3', 'etunimi3'),
+        ('sukunimi3', 'sukunimi3'),
+        ('email3', 'email3'),
+        ('phone3', 'phone3'),
+        ('kilta3', 'kilta3'),
+        ('show_name_consent', 'hyväksyn nimen julkaisemisen'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
+        ('binding_registration_consent', 'ymmärrän että ilmoittautuminen on sitova'),
+        ('datetime', 'datetime')
+    ])

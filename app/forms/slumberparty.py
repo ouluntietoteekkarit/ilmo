@@ -1,129 +1,70 @@
-from flask_wtf import FlaskForm
-from flask import render_template
-from wtforms import StringField, BooleanField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from typing import Any
 
-from app import db
-from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
-from .forms_util.forms import get_guild_choices
+from app.email import EmailRecipient, make_greet_line, make_signature_line
+from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.forms import PhoneNumberField, GuildField, BasicForm, ShowNameConsentField, \
+    BindingRegistrationConsentField
 from .forms_util.guilds import *
-from .forms_util.event import Event
-from .forms_util.form_controller import FormController
-
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.models import BasicModel, GuildColumn, BindingRegistrationConsentColumn, PhoneNumberColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-
-"""Singleton instance containing this form module's information."""
-_form_module = None
+(_form_module, _form_name) = init_module(__file__)
 
 
-def get_form_info() -> FormModuleInfo:
-    """
-    Returns this form's module information.
-    """
+def get_module_info() -> ModuleInfo:
+    """Returns a singleton object containing this form's module information."""
     global _form_module
-    if _form_module is None:
-        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
-class _Form(FlaskForm):
-    etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    phone = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()))
-    consent0 = BooleanField('Sallin nimeni julkaisemisen osallistujalistassa')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
-    consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova *', validators=[DataRequired()])
-    submit = SubmitField('Ilmoittaudu')
+@BindingRegistrationConsentField()
+@ShowNameConsentField()
+@GuildField(get_guild_choices(get_all_guilds()))
+@PhoneNumberField()
+class _Form(BasicForm):
+    pass
 
 
-class _Model(db.Model):
-    __tablename__ = 'slumberparty'
-    id = db.Column(db.Integer, primary_key=True)
-    etunimi = db.Column(db.String(64))
-    sukunimi = db.Column(db.String(64))
-    phone = db.Column(db.String(32))
-    email = db.Column(db.String(128))
-    kilta = db.Column(db.String(16))
-    consent0 = db.Column(db.Boolean())
-    consent1 = db.Column(db.Boolean())
-    consent2 = db.Column(db.Boolean())
-    datetime = db.Column(db.DateTime())
+class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
+    __tablename__ = _form_name
+
+
+_event = Event('Slumberparty ilmoittautuminen', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50, 0, _Form.asks_name_consent)
 
 
 class _Controller(FormController):
 
-    def get_request_handler(self, request) -> Any:
-        form = _Form()
-        event = self._get_event()
-        entries = _Model.query.all()
+    def __init__(self):
+        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
-        return self._render_form(entries, len(entries), event, datetime.now(), form)
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
+        return ' '.join([
+            make_greet_line(recipient),
+            "\nOlet ilmoittautunut slumberpartyyn. Syötit seuraavia tietoja: ",
+            "\n'Nimi: ", firstname, " ", lastname,
+            "\nSähköposti: ", recipient.get_email_address(),
+            "\nPuhelinnumero: ", model.get_phone_number(),
+            "\nKilta: ", model.get_guild_name(),
+            "\n\n", make_signature_line()
+        ])
 
-    def post_request_handler(self, request) -> Any:
-        return self._post_routine(_Form(), _Model)
 
-    def get_data_request_handler(self, request) -> Any:
-        return self._data_view(get_form_info(), _Model, 'slumberparty/data.html')
-
-    def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(_Model.__tablename__)
-
-    def _get_event(self) -> Event:
-        return Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00), datetime(2020, 10, 27, 23, 59, 59), 50, 0)
-
-    def _render_form(self, entries, count: int, event: Event, nowtime, form: FlaskForm) -> Any:
-        return render_template('slumberparty/index.html',
-                               title='slumberparty ilmoittautuminen',
-                               entrys=entries,
-                               count=count,
-                               starttime=event.get_start_time(),
-                               endtime=event.get_end_time(),
-                               nowtime=nowtime,
-                               limit=event.get_participant_limit(),
-                               form=form,
-                               page="slumberparty",
-                               form_info=get_form_info())
-
-    def _find_from_entries(self, entries, form: FlaskForm) -> bool:
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        for entry in entries:
-            if entry.etunimi == firstname and entry.sukunimi == lastname:
-                return True
-        return False
-
-    def _get_email_subject(self) -> str:
-        return "slumberparty ilmoittautuminen"
-
-    def _get_email_recipient(self, form: FlaskForm) -> str:
-        return str(form.email.data)
-
-    def _get_email_msg(self, form: FlaskForm, reserve: bool) -> str:
-        return ' '.join(["\"Hei", str(form.etunimi.data), str(form.sukunimi.data),
-                        "\n\nOlet ilmoittautunut slumberpartyyn. Syötit seuraavia tietoja: ",
-                        "\n'Nimi: ", str(form.etunimi.data), str(form.sukunimi.data),
-                        "\nSähköposti: ", str(form.email.data),
-                        "\nPuhelinnumero: ", str(form.phone.data),
-                        "\nKilta: ", str(form.kilta.data),
-                        "\n\nÄlä vastaa tähän sähköpostiin",
-                        "\n\nTerveisin: ropottilari\""])
-
-    def _form_to_model(self, form: FlaskForm, nowtime) -> db.Model:
-        return _Model(
-            etunimi=form.etunimi.data,
-            sukunimi=form.sukunimi.data,
-            phone=form.phone.data,
-            email=form.email.data,
-            kilta=form.kilta.data,
-            consent0=form.consent0.data,
-            consent1=form.consent1.data,
-            consent2=form.consent2.data,
-            datetime=nowtime
-        )
+def _get_data_table_info() -> DataTableInfo:
+    # MEMO: (attribute, header_text)
+    return DataTableInfo([
+        ('etunimi', 'etunimi'),
+        ('sukunimi', 'sukunimi'),
+        ('phone_number', 'phone'),
+        ('email', 'email'),
+        ('guild_name', 'kilta'),
+        ('show_name_consent', 'hyväksyn nimen julkaisemisen'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
+        ('binding_registration_consent', 'ymmärrän että ilmoittautuminen on sitova'),
+        ('datetime', 'datetime'),
+    ])

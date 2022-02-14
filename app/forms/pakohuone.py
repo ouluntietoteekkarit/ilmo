@@ -1,33 +1,26 @@
-from flask_wtf import FlaskForm
-from flask import render_template, url_for, redirect, flash
-from wtforms import StringField, BooleanField, SubmitField, RadioField
-from wtforms.validators import DataRequired, Email, length
+from flask import flash
+from wtforms import StringField, RadioField
+from wtforms.validators import DataRequired, length
 from datetime import datetime
 import json
 from typing import Any
 
 from app import db
-from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIfValue
-from .forms_util.event import Event
-from .forms_util.form_controller import FormController
-
+from app.email import EmailRecipient, make_greet_line, make_signature_line
+from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.forms import RequiredIfValue, PhoneNumberField, get_str_choices, BasicForm
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
+from .forms_util.models import BasicModel, PhoneNumberColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-
-"""Singleton instance containing this form module's information."""
-_form_module = None
+(_form_module, _form_name) = init_module(__file__)
 
 
-def get_form_info() -> FormModuleInfo:
-    """
-    Returns this form's module information.
-    """
+def get_module_info() -> ModuleInfo:
+    """Returns a singleton object containing this form's module information."""
     global _form_module
-    if _form_module is None:
-        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
@@ -37,24 +30,17 @@ _PAKO_TIME_SECOND = '19:30'
 
 def _get_escape_games():
     return [
-       'Pommi (Uusikatu)',
-       'Kuolleen miehen saari (Uusikatu)',
-       'Temppelin kirous (Uusikatu)',
-       'Velhon perintö (Uusikatu)',
-       'Murhamysteeri (Kajaaninkatu)',
-       'Vankilapako (Kajaaninkatu)',
-       'Professorin arvoitus (Kajaaninkatu)',
-       'The SAW (Kirkkokatu)',
-       'Alcatraz (Kirkkokatu)',
-       'Matka maailman ympäri (Kirkkokatu)',
+        'Pommi (Uusikatu)',
+        'Kuolleen miehen saari (Uusikatu)',
+        'Temppelin kirous (Uusikatu)',
+        'Velhon perintö (Uusikatu)',
+        'Murhamysteeri (Kajaaninkatu)',
+        'Vankilapako (Kajaaninkatu)',
+        'Professorin arvoitus (Kajaaninkatu)',
+        'The SAW (Kirkkokatu)',
+        'Alcatraz (Kirkkokatu)',
+        'Matka maailman ympäri (Kirkkokatu)',
     ]
-
-
-def _get_game_choices():
-    choices = []
-    for game in _get_escape_games():
-        choices.append((game, game))
-    return choices
 
 
 def _get_game_times():
@@ -64,22 +50,13 @@ def _get_game_times():
     ]
 
 
-def _get_time_choices():
-    choices = []
-    for time in _get_game_times():
-        choices.append((time, time))
-    return choices
-
-
-class _Form(FlaskForm):
-    aika = RadioField('Aika *', choices=_get_time_choices(), validators=[DataRequired()])
-    huone1800 = RadioField('Huone (18:00) *', choices=_get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
-    huone1930 = RadioField('Huone (19:30) *', choices=_get_game_choices(), validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
-
-    etunimi0 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi0 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    email0 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
+@PhoneNumberField()
+class _Form(BasicForm):
+    aika = RadioField('Aika *', choices=get_str_choices(_get_game_times()), validators=[DataRequired()])
+    huone1800 = RadioField('Huone (18:00) *', choices=get_str_choices(_get_escape_games()),
+                           validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
+    huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_escape_games()),
+                           validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi1 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
@@ -96,25 +73,12 @@ class _Form(FlaskForm):
     etunimi5 = StringField('Etunimi', validators=[length(max=50)])
     sukunimi5 = StringField('Sukunimi', validators=[length(max=50)])
 
-    consent0 = BooleanField(
-        'Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *',
-        validators=[DataRequired()])
 
-    submit = SubmitField('Ilmoittaudu')
-
-
-class _Model(db.Model):
-    __tablename__ = 'pakohuone'
-    id = db.Column(db.Integer, primary_key=True)
-
+class _Model(BasicModel, PhoneNumberColumn):
+    __tablename__ = _form_name
     aika = db.Column(db.String(16))
     huone1800 = db.Column(db.String(128))
     huone1930 = db.Column(db.String(128))
-
-    etunimi0 = db.Column(db.String(64))
-    sukunimi0 = db.Column(db.String(64))
-    phone0 = db.Column(db.String(32))
-    email0 = db.Column(db.String(128))
 
     etunimi1 = db.Column(db.String(64))
     sukunimi1 = db.Column(db.String(64))
@@ -131,132 +95,91 @@ class _Model(db.Model):
     etunimi5 = db.Column(db.String(64))
     sukunimi5 = db.Column(db.String(64))
 
-    consent0 = db.Column(db.Boolean())
 
-    datetime = db.Column(db.DateTime())
+_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0, _Form.asks_name_consent)
 
 
 class _Controller(FormController):
 
-    def get_request_handler(self, request) -> Any:
-        form = _Form()
-        event = self._get_event()
-        entries = _Model.query.all()
-
-        return self._render_form(entries, len(entries), event, datetime.now(), form)
+    def __init__(self):
+        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         form = _Form()
-        event = self._get_event()
         nowtime = datetime.now()
         entries = _Model.query.all()
-        count = len(entries)
+        registrations = EventRegistrations(entries, self._count_participants(entries))
 
-        if count >= event.get_participant_limit():
-            flash('Ilmoittautuminen on jo täynnä')
-            return self._render_form(entries, count, event, nowtime, form)
-
-        if self._find_from_entries(entries, form):
-            flash('Olet jo ilmoittautunut')
-            return self._render_form(entries, count, event, nowtime, form,)
+        error_msg = self._check_form_submit(registrations, form, nowtime)
+        if len(error_msg) != 0:
+            flash(error_msg)
+            return self._render_index_view(registrations, form, nowtime)
 
         chosen_time = form.aika.data
         early_room = form.huone1800.data
         later_room = form.huone1930.data
         for entry in entries:
-            if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
+            if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (
+                    entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
                 flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-                return self._render_form(entries, count, event, nowtime, form)
+                return self._render_index_view(registrations, form, nowtime)
 
-        if form.validate_on_submit():
-            db.session.add(self._form_to_model(form, nowtime))
-            db.session.commit()
-
+        model = self._form_to_model(form, nowtime)
+        if self._insert_model(model):
             flash('Ilmoittautuminen onnistui')
-            form_info = get_form_info()
-            return redirect(url_for(form_info.get_endpoint_get_index()))
 
-        else:
-            flash('Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot')
+        return self._render_index_view(registrations, form, nowtime)
 
-        return self._render_form(entries, count, event, nowtime, form)
-
-    def get_data_request_handler(self, request) -> Any:
-        return self._data_view(get_form_info(), _Model)
-
-    def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(_Model.__tablename__)
-
-    def _get_event(self) -> Event:
-        return Event('Pakohuone', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0)
-
-    def _render_form(self, entries, count: int, event: Event, nowtime, form: _Form) -> Any:
+    def _render_index_view(self, registrations: EventRegistrations, form: _Form, nowtime, **extra_template_args) -> Any:
         varatut = []
-        for entry in entries:
+        for entry in registrations.get_entries():
             varatut.append((entry.aika, entry.huone1800, entry.huone1930))
+        return super()._render_index_view(registrations, form, nowtime, **{
+            'varatut': json.dumps(varatut),
+            **extra_template_args})
 
-        return render_template('pakohuone/index.html',
-                               title='pakohuone ilmoittautuminen',
-                               entrys=entries,
-                               count=count,
-                               starttime=event.get_start_time(),
-                               endtime=event.get_end_time(),
-                               nowtime=nowtime,
-                               limit=event.get_participant_limit(),
-                               form=form,
-                               varatut=json.dumps(varatut),
-                               page="pakohuone",
-                               form_info=get_form_info())
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
+        return ' '.join([
+            make_greet_line(recipient),
+            "\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
+            "\n'Nimi: ", firstname, " ", lastname,
+            "\nSähköposti: ", recipient.get_email_address(),
+            "\nPuhelinnumero: ", model.get_phone_number(),
+            "\nJoukkuelaisten nimet: ",
+            "\n", model.firstname, " ", model.lastname,
+            "\n", model.etunimi1, " ", model.sukunimi1,
+            "\n", model.etunimi2, " ", model.sukunimi2,
+            "\n", model.etunimi3, " ", model.sukunimi3,
+            "\n", model.etunimi4, " ", model.sukunimi4,
+            "\n", model.etunimi5, " ", model.sukunimi5,
+            "\n\n", make_signature_line()
+        ])
 
-    def _find_from_entries(self, entries, form: FlaskForm) -> bool:
-        firstname = form.etunimi0.data
-        lastname = form.sukunimi0.data
-        email = form.email0.data
-        for entry in entries:
-            if (entry.etunimi0 == firstname and entry.sukunimi0 == lastname) or entry.email0 == email:
-                return True
-        return False
 
-    def _get_email_subject(self) -> str:
-        return "pakopelipäivä ilmoittautuminen"
-
-    def _get_email_recipient(self, form: FlaskForm) -> str:
-        return str(form.email0.data)
-
-    def _get_email_msg(self, form: FlaskForm, reserve: bool) -> str:
-        return ' '.join(["\"Hei", str(form.etunimi0.data), str(form.sukunimi0.data),
-                        "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
-                        "\n'Nimi: ", str(form.etunimi0.data), str(form.sukunimi0.data),
-                        "\nSähköposti: ", str(form.email0.data),
-                        "\nPuhelinnumero: ", str(form.phone0.data),
-                        "\nMuiden joukkuelaisten nimet: ", str(form.etunimi1.data), str(form.sukunimi1.data),
-                        str(form.etunimi2.data), str(form.sukunimi2.data),
-                        str(form.etunimi3.data), str(form.sukunimi3.data),
-                        str(form.etunimi4.data), str(form.sukunimi4.data),
-                        str(form.etunimi5.data), str(form.sukunimi5.data),
-                        "\n\nÄlä vastaa tähän sähköpostiin",
-                        "\n\nTerveisin: ropottilari\""])
-
-    def _form_to_model(self, form: _Form, nowtime) -> _Model:
-        return _Model(
-            aika=form.aika.data,
-            huone1800=form.huone1800.data,
-            huone1930=form.huone1930.data,
-            etunimi0=form.etunimi0.data,
-            sukunimi0=form.sukunimi0.data,
-            phone0=form.phone0.data,
-            email0=form.email0.data,
-            etunimi1=form.etunimi1.data,
-            sukunimi1=form.sukunimi1.data,
-            etunimi2=form.etunimi2.data,
-            sukunimi2=form.sukunimi2.data,
-            etunimi3=form.etunimi3.data,
-            sukunimi3=form.sukunimi3.data,
-            etunimi4=form.etunimi4.data,
-            sukunimi4=form.sukunimi4.data,
-            etunimi5=form.etunimi5.data,
-            sukunimi5=form.sukunimi5.data,
-            consent0=form.consent0.data,
-            datetime=nowtime
-        )
+def _get_data_table_info() -> DataTableInfo:
+    # MEMO: (attribute, header_text)
+    return DataTableInfo([
+        ('aika', 'aika'),
+        ('huone1800', 'huone1800'),
+        ('huone1930', 'huone1930'),
+        ('firstname', 'etunimi0'),
+        ('lastname', 'sukunimi0'),
+        ('phone_number', 'phone0'),
+        ('email', 'email0'),
+        ('etunimi1', 'etunimi1'),
+        ('sukunimi1', 'sukunimi1'),
+        ('etunimi2', 'etunimi2'),
+        ('sukunimi2', 'sukunimi2'),
+        ('etunimi3', 'etunimi3'),
+        ('sukunimi3', 'sukunimi3'),
+        ('etunimi4', 'etunimi4'),
+        ('sukunimi4', 'sukunimi4'),
+        ('etunimi5', 'etunimi5'),
+        ('sukunimi5', 'sukunimi5'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
+        ('datetime', 'datetime')
+    ])

@@ -1,31 +1,23 @@
-from flask_wtf import FlaskForm
-from flask import render_template
-from wtforms import StringField, BooleanField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from typing import Any, List, Iterable, Tuple
+from typing import List, Iterable, Tuple
 
-from app import db
-from .forms_util.event import Event
-from .forms_util.form_controller import FormController
-from .forms_util.form_module_info import FormModuleInfo, file_path_to_form_name
-
+from app.email import EmailRecipient, make_greet_line
+from .forms_util.form_controller import FormController, DataTableInfo, Event
+from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.forms import PhoneNumberField, DepartureBusstopField, ShowNameConsentField, \
+    BindingRegistrationConsentField, BasicForm
+from .forms_util.models import BasicModel, DepartureBusstopColumn, PhoneNumberColumn
+from .forms_util.models import BindingRegistrationConsentColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-
-"""Singleton instance containing this form module's information."""
-_form_module = None
+(_form_module, _form_name) = init_module(__file__)
 
 
-def get_form_info() -> FormModuleInfo:
-    """
-    Returns this form's module information.
-    """
+def get_module_info() -> ModuleInfo:
+    """Returns a singleton object containing this form's module information."""
     global _form_module
-    if _form_module is None:
-        _form_module = FormModuleInfo(_Controller, True, file_path_to_form_name(__file__))
+    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
@@ -49,97 +41,45 @@ def _get_choise(values: Iterable[str]) -> List[Tuple[str, str]]:
     return choices
 
 
-class _Form(FlaskForm):
-    etunimi = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    email = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    puh = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    lahtopaikka = SelectField('Lähtöpaikka *', choices=_get_choise(_get_departure_stops()), validators=[DataRequired()])
-    consent0 = BooleanField('Hyväksyn nimeni julkaisemisen tällä sivulla')
-    consent1 = BooleanField('Olen lukenut tietosuojaselosteen ja hyväksyn tietojeni käytön tapahtuman järjestämisessä *', validators=[DataRequired()])
-    consent2 = BooleanField('Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *', validators=[DataRequired()])
-    submit = SubmitField('Ilmoittaudu')
+@BindingRegistrationConsentField('Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *')
+@ShowNameConsentField()
+@DepartureBusstopField(_get_choise(_get_departure_stops()))
+@PhoneNumberField()
+class _Form(BasicForm):
+    pass
 
 
-class _Model(db.Model):
-    __tablename__ = 'kmp'
-    id = db.Column(db.Integer, primary_key=True)
-    etunimi = db.Column(db.String(64))
-    sukunimi = db.Column(db.String(64))
-    email = db.Column(db.String(128))
-    puh = db.Column(db.String(32))
-    lahtopaikka = db.Column(db.String(32))
-    consent0 = db.Column(db.Boolean())
-    consent1 = db.Column(db.Boolean())
-    consent2 = db.Column(db.Boolean())
-    datetime = db.Column(db.DateTime())
+class _Model(BasicModel, DepartureBusstopColumn, PhoneNumberColumn, BindingRegistrationConsentColumn):
+    __tablename__ = _form_name
+
+
+_event = Event('OTiT KMP ilmoittautuminen', datetime(2021, 11, 19, 13, 37, 37), datetime(2021, 12, 3, 2, 00, 00),
+               15, 15, _Form.asks_name_consent)
 
 
 class _Controller(FormController):
 
-    def get_request_handler(self, request) -> Any:
-        form = _Form()
-        event = self._get_event()
-        entries = _Model.query.all()
+    def __init__(self):
+        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
-        return self._render_form(entries, len(entries), event, datetime.now(), form)
-
-    def post_request_handler(self, request) -> Any:
-        return self._post_routine(_Form(), _Model)
-
-    def get_data_request_handler(self, request) -> Any:
-        return self._data_view(get_form_info(), _Model)
-
-    def get_data_csv_request_handler(self, request) -> Any:
-        return self._export_to_csv(_Model.__tablename__)
-
-    def _get_event(self) -> Event:
-        return Event('Kmp', datetime(2021, 11, 19, 13, 37, 37), datetime(2021, 12, 3, 2, 00, 00), 15, 15)
-
-    def _render_form(self, entries, count: int, event: Event, nowtime, form: _Form) -> Any:
-         return render_template('kmp/index.html',
-                                title='kmp ilmoittautuminen',
-                                entrys=entries,
-                                totalcount=count,
-                                starttime=event.get_start_time(),
-                                endtime=event.get_end_time(),
-                                nowtime=nowtime,
-                                limit=event.get_participant_limit(),
-                                form=form,
-                                page="kmp",
-                                form_info=get_form_info())
-
-    def _find_from_entries(self, entries, form: _Form) -> bool:
-        firstname = form.etunimi.data
-        lastname = form.sukunimi.data
-        for entry in entries:
-            if entry.etunimi == firstname and entry.sukunimi == lastname:
-                return True
-        return False
-
-    def _get_email_subject(self) -> str:
-        return 'OTiT KMP ilmoittautuminen'
-
-    def _get_email_recipient(self, form: _Form) -> str:
-        return str(form.email.data)
-
-    def _get_email_msg(self, form: _Form, reserve: bool) -> str:
-        firstname = str(form.etunimi.data)
-        lastname = str(form.sukunimi.data)
-        email = str(form.email.data),
-        phone_number = str(form.puh.data)
-        departure_location = str(form.lahtopaikka.data)
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
+        email = recipient.get_email_address()
+        phone_number = model.get_phone_number()
+        departure_location = model.get_departure_busstop()
         if reserve:
             return ' '.join([
-                "\"Hei", firstname, " ", lastname,
-                "\n\nOlet ilmoittautunut OTiTin KMP:lle. Olet varasijalla. ",
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin KMP:lle. Olet varasijalla. ",
                 "Jos KMPlle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
         else:
             return ' '.join([
-                "\"Hei", firstname, " ", lastname,
-                "\n\nOlet ilmoittautunut OTiTin KMPlle. Tässä vielä syöttämäsi tiedot: ",
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin KMPlle. Tässä vielä syöttämäsi tiedot: ",
                 "\n\nNimi: ", firstname, lastname,
                 "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
                 "\nLähtöpaikka: ", departure_location,
@@ -149,19 +89,20 @@ class _Controller(FormController):
                 "\nTilinumero: FI03 4744 3020 0116 87",
                 "\nVastaanottajan nimi: Oulun Tietoteekkarit ry",
                 "\nViestiksi \"KMP + etunimi ja sukunimi\"",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
 
-    def _form_to_model(self, form: _Form, nowtime) -> _Model:
-        return _Model(
-            etunimi=form.etunimi.data,
-            sukunimi=form.sukunimi.data,
-            email=form.email.data,
-            puh=form.puh.data,
-            lahtopaikka=form.lahtopaikka.data,
-            consent0=form.consent0.data,
-            consent1=form.consent1.data,
-            consent2=form.consent2.data,
-            datetime=nowtime
-        )
 
+def _get_data_table_info() -> DataTableInfo:
+    # MEMO: (attribute, header_text)
+    return DataTableInfo([
+        ('firstname', 'etunimi'),
+        ('lastname', 'sukunimi'),
+        ('email', 'email'),
+        ('phone_number', 'puhelinnumero'),
+        ('departure_busstop', 'lahtopaikka'),
+        ('show_name_consent', 'hyväksyn nimeni julkaisemisen'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
+        ('binding_registration_consent', 'ymmärrän, että ilmoittautuminen on sitova'),
+        ('datetime', 'datetime')
+    ])

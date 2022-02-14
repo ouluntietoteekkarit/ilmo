@@ -1,0 +1,48 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/pitsakalja.jpg') }}");
+        }
+
+        div.container:nth-child(1) {
+            max-width: 800px;
+            background-color: white;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block extra_js -%}
+    <script src="{{ url_for('static',filename='js/pitsakaljasitsit.js') }}"></script>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <h1>Pitsakalja Sitsit</h1>
+
+    <p>Pitsakalja Sitsit 18.11. @Teekkaritalo</p>
+    <p><strong>Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman kanssa 17€. Maksu tapahtuu
+        tilisiirrolla Oulun
+        Tietoteekkarit ry:n tilille FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, Pitsakalja-sitsit sekä
+        alkoholiton tai alkoholillinen valintasi mukaan.</strong></p>
+
+    <p>60 ensimmäisen jälkeen ilmoittautuneet ovat varasijoilla.</p>
+    <p>Jos on kysyttävää niin voit olla yhteydessä sähköpostitse pepeministeri@otit.fi</p>
+{%- endblock -%}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ macros.form_field(form.firstname) }}
+        {{ macros.form_field(form.lastname) }}
+        {{ macros.form_field(form.email) }}
+        {{ macros.form_field(form.alkoholi) }}
+        <div id="mieto" style="display: none;">
+            {{ macros.form_field(form.mieto) }}
+        </div>
+        {{ macros.form_field(form.pitsa) }}
+        {{ macros.form_field(form.allergiat) }}
+        {{ macros.form_field(form.show_name_consent) }}
+        {{ macros.form_field(form.privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}

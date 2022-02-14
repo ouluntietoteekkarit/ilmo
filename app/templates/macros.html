@@ -1,0 +1,87 @@
+{% import "bootstrap/wtf.html" as wtf %}
+
+
+{% macro registration_form_routine(form) %}
+    <form class="form form-horizontal" method="post" role="form">
+        {{- form.hidden_tag() -}}
+        {{- caller() -}}
+        {{- form_submit_button() -}}
+    </form>
+{% endmacro %}
+
+
+{% macro basic_registration_form(form) %}
+    {%- call registration_form_routine(form) -%}
+        {{ form_field(form.firstname) }}
+        {{ form_field(form.lastname) }}
+        {{ form_field(form.email) }}
+        {{ form_field(form.privacy_consent) }}
+    {%- endcall -%}
+{% endmacro %}
+
+
+{% macro form_field(field) %}
+    {#
+        TODO: wtf.form_field is poorly made and needs to be replaced.
+              Look into replacing it and keep the replacement bootstrap
+              compatible.
+    #}
+    {{- wtf.form_field(field) -}}
+{% endmacro %}
+
+
+{% macro form_submit_button() %}
+    <button class="btn btn-info">
+        <input class="btn btn-default" value="Ilmoittaudu" type="submit">
+    </button>
+{% endmacro %}
+
+
+{% macro registration_begins(event) %}
+    <h5>Ilmoittautuminen alkaa {{ event.get_start_time() }}</h5>
+{% endmacro %}
+
+
+{% macro registration_ends(event) %}
+    <h5>Ilmoittautuminen päättyy {{ event.get_end_time() }}</h5>
+{% endmacro %}
+
+
+{% macro registration_ended(event) %}
+    <h5>Ilmoittautuminen on päättynyt</h5>
+{% endmacro %}
+
+
+{% macro privacy_statement(module_info) %}
+    <a href="{{ url_for('static',filename='privacy_statements/' ~ module_info.get_form_name() ~ '.pdf') }}">Tietosuojaseloste</a>
+{% endmacro %}
+
+
+{% macro participant_list_routine(entries, event, start, end) %}
+    {%- if event.get_list_participant_name() -%}
+        {%- for entry in entries[start:end] %}
+            {%- if entry.get_show_name_consent() %}
+                {{- caller(entry) -}}
+            {% endif %}
+        {% endfor -%}
+    {%- endif -%}
+{% endmacro %}
+
+
+{% macro participant_list(entries, event) %}
+    {%- set limit = event.get_participant_limit() -%}
+    {%- set maxlimit = event.get_max_limit() -%}
+
+    {%- call(entry) participant_list_routine(entries, event, 0, limit) -%}
+        <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }}</p>
+    {%- endcall -%}
+
+    {%- call(entry) participant_list_routine(entries, event, limit, maxlimit) -%}
+        <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }} (Varasijalla)</p>
+    {%- endcall -%}
+{% endmacro %}
+
+
+{% macro participant_count(count, event) %}
+    <h3>Osallistujat: {{ count }}/{{ event.get_participant_limit() }}</h3>
+{% endmacro %}

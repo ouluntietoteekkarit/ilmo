@@ -1,3 +1,5 @@
+from typing import Iterable
+
 GUILD_OTIT = 'OTiT'
 GUILD_SIK = 'SIK'
 GUILD_YMP = 'YMP'
@@ -26,3 +28,10 @@ def get_all_guilds():
         Guild(GUILD_OPTIEM),
         Guild(GUILD_ARK)
     ]
+
+
+def get_guild_choices(guilds: Iterable[Guild]) -> list:
+    choices = []
+    for guild in guilds:
+        choices.append((guild.get_name(), guild.get_name()))
+    return choices
