@@ -42,8 +42,9 @@ class FormContext:
 
 class FormController(ABC):
 
-    def __init__(self, context: FormContext):
-        self._context = context
+    def __init__(self, event: Event, form: Type[basic_form()], model: Type[BasicModel],
+                 module_info: ModuleInfo, data_table_info: DataTableInfo):
+        self._context = FormContext(event, form, model, module_info, data_table_info)
 
     def get_request_handler(self, request) -> Any:
         """
@@ -238,12 +239,13 @@ class DataTableInfo:
 
 class Event(object):
 
-    def __init__(self, title: str, start_time, end_time, participant_limit: int, participant_reserve: int):
+    def __init__(self, title: str, start_time, end_time, participant_limit: int, participant_reserve: int, list_participant_name: bool):
         self.title = title
         self._start_time = start_time
         self._end_time = end_time
         self._participant_limit = participant_limit
         self._participant_reserve = participant_reserve
+        self._list_paticipant_names = list_participant_name
 
     def get_title(self) -> str:
         return self.title
@@ -259,6 +261,9 @@ class Event(object):
 
     def get_participant_reserve(self) -> int:
         return self._participant_reserve
+
+    def get_list_participant_name(self) -> bool:
+        return self._list_paticipant_names
 
     def get_max_limit(self) -> int:
         return self._participant_limit + self._participant_reserve

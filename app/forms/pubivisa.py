@@ -13,22 +13,21 @@ from .forms_util.form_controller import FormController, FormContext, DataTableIn
 from .forms_util.models import BasicModel, BindingRegistrationConsentColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-
 (_form_module, _form_name) = init_module(__file__)
 
 
 def get_module_info() -> ModuleInfo:
-    """
-    Returns a singleton object containing this form's module information.
-    """
+    """Returns a singleton object containing this form's module information."""
     global _form_module
     _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
-name_consent_txt = 'Sallin joukkueen nimen julkaisemisen osallistujalistassa'
-class _Form(basic_form(), show_name_consent_field(name_consent_txt), binding_registration_consent_field()):
+_name_consent_txt = 'Sallin joukkueen nimen julkaisemisen osallistujalistassa'
+_name_consent_type = show_name_consent_field(_name_consent_txt)
+class _Form(basic_form(),
+            _name_consent_type,
+            binding_registration_consent_field()):
     teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
 
     phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
@@ -81,12 +80,14 @@ class _Model(BasicModel, BindingRegistrationConsentColumn):
     personcount = db.Column(db.Integer())
 
 
+_event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
+               datetime(2020, 10, 10, 23, 59, 59), 50, 0, issubclass(_Form, _name_consent_type))
+
+
 class _Controller(FormController):
 
     def __init__(self):
-        event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
-                      datetime(2020, 10, 10, 23, 59, 59), 50, 0)
-        super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
+        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
@@ -165,7 +166,7 @@ class _Controller(FormController):
 def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
     # MEMO: Exclude id, teamname and person count
-    table_structure = [
+    return DataTableInfo([
         ('firstname', 'etunimi0'),
         ('lastname', 'sukunimi0'),
         ('email', 'email0'),
@@ -190,5 +191,4 @@ def _get_data_table_info() -> DataTableInfo:
         ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
         ('binding_registration_consent', 'ymmärrän että ilmoittautuminen on sitova'),
         ('datetime', 'datetime')
-    ]
-    return DataTableInfo(table_structure)
+    ])

@@ -11,18 +11,14 @@ from .forms_util.form_controller import FormController, FormContext, DataTableIn
 from .forms_util.models import BasicModel
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-
 (_form_module, _form_name) = init_module(__file__)
 
 
 def get_module_info() -> ModuleInfo:
-    """
-    Returns a singleton object containing this form's module information.
-    """
+    """Returns a singleton object containing this form's module information."""
     global _form_module
     _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
@@ -59,7 +55,8 @@ def _get_pizzas() -> List[str]:
     ]
 
 
-class _Form(basic_form(), show_name_consent_field()):
+_name_consent_type = show_name_consent_field()
+class _Form(basic_form(), _name_consent_type):
     alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
     mieto = SelectField('Mieto juoma *', choices=get_str_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value=_DRINK_ALCOHOLIC)])
     pitsa = SelectField('Pitsa *', choices=get_str_choices(_get_pizzas()), validators=[DataRequired()])
@@ -74,11 +71,13 @@ class _Model(BasicModel):
     allergiat = db.Column(db.String(256))
 
 
+_event = Event('OTiT Pitsakaljasitsit ilmoittautuminen', datetime(2021, 10, 26, 12, 00, 00), datetime(2021, 11, 9, 23, 59, 59), 60, 30, issubclass(_Form, _name_consent_type))
+
+
 class _Controller(FormController):
 
     def __init__(self):
-        event = Event('OTiT Pitsakaljasitsit ilmoittautuminen', datetime(2021, 10, 26, 12, 00, 00), datetime(2021, 11, 9, 23, 59, 59), 60, 30)
-        super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
+        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool):
@@ -105,7 +104,7 @@ class _Controller(FormController):
 
 def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
-    table_structure = [
+    return DataTableInfo([
         ('firstname', 'etunimi'),
         ('lastname', 'sukunimi'),
         ('email', 'email'),
@@ -116,5 +115,4 @@ def _get_data_table_info() -> DataTableInfo:
         ('show_name_consent', 'hyväksyn nimeni julkaisemisen'),
         ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
         ('datetime', 'datetime')
-    ]
-    return DataTableInfo(table_structure)
+    ])

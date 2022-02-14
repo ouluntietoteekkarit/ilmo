@@ -52,12 +52,10 @@
     {% endif %}
 
     {{ macros.participant_count(entries|length, event) }}
-    {#
     {% call(entry) macros.participant_list_routine(entries, event, 0, event.get_participant_limit()) %}
         <p>{{ entry.teamname }}</p>
     {% endcall %}
     {% call(entry) macros.participant_list_routine(entries, event, event.get_participant_limit(), event.get_max_limit()) %}
         <p>{{ entry.teamname }} (Varasijalla)</p>
     {% endcall %}
-    #}
 {% endblock %}

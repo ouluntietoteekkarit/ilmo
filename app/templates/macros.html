@@ -7,13 +7,23 @@
 {% endmacro %}
 
 
+{% macro registration_form(form) %}
+    <form class="form form-horizontal" method="post" role="form">
+        {{ form.hidden_tag() }}
+        {%- for field in form -%}
+            {{ form_field(field) }}
+        {%- endfor -%}
+        {{ form_submit_button() }}
+    </form>
+{% endmacro %}
+
 {% macro form_field(field) %}
     {#
         TODO: wtf.form_field is poorly made and needs to be replaced.
               Look into replacing it and keep the replacement bootstrap
               compatible.
     #}
-    {{ wtf.form_field(field) }}
+    {{- wtf.form_field(field) -}}
 {% endmacro %}
 
 
@@ -30,25 +40,27 @@
 
 
 {% macro participant_list_routine(entries, event, start, end) %}
-    {% for entry in entries[start:end] %}
-        {% if entry.get_show_name_consent() %}
-            {{ caller(entry) }}
-        {% endif %}
-    {% endfor %}
+    {%- if event.get_list_participant_name() -%}
+        {%- for entry in entries[start:end] %}
+            {%- if entry.get_show_name_consent() %}
+                {{- caller(entry) -}}
+            {% endif %}
+        {% endfor -%}
+    {%- endif -%}
 {% endmacro %}
 
 
 {% macro participant_list(entries, event) %}
-    {% set limit = event.get_participant_limit() %}
-    {% set maxlimit = event.get_max_limit() %}
+    {%- set limit = event.get_participant_limit() -%}
+    {%- set maxlimit = event.get_max_limit() -%}
 
-    {% call(entry) participant_list_routine(entries, event, 0, limit) %}
+    {%- call(entry) participant_list_routine(entries, event, 0, limit) -%}
         <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }}</p>
-    {% endcall %}
+    {%- endcall -%}
 
-    {% call(entry) participant_list_routine(entries, event, limit, maxlimit) %}
+    {%- call(entry) participant_list_routine(entries, event, limit, maxlimit) -%}
         <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }} (Varasijalla)</p>
-    {% endcall %}
+    {%- endcall -%}
 {% endmacro %}
 
 

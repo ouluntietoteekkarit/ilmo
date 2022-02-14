@@ -33,7 +33,9 @@
 {% endblock %}
 
 {% block registration_form %}
-    {% if event.get_start_time() < nowtime < event.get_end_time() %}
+    {%- if event.get_start_time() < nowtime < event.get_end_time() -%}
+        {{ macros.registration_form(form) }}
+        {#
         <form class="form form-horizontal" method="post" role="form">
             {{ form.hidden_tag() }}
             {{ macros.form_field(form.firstname) }}
@@ -45,16 +47,16 @@
             {{ macros.form_field(form.show_name_consent) }}
             {{ macros.form_field(form.privacy_consent) }}
             {{ macros.form_submit_button() }}
-
-            <h5>Ilmoittautuminen päättyy {{ event.get_end_time() }}</h5>
-            {{ macros.participant_count(entries|length, event) }}
-            {{ macros.participant_list(entries, event) }}
         </form>
-    {% elif nowtime < event.get_start_time() %}
+        #}
+        <h5>Ilmoittautuminen päättyy {{ event.get_end_time() }}</h5>
+        {{ macros.participant_count(entries|length, event) }}
+        {{ macros.participant_list(entries, event) }}
+    {%- elif nowtime < event.get_start_time() -%}
         <h5>Ilmoittautuminen alkaa {{ event.get_start_time() }}</h5>
-    {% else %}
+    {%- else -%}
         <h5>Ilmoittautuminen on päättynyt</h5>
         {{ macros.participant_count(entries|length, event) }}
         {{ macros.participant_list(entries, event) }}
-    {% endif %}
+    {% endif -%}
 {% endblock %}

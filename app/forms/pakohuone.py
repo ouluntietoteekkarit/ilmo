@@ -13,18 +13,14 @@ from .forms_util.form_controller import FormController, FormContext, DataTableIn
 from .forms_util.models import BasicModel, PhoneNumberColumn
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-
 (_form_module, _form_name) = init_module(__file__)
 
 
 def get_module_info() -> ModuleInfo:
-    """
-    Returns a singleton object containing this form's module information.
-    """
+    """Returns a singleton object containing this form's module information."""
     global _form_module
     _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
     return _form_module
-
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 
@@ -99,11 +95,13 @@ class _Model(BasicModel, PhoneNumberColumn):
     sukunimi5 = db.Column(db.String(64))
 
 
+_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0, False)
+
+
 class _Controller(FormController):
 
     def __init__(self):
-        event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0)
-        super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
+        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     def post_request_handler(self, request) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
@@ -164,7 +162,7 @@ class _Controller(FormController):
 
 def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
-    table_structure = [
+    return DataTableInfo([
         ('aika', 'aika'),
         ('huone1800', 'huone1800'),
         ('huone1930', 'huone1930'),
@@ -184,5 +182,4 @@ def _get_data_table_info() -> DataTableInfo:
         ('sukunimi5', 'sukunimi5'),
         ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
         ('datetime', 'datetime')
-    ]
-    return DataTableInfo(table_structure)
+    ])
