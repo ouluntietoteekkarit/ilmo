@@ -84,6 +84,13 @@ class BasicForm(FlaskForm):
     def get_privacy_consent(self) -> bool:
         return self.privacy_consent.data
 
+    def get_participant_count(self) -> int:
+        """
+        Returns the number of participants this form covers.
+        Overriding this method allows handling group registrations.
+        """
+        return 1
+
 
 class ShowNameConsentField:
     def __init__(self, txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla'):

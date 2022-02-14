@@ -173,7 +173,7 @@ class FormController(ABC):
         if nowtime > event.get_end_time():
             return 'Ilmoittautuminen on päättynyt'
 
-        if registrations.get_participant_count() >= event.get_max_limit():
+        if registrations.get_participant_count() + form.get_participant_count() > event.get_max_limit():
             return 'Ilmoittautuminen on jo täynnä'
 
         if self._find_from_entries(registrations.get_entries(), form):

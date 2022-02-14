@@ -50,6 +50,12 @@ class _Form(BasicForm):
     email3 = StringField('Sähköposti', validators=[length(max=100)])
     kilta3 = SelectField('Kilta', choices=get_guild_choices(get_all_guilds()))
 
+    def get_participant_count(self) -> int:
+        return int(self.firstname.data and self.lastname.data) \
+             + int(self.etunimi1.data and self.sukunimi1.data) \
+             + int(self.etunimi2.data and self.sukunimi2.data) \
+             + int(self.etunimi3.data and self.sukunimi3.data)
+
 
 class _Model(BasicModel, BindingRegistrationConsentColumn):
     __tablename__ = _form_name
@@ -88,24 +94,6 @@ class _Controller(FormController):
     def __init__(self):
         super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
-    def post_request_handler(self, request) -> Any:
-        # MEMO: This routine is prone to data race since it does not use transactions
-        form = _Form()
-        nowtime = datetime.now()
-        entries = _Model.query.all()
-        registrations = EventRegistrations(entries, self._count_participants(entries) + self._count_group_members(form))
-
-        error_msg = self._check_form_submit(registrations, form, nowtime)
-        if len(error_msg) != 0:
-            flash(error_msg)
-            return self._render_index_view(registrations, form, nowtime)
-
-        model = self._form_to_model(form, nowtime)
-        if self._insert_model(model):
-            flash('Ilmoittautuminen onnistui')
-
-        return self._render_index_view(registrations, form, nowtime)
-
     def _count_participants(self, entries) -> int:
         total_count = 0
         for entry in entries:
@@ -139,17 +127,9 @@ class _Controller(FormController):
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
         model = super()._form_to_model(form, nowtime)
-        members = self._count_group_members(form)
+        members = form.get_participant_count()
         model.personcount = members
         return model
-
-    def _count_group_members(self, form: _Form) -> int:
-        members = 0
-        members += int(form.etunimi0.data and form.sukunimi0.data)
-        members += int(form.etunimi1.data and form.sukunimi1.data)
-        members += int(form.etunimi2.data and form.sukunimi2.data)
-        members += int(form.etunimi3.data and form.sukunimi3.data)
-        return members
 
 
 def _get_data_table_info() -> DataTableInfo:
