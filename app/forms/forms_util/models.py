@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 from app import db
 
 
@@ -61,3 +63,43 @@ class BindingRegistrationConsentColumn:
 
     def get_binding_registration_consent(self) -> bool:
         return self.binding_registration_consent
+
+
+def basic_model_csv_map() -> List[Tuple[str, str]]:
+    # MEMO: (attribute, header_text)
+    return [
+        ('firstname', 'etunimi'),
+        ('lastname', 'sukunimi'),
+        ('email', 'email'),
+        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
+        ('show_name_consent', 'hyväksyn nimen julkaisun'),
+        ('datetime', 'pvm')
+    ]
+
+
+def phone_number_csv_map() -> List[Tuple[str, str]]:
+    # MEMO: (attribute, header_text)
+    return [
+        ('phone_number', 'puhelinnumero')
+    ]
+
+
+def guild_name_csv_map() -> List[Tuple[str, str]]:
+    # MEMO: (attribute, header_text)
+    return [
+        ('guild_name', 'kilta')
+    ]
+
+
+def departure_busstop_csv_map() -> List[Tuple[str, str]]:
+    # MEMO: (attribute, header_text)
+    return [
+        ('departure_busstop', 'lähtopaikka')
+    ]
+
+
+def binding_registration_csv_map() -> List[Tuple[str, str]]:
+    # MEMO: (attribute, header_text)
+    return [
+        ('binding_registration_consent', 'ymmärrän että ilmoittautuminen on sitova')
+    ]

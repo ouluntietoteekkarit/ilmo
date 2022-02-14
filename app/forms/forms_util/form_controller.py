@@ -21,11 +21,10 @@ class FormContext:
     """
 
     def __init__(self, event: Event, form: Type[BasicForm], model: Type[BasicModel],
-                 module_info: ModuleInfo, data_table_info: DataTableInfo):
+                 data_table_info: DataTableInfo):
         self._event = event
         self._form = form
         self._model = model
-        self._module_info = module_info
         self._data_table_info = data_table_info
 
     def get_event(self) -> Event:
@@ -62,9 +61,9 @@ class EventRegistrations:
 
 class FormController(ABC):
 
-    def __init__(self, event: Event, form: Type[BasicForm], model: Type[BasicModel],
-                 module_info: ModuleInfo, data_table_info: DataTableInfo):
-        self._context = FormContext(event, form, model, module_info, data_table_info)
+    def __init__(self, module_info: ModuleInfo):
+        self._module_info = module_info
+        self._context = module_info.get_form_context()
 
     def get_request_handler(self, request) -> Any:
         """
@@ -213,7 +212,7 @@ class FormController(ABC):
         """
         A method to render the index.html template of this event.
         """
-        module_info = self._context.get_module_info()
+        module_info = self._module_info
         form_name = module_info.get_form_name()
         return render_template('{}/index.html'.format(form_name), **{
                                    'registrations': registrations,

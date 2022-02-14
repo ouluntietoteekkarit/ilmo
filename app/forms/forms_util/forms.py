@@ -4,6 +4,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SelectField
 from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
 
+from app.forms.forms_util.guilds import Guild
+
 
 class RequiredIf(InputRequired):
     """Validator which makes a field required if another field is set and has a truthy value.
@@ -59,6 +61,13 @@ def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
     choices = []
     for val in values:
         choices.append((val, val))
+    return choices
+
+
+def get_guild_choices(guilds: Iterable[Guild]) -> list:
+    choices = []
+    for guild in guilds:
+        choices.append((guild.get_name(), guild.get_name()))
     return choices
 
 

@@ -1,4 +1,3 @@
-from flask import flash
 from wtforms import StringField, RadioField
 from wtforms.validators import DataRequired, length
 from datetime import datetime
@@ -7,22 +6,12 @@ from typing import Any
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIfValue, PhoneNumberField, get_str_choices, BasicForm
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
-from .forms_util.models import BasicModel, PhoneNumberColumn
+from .forms_util.models import BasicModel, PhoneNumberColumn, basic_model_csv_map, phone_number_csv_map
 
-# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-(_form_module, _form_name) = init_module(__file__)
-
-
-def get_module_info() -> ModuleInfo:
-    """Returns a singleton object containing this form's module information."""
-    global _form_module
-    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
-    return _form_module
-# P U B L I C   M O D U L E   I N T E R F A C E   E N D
-
+_form_name = file_path_to_form_name(__file__)
 
 _PAKO_TIME_FIRST = '18:00'
 _PAKO_TIME_SECOND = '19:30'
@@ -96,13 +85,7 @@ class _Model(BasicModel, PhoneNumberColumn):
     sukunimi5 = db.Column(db.String(64))
 
 
-_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0, _Form.asks_name_consent)
-
-
 class _Controller(FormController):
-
-    def __init__(self):
-        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     def _check_form_submit(self, registrations: EventRegistrations, form: BasicForm, nowtime) -> str:
         error_msg = super()._check_form_submit(registrations, form, nowtime)
@@ -151,24 +134,33 @@ class _Controller(FormController):
 
 def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
-    return DataTableInfo([
-        ('aika', 'aika'),
-        ('huone1800', 'huone1800'),
-        ('huone1930', 'huone1930'),
-        ('firstname', 'etunimi0'),
-        ('lastname', 'sukunimi0'),
-        ('phone_number', 'phone0'),
-        ('email', 'email0'),
-        ('etunimi1', 'etunimi1'),
-        ('sukunimi1', 'sukunimi1'),
-        ('etunimi2', 'etunimi2'),
-        ('sukunimi2', 'sukunimi2'),
-        ('etunimi3', 'etunimi3'),
-        ('sukunimi3', 'sukunimi3'),
-        ('etunimi4', 'etunimi4'),
-        ('sukunimi4', 'sukunimi4'),
-        ('etunimi5', 'etunimi5'),
-        ('sukunimi5', 'sukunimi5'),
-        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
-        ('datetime', 'datetime')
-    ])
+    return DataTableInfo([('aika', 'aika'),
+                          ('huone1800', 'huone1800'),
+                          ('huone1930', 'huone1930')] +
+                         basic_model_csv_map() +
+                         phone_number_csv_map() +
+                         [('etunimi1', 'etunimi1'),
+                          ('sukunimi1', 'sukunimi1'),
+                          ('etunimi2', 'etunimi2'),
+                          ('sukunimi2', 'sukunimi2'),
+                          ('etunimi3', 'etunimi3'),
+                          ('sukunimi3', 'sukunimi3'),
+                          ('etunimi4', 'etunimi4'),
+                          ('sukunimi4', 'sukunimi4'),
+                          ('etunimi5', 'etunimi5'),
+                          ('sukunimi5', 'sukunimi5')])
+
+
+_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
+               20, 0, _Form.asks_name_consent)
+
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+def get_module_info() -> ModuleInfo:
+    """Returns a singleton object containing this form's module information."""
+    if not hasattr(get_module_info, 'result'):
+        get_module_info.result = ModuleInfo(_Controller, True, _form_name,
+                                            FormContext(_event, _Form, _Model, _get_data_table_info()))
+    return get_module_info.result
+
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D

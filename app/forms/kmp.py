@@ -2,23 +2,15 @@ from datetime import datetime
 from typing import List, Iterable, Tuple
 
 from app.email import EmailRecipient, make_greet_line
-from .forms_util.form_controller import FormController, DataTableInfo, Event
-from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.form_controller import FormController, DataTableInfo, Event, FormContext
+from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import PhoneNumberField, DepartureBusstopField, ShowNameConsentField, \
     BindingRegistrationConsentField, BasicForm
-from .forms_util.models import BasicModel, DepartureBusstopColumn, PhoneNumberColumn
+from .forms_util.models import BasicModel, DepartureBusstopColumn, PhoneNumberColumn, basic_model_csv_map, \
+    phone_number_csv_map, departure_busstop_csv_map, binding_registration_csv_map
 from .forms_util.models import BindingRegistrationConsentColumn
 
-# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-(_form_module, _form_name) = init_module(__file__)
-
-
-def get_module_info() -> ModuleInfo:
-    """Returns a singleton object containing this form's module information."""
-    global _form_module
-    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
-    return _form_module
-# P U B L I C   M O D U L E   I N T E R F A C E   E N D
+_form_name = file_path_to_form_name(__file__)
 
 
 _DEPARTURE_BUS_STOP_UNI = 'Yliopisto'
@@ -53,14 +45,7 @@ class _Model(BasicModel, DepartureBusstopColumn, PhoneNumberColumn, BindingRegis
     __tablename__ = _form_name
 
 
-_event = Event('OTiT KMP ilmoittautuminen', datetime(2021, 11, 19, 13, 37, 37), datetime(2021, 12, 3, 2, 00, 00),
-               15, 15, _Form.asks_name_consent)
-
-
 class _Controller(FormController):
-
-    def __init__(self):
-        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
@@ -95,14 +80,21 @@ class _Controller(FormController):
 
 def _get_data_table_info() -> DataTableInfo:
     # MEMO: (attribute, header_text)
-    return DataTableInfo([
-        ('firstname', 'etunimi'),
-        ('lastname', 'sukunimi'),
-        ('email', 'email'),
-        ('phone_number', 'puhelinnumero'),
-        ('departure_busstop', 'lahtopaikka'),
-        ('show_name_consent', 'hyväksyn nimeni julkaisemisen'),
-        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
-        ('binding_registration_consent', 'ymmärrän, että ilmoittautuminen on sitova'),
-        ('datetime', 'datetime')
-    ])
+    return DataTableInfo(basic_model_csv_map() +
+                         phone_number_csv_map() +
+                         departure_busstop_csv_map() +
+                         binding_registration_csv_map())
+
+
+_event = Event('OTiT KMP ilmoittautuminen', datetime(2021, 11, 19, 13, 37, 37), datetime(2021, 12, 3, 2, 00, 00),
+               15, 15, _Form.asks_name_consent)
+
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+def get_module_info() -> ModuleInfo:
+    """Returns a singleton object containing this form's module information."""
+    if not hasattr(get_module_info, 'result'):
+        get_module_info.result = ModuleInfo(_Controller, True, _form_name, FormContext(_event, _Form, _Model, _get_data_table_info()))
+    return get_module_info.result
+
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D

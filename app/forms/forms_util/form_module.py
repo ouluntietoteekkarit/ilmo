@@ -4,7 +4,7 @@ from typing import Type, Union, TYPE_CHECKING, Tuple
 from os.path import split, splitext
 
 if TYPE_CHECKING:
-    from .form_controller import FormController
+    from .form_controller import FormController, FormContext
 
 
 class ModuleInfo:
@@ -12,10 +12,12 @@ class ModuleInfo:
     A class to provide a programming interface for form python modules.
     """
 
-    def __init__(self, controller_type: Type[FormController], is_active: bool, form_name: str):
+    def __init__(self, controller_type: Type[FormController], is_active: bool,
+                 form_name: str, context: FormContext):
         self._controller_type = controller_type
         self._is_active = is_active
         self._form_name = form_name
+        self._context = context
         self._form_endpoint_get_index = ""
         self._form_endpoint_post_index = ""
         self._form_endpoint_get_data = ""
@@ -29,6 +31,9 @@ class ModuleInfo:
 
     def get_form_name(self) -> str:
         return self._form_name
+
+    def get_form_context(self) -> FormContext:
+        return self._context
 
     def get_endpoint_get_index(self) -> str:
         return self._form_endpoint_get_index
@@ -59,8 +64,3 @@ def file_path_to_form_name(path: Union[str, Path]) -> str:
     """Reduces a file path plain filename"""
     # MEMO: Add sanitation if needed
     return splitext(split(path)[1])[0]
-
-
-def init_module(file_path: str) -> Tuple[None, str]:
-    """Returns initial values for a form module's global variables."""
-    return None, file_path_to_form_name(file_path)

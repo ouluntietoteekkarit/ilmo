@@ -1,36 +1,27 @@
-from flask import flash
 from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from typing import Any, List
+from typing import List
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line, make_fullname_line
-from .forms_util.form_module import ModuleInfo, init_module
-from .forms_util.forms import ShowNameConsentField, BindingRegistrationConsentField, BasicForm
+from .forms_util.form_module import ModuleInfo, file_path_to_form_name
+from .forms_util.forms import ShowNameConsentField, BindingRegistrationConsentField, BasicForm, PhoneNumberField, \
+    GuildField, get_guild_choices
 from .forms_util.guilds import *
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
-from .forms_util.models import BasicModel, BindingRegistrationConsentColumn
+from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.models import BasicModel, BindingRegistrationConsentColumn, basic_model_csv_map, \
+    binding_registration_csv_map, PhoneNumberColumn, GuildColumn, phone_number_csv_map, guild_name_csv_map
 
-# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-(_form_module, _form_name) = init_module(__file__)
-
-
-def get_module_info() -> ModuleInfo:
-    """Returns a singleton object containing this form's module information."""
-    global _form_module
-    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
-    return _form_module
-# P U B L I C   M O D U L E   I N T E R F A C E   E N D
+_form_name = file_path_to_form_name(__file__)
 
 
 @BindingRegistrationConsentField()
 @ShowNameConsentField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
+@GuildField(get_guild_choices(get_all_guilds()))
+@PhoneNumberField()
 class _Form(BasicForm):
     teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
-
-    phone0 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    kilta0 = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()), validators=[DataRequired()])
 
     etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
     sukunimi1 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
@@ -52,16 +43,15 @@ class _Form(BasicForm):
 
     def get_participant_count(self) -> int:
         return int(self.firstname.data and self.lastname.data) \
-             + int(self.etunimi1.data and self.sukunimi1.data) \
-             + int(self.etunimi2.data and self.sukunimi2.data) \
-             + int(self.etunimi3.data and self.sukunimi3.data)
+               + int(self.etunimi1.data and self.sukunimi1.data) \
+               + int(self.etunimi2.data and self.sukunimi2.data) \
+               + int(self.etunimi3.data and self.sukunimi3.data)
 
 
-class _Model(BasicModel, BindingRegistrationConsentColumn):
+class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
     __tablename__ = _form_name
     teamname = db.Column(db.String(128))
 
-    phone0 = db.Column(db.String(32))
     kilta0 = db.Column(db.String(16))
 
     etunimi1 = db.Column(db.String(64))
@@ -85,14 +75,7 @@ class _Model(BasicModel, BindingRegistrationConsentColumn):
     personcount = db.Column(db.Integer())
 
 
-_event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
-               datetime(2020, 10, 10, 23, 59, 59), 50, 0, _Form.asks_name_consent)
-
-
 class _Controller(FormController):
-
-    def __init__(self):
-        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     def _count_participants(self, entries) -> int:
         total_count = 0
@@ -132,32 +115,39 @@ class _Controller(FormController):
         return model
 
 
-def _get_data_table_info() -> DataTableInfo:
-    # MEMO: (attribute, header_text)
-    # MEMO: Exclude id, teamname and person count
-    return DataTableInfo([
-        ('firstname', 'etunimi0'),
-        ('lastname', 'sukunimi0'),
-        ('email', 'email0'),
-        ('phone0', 'phone0'),
-        ('kilta0', 'kilta0'),
-        ('etunimi1', 'etunimi1'),
-        ('sukunimi1', 'sukunimi1'),
-        ('email1', 'email1'),
-        ('phone1', 'phone1'),
-        ('kilta1', 'kilta1'),
-        ('etunimi2', 'etunimi2'),
-        ('sukunimi2', 'sukunimi2'),
-        ('email2', 'email2'),
-        ('phone2', 'phone2'),
-        ('kilta2', 'kilta2'),
-        ('etunimi3', 'etunimi3'),
-        ('sukunimi3', 'sukunimi3'),
-        ('email3', 'email3'),
-        ('phone3', 'phone3'),
-        ('kilta3', 'kilta3'),
-        ('show_name_consent', 'hyväksyn nimen julkaisemisen'),
-        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
-        ('binding_registration_consent', 'ymmärrän että ilmoittautuminen on sitova'),
-        ('datetime', 'datetime')
-    ])
+# MEMO: (attribute, header_text)
+# MEMO: Exclude id, teamname and person count
+_data_table_info = DataTableInfo(
+    basic_model_csv_map() +
+    binding_registration_csv_map() +
+    phone_number_csv_map() +
+    guild_name_csv_map() +
+    [('etunimi1', 'etunimi1'),
+     ('sukunimi1', 'sukunimi1'),
+     ('email1', 'email1'),
+     ('phone1', 'phone1'),
+     ('kilta1', 'kilta1'),
+     ('etunimi2', 'etunimi2'),
+     ('sukunimi2', 'sukunimi2'),
+     ('email2', 'email2'),
+     ('phone2', 'phone2'),
+     ('kilta2', 'kilta2'),
+     ('etunimi3', 'etunimi3'),
+     ('sukunimi3', 'sukunimi3'),
+     ('email3', 'email3'),
+     ('phone3', 'phone3'),
+     ('kilta3', 'kilta3')])
+
+_event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
+               datetime(2020, 10, 10, 23, 59, 59), 50, 0, _Form.asks_name_consent)
+
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+def get_module_info() -> ModuleInfo:
+    """Returns a singleton object containing this form's module information."""
+    if not hasattr(get_module_info, 'result'):
+        get_module_info.result = ModuleInfo(_Controller, True, _form_name,
+                                            FormContext(_event, _Form, _Model, _data_table_info))
+    return get_module_info.result
+
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D
