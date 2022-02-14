@@ -2,6 +2,7 @@ from flask import render_template
 from datetime import datetime
 from typing import Any
 
+from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import basic_form
@@ -45,19 +46,16 @@ class _Controller(FormController):
         return render_template('kysely_arvonta_juttu/redirect.html')
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_recipient(self, model: _Model) -> str:
-        return model.get_email()
-
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
-        firstname = model.get_firstname()
-        lastname = model.get_lastname()
-        return ' '.join(["\"Hei", firstname, " ", lastname,
-                         "\n\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
-                         "\n'Nimi: ", firstname, " ", lastname,
-                         "\nSähköposti: ", model.get_email(),
-                         "\n\nÄlä vastaa tähän sähköpostiin",
-                         "\n\nTerveisin: ropottilari\""])
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
+        return ' '.join([
+            make_greet_line(recipient),
+            "\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
+            "\n'Nimi: ", firstname, " ", lastname,
+            "\nSähköposti: ", recipient.get_email(),
+            "\n\n", make_signature_line()
+        ])
 
 
 def _get_data_table_info() -> DataTableInfo:

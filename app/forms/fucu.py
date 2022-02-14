@@ -1,9 +1,10 @@
 from wtforms import SelectField
 from wtforms.validators import DataRequired
 from datetime import datetime
-from typing import Any, List, Iterable, Tuple
+from typing import List, Iterable, Tuple
 
 from app import db
+from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import basic_form, PhoneNumberField, departure_busstop_field, show_name_consent_field
@@ -81,31 +82,29 @@ class _Controller(FormController):
         event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2024, 11, 4, 21, 00, 00), 5, 20)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
-    def _get_email_recipient(self, model: _Model) -> str:
-        return model.get_email()
-
-    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
-        firstname = model.get_firstname()
-        lastname = model.get_lastname()
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
         email = model.get_email()
         phone_number = model.get_phone_number()
         departure_location = model.get_departure_busstop()
         quota = model.kiintio
         if reserve:
             return ' '.join([
-                "\"Hei", firstname, " ", lastname,
-                "\n\nOlet ilmoittautunut OTiTin Fuksicursiolle. Olet varasijalla. ",
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin Fuksicursiolle. Olet varasijalla.",
                 "Jos fuculle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
         else:
             return ' '.join([
-                "\"Hei", firstname, " ", lastname,
-                "\n\nOlet ilmoittautunut OTiTin Fuksicursiolle. Tässä vielä syöttämäsi tiedot: ",
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin Fuksicursiolle. Tässä vielä syöttämäsi tiedot: ",
                 "\n\nNimi: ", firstname, " ", lastname,
                 "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
                 "\nLähtöpaikka: ", departure_location, "\nKiintiö: ", quota,
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
 
 

@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from app import db
+from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIfValue, basic_form, PhoneNumberField
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
@@ -159,26 +160,24 @@ class _Controller(FormController):
             **extra_template_args})
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_recipient(self, model: _Model) -> str:
-        return model.get_email()
-
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
-        firstname = model.get_firstname()
-        lastname = model.get_lastname()
-        return ' '.join(["\"Hei", firstname, " ", lastname,
-                         "\n\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
-                         "\n'Nimi: ", firstname, " ", lastname,
-                         "\nSähköposti: ", model.get_email(),
-                         "\nPuhelinnumero: ", model.get_phone_number(),
-                         "\nMuiden joukkuelaisten nimet: ",
-                         "\n", model.etunimi1, " ", model.sukunimi1,
-                         "\n", model.etunimi2, " ", model.sukunimi2,
-                         "\n", model.etunimi3, " ", model.sukunimi3,
-                         "\n", model.etunimi4, " ", model.sukunimi4,
-                         "\n", model.etunimi5, " ", model.sukunimi5,
-                         "\n\nÄlä vastaa tähän sähköpostiin",
-                         "\n\nTerveisin: ropottilari\""])
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
+        return ' '.join([
+            make_greet_line(recipient),
+            "\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
+            "\n'Nimi: ", firstname, " ", lastname,
+            "\nSähköposti: ", recipient.get_email_address(),
+            "\nPuhelinnumero: ", model.get_phone_number(),
+            "\nJoukkuelaisten nimet: ",
+            "\n", model.firstname, " ", model.lastname,
+            "\n", model.etunimi1, " ", model.sukunimi1,
+            "\n", model.etunimi2, " ", model.sukunimi2,
+            "\n", model.etunimi3, " ", model.sukunimi3,
+            "\n", model.etunimi4, " ", model.sukunimi4,
+            "\n", model.etunimi5, " ", model.sukunimi5,
+            "\n\n", make_signature_line()
+        ])
 
 
 def _get_data_table_info() -> DataTableInfo:

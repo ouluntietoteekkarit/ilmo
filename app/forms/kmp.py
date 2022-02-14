@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Any, List, Iterable, Tuple
+from typing import List, Iterable, Tuple
 
+from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import basic_form, show_name_consent_field, PhoneNumberField, departure_busstop_field, \
@@ -65,26 +66,24 @@ class _Controller(FormController):
                       15, 15)
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
-    def _get_email_recipient(self, model: _Model) -> str:
-        return model.get_email()
-
-    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
-        firstname = model.get_firstname()
-        lastname = model.get_lastname()
-        email = model.get_email()
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
+        email = recipient.get_email_address()
         phone_number = model.get_phone_number()
         departure_location = model.get_departure_busstop()
         if reserve:
             return ' '.join([
-                "\"Hei", firstname, " ", lastname,
-                "\n\nOlet ilmoittautunut OTiTin KMP:lle. Olet varasijalla. ",
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin KMP:lle. Olet varasijalla. ",
                 "Jos KMPlle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
         else:
             return ' '.join([
-                "\"Hei", firstname, " ", lastname,
-                "\n\nOlet ilmoittautunut OTiTin KMPlle. Tässä vielä syöttämäsi tiedot: ",
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin KMPlle. Tässä vielä syöttämäsi tiedot: ",
                 "\n\nNimi: ", firstname, lastname,
                 "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
                 "\nLähtöpaikka: ", departure_location,
@@ -94,7 +93,7 @@ class _Controller(FormController):
                 "\nTilinumero: FI03 4744 3020 0116 87",
                 "\nVastaanottajan nimi: Oulun Tietoteekkarit ry",
                 "\nViestiksi \"KMP + etunimi ja sukunimi\"",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
 
 

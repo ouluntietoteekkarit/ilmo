@@ -1,9 +1,10 @@
 from wtforms import StringField, RadioField, SelectField
 from wtforms.validators import DataRequired, length
 from datetime import datetime
-from typing import Any, List, Iterable, Tuple
+from typing import List, Iterable, Tuple
 
 from app import db
+from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIf, basic_form, show_name_consent_field
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
@@ -91,31 +92,26 @@ class _Controller(FormController):
         super().__init__(FormContext(event, _Form, _Model, get_module_info(), _get_data_table_info()))
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_recipient(self, model: _Model) -> str:
-        return model.get_email()
-
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, model: _Model, reserve: bool):
-        firstname = model.firstname
-        lastname = model.lastname
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool):
         if reserve:
             return ' '.join([
-                "\"Hei", firstname, " ", lastname,
-                "\n\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Olet varasijalla. ",
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Olet varasijalla. ",
                 "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
                 "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\"",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
         else:
             return ' '.join([
-                "\"Hei", firstname, " ", lastname,
-                "\n\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
                 "\n\n", "Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
                 "kanssa 17€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille ",
                 "FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, ",
                 "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
                 "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään.\""])
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
+            ])
 
 
 def _get_data_table_info() -> DataTableInfo:

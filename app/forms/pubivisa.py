@@ -2,9 +2,10 @@ from flask import flash
 from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, Email, length
 from datetime import datetime
-from typing import Any
+from typing import Any, List, Tuple
 
 from app import db
+from app.email import EmailRecipient, make_greet_line, make_signature_line, make_fullname_line
 from .forms_util.form_module_info import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import basic_form, show_name_consent_field, binding_registration_consent_field
 from .forms_util.guilds import *
@@ -126,8 +127,13 @@ class _Controller(FormController):
         return total_count
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_recipient(self, model: _Model) -> str:
-        return model.get_email()
+    def _get_email_recipient(self, recipient, model: _Model) -> List[EmailRecipient]:
+        return [
+            EmailRecipient(model.get_firstname(), model.get_lastname(), model.get_email()),
+            EmailRecipient(model.etunimi1, model.sukunimi1, model.email1),
+            EmailRecipient(model.etunimi2, model.sukunimi2, model.email2),
+            EmailRecipient(model.etunimi3, model.sukunimi3, model.email3)
+        ]
 
     def _pubi_visa_mail(form):
         # pubi_visa_mail_to(form, str(form.email0.data))
@@ -137,19 +143,20 @@ class _Controller(FormController):
         pass
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, model: _Model, reserve: bool) -> str:
-        firstname = model.get_firstname()
-        lastname = model.get_lastname()
-        return ' '.join(["\"Hei", firstname, " ", lastname,
-                         "\n\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-                         "\n'Joukkueen nimi: ", model.teamname,
-                         "\n'Osallistujien nimet:\n",
-                         firstname, " ", lastname, "\n",
-                         model.etunimi1, " ", model.sukunimi1, "\n",
-                         model.etunimi2, " ", model.sukunimi2, "\n",
-                         model.etunimi3, " ", model.sukunimi3, "\n",
-                         "\n\nÄlä vastaa tähän sähköpostiin",
-                         "\n\nTerveisin: ropottilari\""])
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
+        return ' '.join([
+            make_greet_line(recipient),
+            "\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
+            "\n'Joukkueen nimi: ", model.teamname,
+            "\n'Osallistujien nimet:\n",
+            make_fullname_line(model.get_firstname(), model.get_lastname()),
+            make_fullname_line(model.etunimi1, model.sukunimi1),
+            make_fullname_line(model.etunimi2, model.sukunimi2),
+            make_fullname_line(model.etunimi3, model.sukunimi3), "\n",
+            "\n\n", make_signature_line()
+        ])
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
         model = super()._form_to_model(form, nowtime)

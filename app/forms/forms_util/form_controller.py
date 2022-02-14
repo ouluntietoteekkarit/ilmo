@@ -3,10 +3,10 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from flask import send_from_directory, abort, render_template, flash
-from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple
+from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List
 from app import db
 from app.sqlite_to_csv import export_to_csv
-from app.email import send_email
+from app.email import send_email, EmailRecipient
 from .forms import basic_form
 from .models import BasicModel
 
@@ -76,12 +76,18 @@ class FormController(ABC):
                 return True
         return False
 
-    @abstractmethod
-    def _get_email_recipient(self, model: BasicModel) -> str:
-        pass
+    def _get_email_recipient(self, model: BasicModel) -> List[EmailRecipient]:
+        """
+        A method to get all email recipients to whom an email
+        concerning current registration should be sent to.
+         Can be overridden in inheriting classes to alter behaviour.
+        """
+        return [
+            EmailRecipient(model.get_firstname(), model.get_lastname(), model.get_email())
+        ]
 
     @abstractmethod
-    def _get_email_msg(self, model: BasicModel, reserve: bool) -> str:
+    def _get_email_msg(self, recipient: EmailRecipient, model: BasicModel, reserve: bool) -> str:
         pass
 
     def _form_to_model(self, form: basic_form(), nowtime) -> BasicModel:
@@ -114,10 +120,8 @@ class FormController(ABC):
         model = self._form_to_model(form, nowtime)
         if self._insert_model(model):
             reserve = count >= event.get_participant_limit()
-            msg = self._get_email_msg(model, reserve)
-            subject = self._context.get_event().get_title()
             flash(_make_success_msg(reserve))
-            send_email(msg, subject, self._get_email_recipient(model))
+            self._send_emails(model, reserve)
 
         return self._post_routine_output(entries, event, nowtime, form)
 
@@ -160,6 +164,12 @@ class FormController(ABC):
             print(e)
 
         return False
+
+    def _send_emails(self, model: BasicModel, reserve: bool) -> None:
+        subject = self._context.get_event().get_title()
+        for recipient in self._get_email_recipient(model):
+            msg = self._get_email_msg(recipient, model, reserve)
+            send_email(msg, subject, recipient)
 
     def _render_index_view(self, entries, event: Event, nowtime, form: basic_form(), **extra_template_args) -> Any:
         """
