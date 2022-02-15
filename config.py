@@ -12,3 +12,4 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = _make_db_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     WTF_CSRF_ENABLED = True
+    TEMPLATES_AUTO_RELOAD = True

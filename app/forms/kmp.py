@@ -85,7 +85,7 @@ _data_table_info = DataTableInfo(basic_model_csv_map() +
                                  binding_registration_csv_map())
 _event = Event('OTiT KMP ilmoittautuminen', datetime(2021, 11, 19, 13, 37, 37),
                datetime(2021, 12, 3, 2, 00, 00), 15, 15, _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, True, _form_name,
+_module_info = ModuleInfo(_Controller, False, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
 

@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash
 from flask import render_template, request, Flask
 import importlib.util
 
-from . import server, auth, users, roles
+from . import auth, users, roles
 from .forms.forms_util.form_module import ModuleInfo
 
 
