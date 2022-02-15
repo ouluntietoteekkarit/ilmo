@@ -34,7 +34,7 @@ class _Controller(FormController):
         return ' '.join([
             make_greet_line(recipient),
             "\n\nOlet ilmoittautunut kortti- ja lautapeli-iltaan. Syötit seuraavia tietoja: ",
-            "\n'Nimi: ", firstname, " ", lastname,
+            "\nNimi: ", firstname, " ", lastname,
             "\nSähköposti: ", recipient.get_email_address(),
             "\nPuhelinnumero: ", model.get_phone_number(),
             "\nKilta: ", model.get_guild_name(),

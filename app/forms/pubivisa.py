@@ -99,8 +99,8 @@ class _Controller(FormController):
         return ' '.join([
             make_greet_line(recipient),
             "\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",
-            "\n'Joukkueen nimi: ", model.teamname,
-            "\n'Osallistujien nimet:\n",
+            "\nJoukkueen nimi: ", model.teamname,
+            "\nOsallistujien nimet:\n",
             make_fullname_line(model.get_firstname(), model.get_lastname()),
             make_fullname_line(model.etunimi1, model.sukunimi1),
             make_fullname_line(model.etunimi2, model.sukunimi2),

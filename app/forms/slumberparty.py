@@ -33,7 +33,7 @@ class _Controller(FormController):
         return ' '.join([
             make_greet_line(recipient),
             "\nOlet ilmoittautunut slumberpartyyn. Syötit seuraavia tietoja: ",
-            "\n'Nimi: ", firstname, " ", lastname,
+            "\nNimi: ", firstname, " ", lastname,
             "\nSähköposti: ", recipient.get_email_address(),
             "\nPuhelinnumero: ", model.get_phone_number(),
             "\nKilta: ", model.get_guild_name(),

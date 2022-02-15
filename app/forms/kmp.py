@@ -64,9 +64,10 @@ class _Controller(FormController):
         else:
             return ' '.join([
                 make_greet_line(recipient),
-                "\nOlet ilmoittautunut OTiTin KMPlle. Tässä vielä syöttämäsi tiedot: ",
+                "\nOlet ilmoittautunut OTiTin KMP:lle. Tässä vielä syöttämäsi tiedot: ",
                 "\n\nNimi: ", firstname, lastname,
-                "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
+                "\nSähköposti: ", email,
+                "\nPuhelinnumero: ", phone_number,
                 "\nLähtöpaikka: ", departure_location,
                 "\nKMP:llä Lappeenrannassa järjestettäville sitseille voit ilmoittautua osoitteessa https://forms.gle/aLLSsT1PpUQMQaNb8",
                 "\n\nMaksuohjeet: ",

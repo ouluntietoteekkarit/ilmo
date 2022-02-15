@@ -31,7 +31,7 @@ class _Controller(FormController):
         return ' '.join([
             make_greet_line(recipient),
             "\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
-            "\n'Nimi: ", firstname, " ", lastname,
+            "\nNimi: ", firstname, " ", lastname,
             "\nSähköposti: ", recipient.get_email_address(),
             "\n\n", make_signature_line()
         ])
