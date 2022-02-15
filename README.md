@@ -51,9 +51,12 @@ different class names but there is little reason to do so.
 
 ### Form HTML template
 The forms require an HTML template to be displayed in the browser. Each template must extend form.html. Importing 
-macros.html is also adviced by not necessary. macros.html contains a set of utility macros. form.html has four blocks 
-which can be overridden in the template to alter their contents. These are extra_styles, extra_js, event_info and 
-registration_form. For a minimal form, only event_info needs to be overridden. event_info must contain the event 
-information. registration_form is used to render the _Form classe's fields. extra_styles allows adding CSS styles 
-to the form, such as background images. The contents of this block must include the style tags. extra_js allows 
-adding JavaScript to the form. This block must include the script tags. Multiple script tags may be used.
+macros.html is also adviced by not necessary. macros.html contains a set of utility macros. form.html has five 
+blocks which can be overridden in the template to alter their contents. These are extra_styles, extra_js, event_info, 
+registration_form and participant_list. For a minimal form, only event_info needs to be overridden. event_info must 
+contain the event information. registration_form is used to render the _Form classe's fields. extra_styles allows 
+adding CSS styles to the form, such as background images. The contents of this block must include the style tags. 
+extra_js allows adding JavaScript to the form. This block must include the script tags. Multiple script tags may be 
+used. participant_list should be overridden when its contents should be different from a list of names. Excluding 
+participant_list does not prevent it from being redered. If the form does not ask for name publishing consent at all,
+the participant list will not be rendered. Utility macros to render the list can be found in macros.html.

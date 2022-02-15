@@ -9,8 +9,9 @@ from . import server, auth, users, roles
 from .forms.forms_util.form_module import ModuleInfo
 
 
-def _find_modules(folder:str, package: str) -> List[str]:
+def find_form_modules() -> List[str]:
     from glob import glob
+    (folder, package) = (dirname(__file__), ".forms")
     pattern = join(folder, package.strip('.'), "*.py")
     modules = []
     for module in glob(pattern):
@@ -18,10 +19,6 @@ def _find_modules(folder:str, package: str) -> List[str]:
             modules.append(".".join([package, basename(module)[:-3]]))
 
     return modules
-
-
-def find_form_modules():
-    return _find_modules(dirname(__file__), ".forms")
 
 
 def load_module(module_name: str) -> ModuleType:
@@ -79,6 +76,16 @@ def register_module_route(server: Flask, module_info: ModuleInfo):
     module_info.set_endpoint_get_data_csv(data_get_csv_endpoint)
 
 
+def register_index_route(server: Flask, module_infos: List[ModuleInfo]):
+
+    def get_index() -> Any:
+        return render_template('index.html',
+                               title='OTiTin ilmot',
+                               form_modules=module_infos)
+
+    server.add_url_rule("/", "index", get_index)
+
+
 @auth.verify_password
 def verify_password(username, password):
     if username in users and check_password_hash(users.get(username), password):
@@ -88,8 +95,3 @@ def verify_password(username, password):
 @auth.get_user_roles
 def get_user_roles(user):
     return roles.get(user)
-
-
-@server.route('/')
-def route_index():
-    return render_template('index.html', title='OTiTin ilmot', page="index")
