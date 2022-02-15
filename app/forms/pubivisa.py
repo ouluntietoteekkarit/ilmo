@@ -9,7 +9,7 @@ from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import ShowNameConsentField, BindingRegistrationConsentField, BasicForm, PhoneNumberField, \
     GuildField, get_guild_choices
 from .forms_util.guilds import *
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
+from .forms_util.form_controller import FormController, DataTableInfo, Event
 from .forms_util.models import BasicModel, BindingRegistrationConsentColumn, basic_model_csv_map, \
     binding_registration_csv_map, PhoneNumberColumn, GuildColumn, phone_number_csv_map, guild_name_csv_map
 
@@ -84,7 +84,7 @@ class _Controller(FormController):
         return total_count
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_recipient(self, recipient, model: _Model) -> List[EmailRecipient]:
+    def _get_email_recipient(self, model: _Model) -> List[EmailRecipient]:
         return [
             EmailRecipient(model.get_firstname(), model.get_lastname(), model.get_email()),
             EmailRecipient(model.etunimi1, model.sukunimi1, model.email1),
@@ -110,8 +110,7 @@ class _Controller(FormController):
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
         model = super()._form_to_model(form, nowtime)
-        members = form.get_participant_count()
-        model.personcount = members
+        model.personcount = form.get_participant_count()
         return model
 
 
@@ -137,17 +136,13 @@ _data_table_info = DataTableInfo(
      ('email3', 'email3'),
      ('phone3', 'phone3'),
      ('kilta3', 'kilta3')])
-
 _event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
                datetime(2020, 10, 10, 23, 59, 59), 50, 0, _Form.asks_name_consent)
+_module_info = ModuleInfo(_Controller, True, _form_name,
+                          _event, _Form, _Model, _data_table_info)
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 def get_module_info() -> ModuleInfo:
-    """Returns a singleton object containing this form's module information."""
-    if not hasattr(get_module_info, 'result'):
-        get_module_info.result = ModuleInfo(_Controller, True, _form_name,
-                                            FormContext(_event, _Form, _Model, _data_table_info))
-    return get_module_info.result
-
+    return _module_info
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D

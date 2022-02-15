@@ -36,9 +36,6 @@ class FormContext:
     def get_model_type(self) -> Type[BasicModel]:
         return self._model
 
-    def get_module_info(self) -> ModuleInfo:
-        return self._module_info
-
     def get_data_table_info(self) -> DataTableInfo:
         return self._data_table_info
 
@@ -127,7 +124,7 @@ class FormController(ABC):
     def _get_email_msg(self, recipient: EmailRecipient, model: BasicModel, reserve: bool) -> str:
         pass
 
-    def _form_to_model(self, form: BasicForm, nowtime) -> BasicModel:
+    def _form_to_model(self, form: BasicForm, nowtime: datetime) -> BasicModel:
         """
         A method to convert form into a model.
         Can be overridden in inheriting classes to alter behaviour.
@@ -169,6 +166,8 @@ class FormController(ABC):
         and that all registration conditions are met.
         Can be overridden in inheriting classes to alter behaviour.
         Overriding methods should call this method first.
+
+        Empty string is returned if everything checks.
         """
         event = self._context.get_event()
 
@@ -181,7 +180,8 @@ class FormController(ABC):
         if nowtime > event.get_end_time():
             return 'Ilmoittautuminen on päättynyt'
 
-        if registrations.get_participant_count() + form.get_participant_count() > event.get_max_limit():
+        count = registrations.get_participant_count() + form.get_participant_count()
+        if count > event.get_max_limit():
             return 'Ilmoittautuminen on jo täynnä'
 
         if self._find_from_entries(registrations.get_entries(), form):
@@ -208,7 +208,8 @@ class FormController(ABC):
             msg = self._get_email_msg(recipient, model, reserve)
             send_email(msg, subject, recipient)
 
-    def _render_index_view(self, registrations: EventRegistrations, form: BasicForm, nowtime, **extra_template_args) -> Any:
+    def _render_index_view(self, registrations: EventRegistrations,
+                           form: BasicForm, nowtime, **extra_template_args) -> Any:
         """
         A method to render the index.html template of this event.
         """
@@ -226,22 +227,17 @@ class FormController(ABC):
         """
         A helper method to render a data view template.
         """
-        module_info = self._context.get_module_info()
         model = self._context.get_model_type()
-        event = self._context.get_event()
-        table_info = self._context.get_data_table_info()
-        limit = event.get_participant_limit()
         entries = model.query.all()
+        registrations = EventRegistrations(entries, self._count_participants(entries))
         return render_template('data.html',
-                               title='{} data'.format(event.get_title()),
-                               entries=entries,
-                               count=len(entries),
-                               limit=limit,
-                               module_info=module_info,
-                               table_info=table_info)
+                               event=self._context.get_event(),
+                               registrations=registrations,
+                               module_info=self._module_info,
+                               table_info=self._context.get_data_table_info())
 
 
-def _make_success_msg(reserve: bool):
+def _make_success_msg(reserve: bool) -> str:
     if reserve:
         return 'Ilmoittautuminen onnistui, olet varasijalla'
     else:
@@ -269,7 +265,9 @@ class Event(object):
     A readonly class containing event's information.
     """
 
-    def __init__(self, title: str, start_time, end_time, participant_limit: int, participant_reserve: int, list_participant_name: bool):
+    def __init__(self, title: str, start_time: datetime,
+                 end_time: datetime, participant_limit: int,
+                 participant_reserve: int, list_participant_name: bool):
         self.title = title
         self._start_time = start_time
         self._end_time = end_time
@@ -280,10 +278,10 @@ class Event(object):
     def get_title(self) -> str:
         return self.title
 
-    def get_start_time(self):
+    def get_start_time(self) -> datetime:
         return self._start_time
 
-    def get_end_time(self):
+    def get_end_time(self) -> datetime:
         return self._end_time
 
     def get_participant_limit(self) -> int:

@@ -3,8 +3,12 @@ from pathlib import Path
 from typing import Type, Union, TYPE_CHECKING, Tuple
 from os.path import split, splitext
 
+from .forms import BasicForm
+from .models import BasicModel
+from .form_controller import FormContext
+
 if TYPE_CHECKING:
-    from .form_controller import FormController, FormContext
+    from .form_controller import FormController, Event, DataTableInfo
 
 
 class ModuleInfo:
@@ -13,11 +17,12 @@ class ModuleInfo:
     """
 
     def __init__(self, controller_type: Type[FormController], is_active: bool,
-                 form_name: str, context: FormContext):
+                 form_name: str, event: Event, form: Type[BasicForm], model: Type[BasicModel],
+                 data_table_info: DataTableInfo):
         self._controller_type = controller_type
         self._is_active = is_active
         self._form_name = form_name
-        self._context = context
+        self._context = FormContext(event, form, model, data_table_info)
         self._form_endpoint_get_index = ""
         self._form_endpoint_post_index = ""
         self._form_endpoint_get_data = ""

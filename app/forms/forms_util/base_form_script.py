@@ -23,14 +23,13 @@ class _Controller(FormController):
 
 
 _data_table_info = DataTableInfo(basic_model_csv_map())
-_event = Event(, _Form.asks_name_consent)
+_event = Event('---', datetime(----),
+               datetime(----), -, -, _Form.asks_name_consent)
+_module_info = ModuleInfo(_Controller, True, _form_name,
+                          FormContext(_event, _Form, _Model, _data_table_info))
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
 def get_module_info() -> ModuleInfo:
-    """Returns a singleton object containing this form's module information."""
-    if not hasattr(get_module_info, 'result'):
-        get_module_info.result = ModuleInfo(_Controller, True, _form_name, FormContext(_event, _Form, _Model, _data_table_info))
-    return get_module_info.result
-
+    return _module_info
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
