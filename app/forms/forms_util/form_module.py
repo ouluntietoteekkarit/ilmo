@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 class ModuleInfo:
     """
     A class to provide a programming interface for form python modules.
+    The cosntructor has some functionality that allows eliminating
+    boilerplate code from form scripts.
     """
 
     def __init__(self, controller_type: Type[FormController], is_active: bool,
