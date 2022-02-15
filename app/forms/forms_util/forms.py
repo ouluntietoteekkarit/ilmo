@@ -4,6 +4,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SelectField
 from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
 
+from app.forms.forms_util.guilds import Guild
+
 
 class RequiredIf(InputRequired):
     """Validator which makes a field required if another field is set and has a truthy value.
@@ -62,6 +64,13 @@ def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
     return choices
 
 
+def get_guild_choices(guilds: Iterable[Guild]) -> list:
+    choices = []
+    for guild in guilds:
+        choices.append((guild.get_name(), guild.get_name()))
+    return choices
+
+
 # MEMO: Must have same attribute names as BasicModel
 class BasicForm(FlaskForm):
     firstname = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
@@ -83,6 +92,13 @@ class BasicForm(FlaskForm):
 
     def get_privacy_consent(self) -> bool:
         return self.privacy_consent.data
+
+    def get_participant_count(self) -> int:
+        """
+        Returns the number of participants this form covers.
+        Overriding this method allows handling group registrations.
+        """
+        return 1
 
 
 class ShowNameConsentField:

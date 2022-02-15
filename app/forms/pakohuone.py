@@ -1,4 +1,3 @@
-from flask import flash
 from wtforms import StringField, RadioField
 from wtforms.validators import DataRequired, length
 from datetime import datetime
@@ -7,22 +6,12 @@ from typing import Any
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIfValue, PhoneNumberField, get_str_choices, BasicForm
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations
-from .forms_util.models import BasicModel, PhoneNumberColumn
+from .forms_util.form_controller import FormController, DataTableInfo, Event, EventRegistrations
+from .forms_util.models import BasicModel, PhoneNumberColumn, basic_model_csv_map, phone_number_csv_map
 
-# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-(_form_module, _form_name) = init_module(__file__)
-
-
-def get_module_info() -> ModuleInfo:
-    """Returns a singleton object containing this form's module information."""
-    global _form_module
-    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
-    return _form_module
-# P U B L I C   M O D U L E   I N T E R F A C E   E N D
-
+_form_name = file_path_to_form_name(__file__)
 
 _PAKO_TIME_FIRST = '18:00'
 _PAKO_TIME_SECOND = '19:30'
@@ -96,40 +85,23 @@ class _Model(BasicModel, PhoneNumberColumn):
     sukunimi5 = db.Column(db.String(64))
 
 
-_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59), 20, 0, _Form.asks_name_consent)
-
-
 class _Controller(FormController):
 
-    def __init__(self):
-        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
-
-    def post_request_handler(self, request) -> Any:
-        # MEMO: This routine is prone to data race since it does not use transactions
-        form = _Form()
-        nowtime = datetime.now()
-        entries = _Model.query.all()
-        registrations = EventRegistrations(entries, self._count_participants(entries))
-
-        error_msg = self._check_form_submit(registrations, form, nowtime)
+    def _check_form_submit(self, registrations: EventRegistrations, form: BasicForm, nowtime) -> str:
+        error_msg = super()._check_form_submit(registrations, form, nowtime)
         if len(error_msg) != 0:
-            flash(error_msg)
-            return self._render_index_view(registrations, form, nowtime)
+            return error_msg
 
+        # Check escape room availability
         chosen_time = form.aika.data
         early_room = form.huone1800.data
         later_room = form.huone1930.data
-        for entry in entries:
+        for entry in registrations.get_entries():
             if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (
                     entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
-                flash('Valisemasi huone on jo varattu valitsemanasi aikana')
-                return self._render_index_view(registrations, form, nowtime)
+                return 'Valisemasi huone on jo varattu valitsemanasi aikana'
 
-        model = self._form_to_model(form, nowtime)
-        if self._insert_model(model):
-            flash('Ilmoittautuminen onnistui')
-
-        return self._render_index_view(registrations, form, nowtime)
+        return error_msg
 
     def _render_index_view(self, registrations: EventRegistrations, form: _Form, nowtime, **extra_template_args) -> Any:
         varatut = []
@@ -160,26 +132,30 @@ class _Controller(FormController):
         ])
 
 
-def _get_data_table_info() -> DataTableInfo:
-    # MEMO: (attribute, header_text)
-    return DataTableInfo([
-        ('aika', 'aika'),
-        ('huone1800', 'huone1800'),
-        ('huone1930', 'huone1930'),
-        ('firstname', 'etunimi0'),
-        ('lastname', 'sukunimi0'),
-        ('phone_number', 'phone0'),
-        ('email', 'email0'),
-        ('etunimi1', 'etunimi1'),
-        ('sukunimi1', 'sukunimi1'),
-        ('etunimi2', 'etunimi2'),
-        ('sukunimi2', 'sukunimi2'),
-        ('etunimi3', 'etunimi3'),
-        ('sukunimi3', 'sukunimi3'),
-        ('etunimi4', 'etunimi4'),
-        ('sukunimi4', 'sukunimi4'),
-        ('etunimi5', 'etunimi5'),
-        ('sukunimi5', 'sukunimi5'),
-        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
-        ('datetime', 'datetime')
-    ])
+# MEMO: (attribute, header_text)
+_data_table_info = DataTableInfo([
+    ('aika', 'aika'),
+    ('huone1800', 'huone1800'),
+    ('huone1930', 'huone1930')] +
+    basic_model_csv_map() +
+    phone_number_csv_map() + [
+    ('etunimi1', 'etunimi1'),
+    ('sukunimi1', 'sukunimi1'),
+    ('etunimi2', 'etunimi2'),
+    ('sukunimi2', 'sukunimi2'),
+    ('etunimi3', 'etunimi3'),
+    ('sukunimi3', 'sukunimi3'),
+    ('etunimi4', 'etunimi4'),
+    ('sukunimi4', 'sukunimi4'),
+    ('etunimi5', 'etunimi5'),
+    ('sukunimi5', 'sukunimi5')])
+_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
+               20, 0, _Form.asks_name_consent)
+_module_info = ModuleInfo(_Controller, False, _form_name,
+                          _event, _Form, _Model, _data_table_info)
+
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+def get_module_info() -> ModuleInfo:
+    return _module_info
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D

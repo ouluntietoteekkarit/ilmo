@@ -5,22 +5,13 @@ from typing import List
 
 from app import db
 from app.email import EmailRecipient, make_greet_line
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event
-from .forms_util.form_module import ModuleInfo, init_module
+from .forms_util.form_controller import FormController, DataTableInfo, Event
+from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import PhoneNumberField, DepartureBusstopField, BasicForm, ShowNameConsentField, get_str_choices
-from .forms_util.models import BasicModel, PhoneNumberColumn, DepartureBusstopColumn
+from .forms_util.models import BasicModel, PhoneNumberColumn, DepartureBusstopColumn, basic_model_csv_map, \
+    departure_busstop_csv_map, phone_number_csv_map
 
-# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-(_form_module, _form_name) = init_module(__file__)
-
-
-def get_module_info() -> ModuleInfo:
-    """Returns a singleton object containing this form's module information."""
-    global _form_module
-    _form_module = _form_module or ModuleInfo(_Controller, True, _form_name)
-    return _form_module
-# P U B L I C   M O D U L E   I N T E R F A C E   E N D
-
+_form_name = file_path_to_form_name(__file__)
 
 _PARTICIPANT_FUKSI = 'Fuksi'
 _PARTICIPANT_PRO = 'Pro'
@@ -49,6 +40,11 @@ def _get_participants() -> List[str]:
     ]
 
 
+class _Model(BasicModel, PhoneNumberColumn, DepartureBusstopColumn):
+    __tablename__ = _form_name
+    kiintio = db.Column(db.String(32))
+
+
 @ShowNameConsentField()
 @DepartureBusstopField(get_str_choices(_get_departure_stops()))
 @PhoneNumberField()
@@ -56,18 +52,7 @@ class _Form(BasicForm):
     kiintio = SelectField('Kiintiö *', choices=get_str_choices(_get_participants()), validators=[DataRequired()])
 
 
-class _Model(BasicModel, PhoneNumberColumn, DepartureBusstopColumn):
-    __tablename__ = _form_name
-    kiintio = db.Column(db.String(32))
-
-
-_event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00), datetime(2024, 11, 4, 21, 00, 00), 5, 20, _Form.asks_name_consent)
-
-
 class _Controller(FormController):
-
-    def __init__(self):
-        super().__init__(_event, _Form, _Model, get_module_info(), _get_data_table_info())
 
     # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
@@ -95,16 +80,18 @@ class _Controller(FormController):
             ])
 
 
-def _get_data_table_info() -> DataTableInfo:
-    # MEMO: (attribute, header_text)
-    return DataTableInfo([
-        ('firstname', 'etunimi'),
-        ('lastname', 'sukunimi'),
-        ('email', 'email'),
-        ('phone_number', 'puhelinnumero'),
-        ('departure_busstop', 'lahtopaikka'),
-        ('kiintio', 'kiintio'),
-        ('show_name_consent', 'hyväksyn nimeni julkaisemisen'),
-        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
-        ('datetime', 'datetime')
-    ])
+# MEMO: (attribute, header_text)
+_data_table_info = DataTableInfo(basic_model_csv_map() +
+                                 phone_number_csv_map() +
+                                 departure_busstop_csv_map() +
+                                 [('kiintio', 'kiintio')])
+_event = Event('OTiT Fuksicursio ilmoittautuminen', datetime(2021, 10, 29, 12, 00, 00),
+               datetime(2021, 11, 4, 21, 00, 00), 5, 20, _Form.asks_name_consent)
+_module_info = ModuleInfo(_Controller, False, _form_name,
+                          _event, _Form, _Model, _data_table_info)
+
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+def get_module_info() -> ModuleInfo:
+    return _module_info
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D

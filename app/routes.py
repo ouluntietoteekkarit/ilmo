@@ -5,12 +5,13 @@ from werkzeug.security import check_password_hash
 from flask import render_template, request, Flask
 import importlib.util
 
-from . import server, auth, users, roles
+from . import auth, users, roles
 from .forms.forms_util.form_module import ModuleInfo
 
 
-def _find_modules(folder:str, package: str) -> List[str]:
+def find_form_modules() -> List[str]:
     from glob import glob
+    (folder, package) = (dirname(__file__), ".forms")
     pattern = join(folder, package.strip('.'), "*.py")
     modules = []
     for module in glob(pattern):
@@ -18,10 +19,6 @@ def _find_modules(folder:str, package: str) -> List[str]:
             modules.append(".".join([package, basename(module)[:-3]]))
 
     return modules
-
-
-def find_form_modules():
-    return _find_modules(dirname(__file__), ".forms")
 
 
 def load_module(module_name: str) -> ModuleType:
@@ -33,26 +30,26 @@ def load_module(module_name: str) -> ModuleType:
     return importlib.import_module(module_name, package)
 
 
-def register_module_route(server: Flask, form_info: ModuleInfo):
-    if not form_info.is_active():
+def register_module_route(server: Flask, module_info: ModuleInfo):
+    if not module_info.is_active():
         return
 
-    controller = form_info.get_controller_type()
-    form_name = form_info.get_form_name()
+    controller = module_info.get_controller_type()
+    form_name = module_info.get_form_name()
 
     # Request handler closures
     def get_form_index() -> Any:
-        return controller().get_request_handler(request)
+        return controller(module_info).get_request_handler(request)
 
     def post_form_index() -> Any:
-        return controller().post_request_handler(request)
+        return controller(module_info).post_request_handler(request)
 
     def get_form_data() -> Any:
-        return controller().get_data_request_handler(request)
+        return controller(module_info).get_data_request_handler(request)
     get_form_data = auth.login_required(role=['admin', form_name])(get_form_data)
 
     def get_form_data_csv() -> Any:
-        return controller().get_data_csv_request_handler(request)
+        return controller(module_info).get_data_csv_request_handler(request)
     get_form_data_csv = auth.login_required(role=['admin', form_name])(get_form_data_csv)
 
     # Create URL paths
@@ -73,10 +70,20 @@ def register_module_route(server: Flask, form_info: ModuleInfo):
     server.add_url_rule(data_csv_url_path, data_get_csv_endpoint, get_form_data_csv)
 
     # Set mapped url endpoints to form_info instance
-    form_info.set_endpoint_get_index(index_get_endpoint)
-    form_info.set_endpoint_post_index(index_post_endpoint)
-    form_info.set_endpoint_get_data(data_get_endpoint)
-    form_info.set_endpoint_get_data_csv(data_get_csv_endpoint)
+    module_info.set_endpoint_get_index(index_get_endpoint)
+    module_info.set_endpoint_post_index(index_post_endpoint)
+    module_info.set_endpoint_get_data(data_get_endpoint)
+    module_info.set_endpoint_get_data_csv(data_get_csv_endpoint)
+
+
+def register_index_route(server: Flask, module_infos: List[ModuleInfo]):
+
+    def get_index() -> Any:
+        return render_template('index.html',
+                               title='OTiTin ilmot',
+                               form_modules=module_infos)
+
+    server.add_url_rule("/", "index", get_index)
 
 
 @auth.verify_password
@@ -88,8 +95,3 @@ def verify_password(username, password):
 @auth.get_user_roles
 def get_user_roles(user):
     return roles.get(user)
-
-
-@server.route('/')
-def route_index():
-    return render_template('index.html', title='OTiTin ilmot', page="index")

@@ -7,24 +7,29 @@
         <h6>{{ macros.privacy_statement(module_info) }}</h6>
     </div>
     <div class="container p-3">
+        <hr />
         {%- if event.get_start_time() < nowtime < event.get_end_time() -%}
             <div>
-                <h4>{{ event.get_title() }}</h4>
-                <h5>* merkityt kohdat pakollisia</h5>
+                <h2>{{ event.get_title() }}</h2>
+                {{ macros.registration_ends(event) }}
+                <h5>* merkityt kohdat ovat pakollisia</h5>
             </div>
             {% block registration_form %}
                 {{ macros.basic_registration_form(form) }}
             {% endblock %}
-            {{ macros.registration_ends(event) }}
         {%- elif nowtime < event.get_start_time() -%}
             {{ macros.registration_begins(event) }}
         {%- else -%}
             {{ macros.registration_ended(event) }}
         {%- endif -%}
-
-        {{ macros.participant_count(registrations.get_participant_count(), event) }}
-        {%- block participant_list -%}
-            {{ macros.participant_list(registrations.get_entries(), event) }}
-        {%- endblock -%}
     </div>
+    {%- if event.get_list_participant_name() -%}
+        <div class="container p-3">
+            <hr />
+            {{ macros.participant_count(registrations, event) }}
+            {%- block participant_list -%}
+                {{ macros.participant_list(registrations.get_entries(), event) }}
+            {%- endblock -%}
+        </div>
+    {% endif %}
 {%- endblock -%}

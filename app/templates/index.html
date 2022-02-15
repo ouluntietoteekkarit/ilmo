@@ -2,13 +2,14 @@
 
 {% block content %}
 <div class="container p-3">
-    <!--
-    -->
-    <a href="{{ url_for('route_get_kyselyarvontajuttu') }}"><h4>Hyvinvointi- ja etäopiskelukysely arvonta</h4></a>
-    <a href="{{ url_for('route_get_pubivisa') }}"><h4>Pubivisa ilmoittautuminen</h4></a>
-    <a href="{{ url_for('route_get_korttijalautapeliilta') }}"><h4>Kortti- ja lautapeli-ilta ilmoittautuminen</h4></a>
-    <a href="{{ url_for('route_get_fuksilauluilta') }}"><h4>Fuksilauluilta ilmoittautuminen</h4></a>
-    <a href="{{ url_for('route_get_slumberparty') }}"><h4>Slumberparty ilmoittautuminen</h4></a>
-    <a href="{{ url_for('route_get_pakohuone') }}"><h4>OTYn Pakopelipäivä ilmoittautuminen</h4></a>
+    <h1>{{ title }}</h1>
+    <hr />
+    {% for form in form_modules|selectattr("is_active()") %}
+        {% if form.is_active() %}
+            <a href="{{ url_for(form.get_endpoint_get_index()) }}"><h4>{{ form.get_form_context().get_event().get_title() }}</h4></a>
+        {% endif %}
+    {% else %}
+        <h3>Ei ilmoja tällä hetkellä.</h3>
+    {% endfor %}
 </div>
 {%- endblock -%}

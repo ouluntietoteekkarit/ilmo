@@ -1,38 +1,69 @@
 {% extends "header.html" %}
+{% import "macros.html" as macros %}
+
+
+{% macro participant_table_header(table_info) %}
+    <thead>
+    <tr>
+        <th>#</th>
+        {%- for header in table_info.get_header_names() -%}
+            <th>{{ header }}</th>
+        {%- endfor -%}
+    </tr>
+    </thead>
+{% endmacro %}
+
+
+{% macro participant_table_row(entry, table_info) %}
+    {%- for attribute in table_info.get_attribute_names() -%}
+        <td>{{ entry|attr(attribute) }}</td>
+    {%- endfor -%}
+{% endmacro %}
+
+
+{% macro participant_table_rows(entries, event, start, end) %}
+    {%- for entry in entries[start:end] -%}
+        <tr>{{- caller(entry, loop.index + start) -}}</tr>
+    {%- endfor -%}
+{% endmacro %}
+
+
+{% macro participant_table_body(entries, event, table_info) %}
+    {%- set limit = event.get_participant_limit() -%}
+    {%- set maxlimit = event.get_max_limit() -%}
+
+    <tbody>
+        {%- call(entry, index) participant_table_rows(entries, event, 0, limit) -%}
+            <td>{{ index }}.</td>
+            {{ participant_table_row(entry, table_info) }}
+        {%- endcall -%}
+        {%- call(entry, index) participant_table_rows(entries, event, limit, maxlimit) -%}
+            <td>{{ index }}. (Varasijalla) </td>
+            {{ participant_table_row(entry, table_info) }}
+        {%- endcall -%}
+    </tbody>
+{% endmacro %}
+
+
+{% macro participant_table(entries, event, table_info) %}
+    <table class="table" rules="all">
+        {{ participant_table_header(table_info) }}
+        {{ participant_table_body(entries, event, table_info) }}
+    </table>
+{% endmacro %}
+
 
 {% block content %}
     <div class="container p-3">
-        <h1>{{ title }}</h1>
+        <h1>{{ event.get_title() }}</h1>
+        <h3>Osallistuja data</h3>
 
         <a href="{{ url_for(module_info.get_endpoint_get_data_csv()) }}">
-            <button class="btn btn-info">Lataa CSV</button>
+            <button class="btn btn-info">Lataa data CSV tiedostona</button>
         </a>
-        <div>
-            <h2>Osallistujat</h2>
-            <h3>{{ count }}/{{ limit }}</h3>
-            <table class="table" rules="all">
-                <thead>
-                <tr>
-                    <td>N</td>
-                    {% for header in table_info.get_header_names() %}
-                        <td>{{ header }}</td>
-                    {% endfor %}
-                </tr>
-                </thead>
-                <tbody>
-                {% for entry in entries %}
-                    <tr>
-                        <td>{{ loop.index }}.
-                            {% if loop.index > limit %}
-                                (Vara)
-                            {% endif %}</td>
-                        {% for attribute in table_info.get_attribute_names() %}
-                            <td>{{ entry|attr(attribute) }}</td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    </div>
+    <div class="p-3">
+        {{ macros.participant_count(registrations, event) }}
+        {{ participant_table(registrations.get_entries(), event, table_info) }}
     </div>
 {% endblock %}
