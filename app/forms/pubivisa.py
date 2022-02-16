@@ -42,10 +42,10 @@ class _Form(BasicForm):
     kilta3 = SelectField('Kilta', choices=get_guild_choices(get_all_guilds()))
 
     def get_participant_count(self) -> int:
-        return int(self.firstname.data and self.lastname.data) \
-               + int(self.etunimi1.data and self.sukunimi1.data) \
-               + int(self.etunimi2.data and self.sukunimi2.data) \
-               + int(self.etunimi3.data and self.sukunimi3.data)
+        return int(bool(self.firstname.data and self.lastname.data)) \
+               + int(bool(self.etunimi1.data and self.sukunimi1.data)) \
+               + int(bool(self.etunimi2.data and self.sukunimi2.data)) \
+               + int(bool(self.etunimi3.data and self.sukunimi3.data))
 
 
 class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
@@ -94,8 +94,6 @@ class _Controller(FormController):
 
     # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
-        firstname = recipient.get_firstname()
-        lastname = recipient.get_lastname()
         return ' '.join([
             make_greet_line(recipient),
             "\nOlet ilmoittautunut pubivisaan. Syötit muun muassa seuraavia tietoja: ",

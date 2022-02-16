@@ -1,7 +1,8 @@
 from typing import List, Tuple, Iterable
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SelectField
+from wtforms import Form, widgets
+from wtforms import StringField, BooleanField, SelectField, FormField
 from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
 
 from app.forms.forms_util.guilds import Guild
@@ -55,6 +56,47 @@ class RequiredIfValue(InputRequired):
             super(RequiredIfValue, self).__call__(form, field)
         else:
             Optional().__call__(form, field)
+
+
+class MergeFormField(FormField):
+    """
+    Encapsulate a form as a field in another form.
+    Overrides populate_obj to produce flat objects
+    instead of maintaining the form's object hierarchy.
+    No attribute name mangling takes place.
+
+    :param form_class:
+        A subclass of Form that will be encapsulated.
+    :param separator:
+        A string which will be suffixed to this field's name to create the
+        prefix to enclosed fields. The default is fine for most uses.
+    """
+    def populate_obj(self, obj, name):
+        tmp = type('', (object,), dict())()
+        self.form.populate_obj(tmp)
+        for attr in vars(tmp):
+            setattr(obj, attr, getattr(tmp, attr))
+
+
+class FlatFormField(FormField):
+    """
+    Encapsulate a form as a field in another form.
+    Overrides populate_obj to produce flat objects
+    instead of maintaining the form's object hierarchy.
+    The attribute names of the enclosed form are
+    prefixed with this field's name and an underscore.
+
+    :param form_class:
+        A subclass of Form that will be encapsulated.
+    :param separator:
+        A string which will be suffixed to this field's name to create the
+        prefix to enclosed fields. The default is fine for most uses.
+    """
+    def populate_obj(self, obj, name):
+        tmp = type('', (object,), dict())()
+        self.form.populate_obj(tmp)
+        for attr in vars(tmp):
+            setattr(obj, self.name + '_' + attr, getattr(tmp, attr))
 
 
 def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:

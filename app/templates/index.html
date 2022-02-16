@@ -4,7 +4,7 @@
 <div class="container p-3">
     <h1>{{ title }}</h1>
     <hr />
-    {% for form in form_modules|selectattr("is_active()") %}
+    {% for form in form_modules if form.is_active() %}
         {% if form.is_active() %}
             <a href="{{ url_for(form.get_endpoint_get_index()) }}"><h4>{{ form.get_form_context().get_event().get_title() }}</h4></a>
         {% endif %}

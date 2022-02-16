@@ -89,7 +89,7 @@ class FormController(ABC):
     def get_data_csv_request_handler(self, request) -> Any:
         return _export_to_csv(self._context.get_model_type().__tablename__)
 
-    def _find_from_entries(self, entries: Iterable[BasicModel], form: BasicForm) -> bool:
+    def _find_from_entries(self, entries: Iterable[BasicModel], form: BasicForm) -> Tuple[bool, str]:
         """
         A method to find if the individual described by the form is
         found in the entries. Can be overridden in inheriting classes
@@ -98,10 +98,10 @@ class FormController(ABC):
         firstname = form.get_firstname()
         lastname = form.get_lastname()
         email = form.get_email()
-        for entry in entries:
-            if (entry.get_firstname() == firstname and entry.get_lastname() == lastname) or entry.get_email() == email:
-                return True
-        return False
+        for m in entries:
+            if m.get_firstname() == firstname and m.get_lastname() == lastname and m.get_email() == email:
+                return True, ''
+        return False, ''
 
     def _count_participants(self, entries) -> int:
         """
@@ -184,8 +184,9 @@ class FormController(ABC):
         if count > event.get_max_limit():
             return 'Ilmoittautuminen on jo täynnä'
 
-        if self._find_from_entries(registrations.get_entries(), form):
-            return 'Olet jo ilmoittautunut'
+        (found, msg) = self._find_from_entries(registrations.get_entries(), form)
+        if found:
+            return msg or 'Olet jo ilmoittautunut'
 
         return ""
 

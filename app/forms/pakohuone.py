@@ -149,7 +149,7 @@ _data_table_info = DataTableInfo([
     ('sukunimi4', 'sukunimi4'),
     ('etunimi5', 'etunimi5'),
     ('sukunimi5', 'sukunimi5')])
-_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
+_event = Event('OTY:n Pakopelipäivä', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
                20, 0, _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, False, _form_name,
                           _event, _Form, _Model, _data_table_info)
