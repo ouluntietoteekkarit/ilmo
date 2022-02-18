@@ -1,15 +1,17 @@
 from datetime import datetime
 from typing import List, Iterable, Tuple
 
-from wtforms import RadioField, StringField
+from wtforms import RadioField, StringField, SelectField
 from wtforms.validators import DataRequired, length, Email
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_controller import FormController, DataTableInfo, Event
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import BasicForm, ShowNameConsentField, get_str_choices, RequiredIf
-from .forms_util.models import BasicModel, basic_model_csv_map
+from .forms_util.forms import BasicForm, ShowNameConsentField, get_str_choices, RequiredIf, GuildField, \
+    get_guild_choices
+from .forms_util.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA, Guild
+from .forms_util.models import BasicModel, basic_model_csv_map, GuildColumn
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -44,6 +46,14 @@ def _get_wines() -> List[str]:
     ]
 
 
+def _get_all_guilds():
+    return [
+        Guild(GUILD_OTIT),
+        Guild(GUILD_PROSE),
+        Guild(GUILD_COMMUNICA),
+    ]
+
+@GuildField(get_guild_choices(_get_all_guilds()))
 @ShowNameConsentField()
 class _Form(BasicForm):
     drink = RadioField('Juoma *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
@@ -55,6 +65,7 @@ class _Form(BasicForm):
     avec_firstname = StringField('Etunimi', validators=[length(max=50)])
     avec_lastname = StringField('Sukunimi', validators=[RequiredIf(other_field_name='avec_firstname'), length(max=50)])
     avec_email = StringField('Sähköposti', validators=[RequiredIf(other_field_name='avec_firstname'), Email(), length(max=100)])
+    avec_guild_name = SelectField('Kilta *', choices=get_guild_choices(_get_all_guilds()), validators=[DataRequired()])
     avec_drink = RadioField('Juoma', choices=get_str_choices(_get_drinks()), validators=[RequiredIf(other_field_name='avec_firstname')])
     avec_liquor = RadioField('Viinakaato', choices=get_str_choices(_get_liquors()), validators=[RequiredIf(other_field_name='avec_firstname')])
     avec_wine = RadioField('Viini', choices=get_str_choices(_get_wines()), validators=[RequiredIf(other_field_name='avec_firstname')])
@@ -66,7 +77,7 @@ class _Form(BasicForm):
              + int(bool(self.avec_firstname.data and self.avec_lastname.data))
 
 
-class _Model(BasicModel):
+class _Model(BasicModel, GuildColumn):
     __tablename__ = _form_name
     drink = db.Column(db.String(32))
     liquor = db.Column(db.String(32))
@@ -77,6 +88,7 @@ class _Model(BasicModel):
     avec_firstname = db.Column(db.String(64))
     avec_lastname = db.Column(db.String(64))
     avec_email = db.Column(db.String(128))
+    avec_guild_name = db.Column(db.String(16))
     avec_drink = db.Column(db.String(32))
     avec_liquor = db.Column(db.String(32))
     avec_wine = db.Column(db.String(32))
@@ -141,7 +153,7 @@ class _Controller(FormController):
                 make_greet_line(recipient),
                 "\nOlet ilmoittautunut humanöörisitseille. Olet varasijalla.",
                 "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-                "\n\nJos tulee kysyttävää, voit olla sähköpostitse yhteydessä "
+                "\n\nJos tulee kysyttävää, voit olla sähköpostitse yhteydessä joensuu@otit.fi"
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
         else:
@@ -156,7 +168,7 @@ nimi ja \"humanöörisitsit\". Maksun eräpäivä on 14.3.2022.
 
 Sitsien jatkoja varten mukaan OMPx2
 
-Jos tulee kysyttävää, voit olla sähköpostitse yhteydessä 
+Jos tulee kysyttävää, voit olla sähköpostitse yhteydessä joensuu@otit.fi
 Älä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."""
             ])
 

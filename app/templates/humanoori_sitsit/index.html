@@ -2,14 +2,27 @@
 {%- import "macros.html" as macros -%}
 
 
-{%- block extra_styles -%}
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/humanoori_background.jpg') }}");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
 
+        div.container {
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
 {%- endblock -%}
 
+
 {%- block event_info -%}
-    <p>Paikka ja aika: Walhalla 14.3. klo 18:00 alkaen<br />
-    Pukukoodi: Cocktail lastensynttäri twistillä<br />
-    Jatkoille mukaan OMPx2
+    <p>OTiTin, Prosen ja Communican yhteiset humanöörisitsit ovat täällä taas! <br \>
+    Sitsit pidetään Walhallassa maanantaina 14.3. klo 18:00 alkaen. Tulkaahan ajoissa paikalle!<br />
+    Pukukoodina toimii Cocktail Lasten synttäri -twistillä<br />
+    Jatkoilla lämpenee sauna, joten sinne OPMx2
     </p>
     <h3>Maksuohjeet:</h3>
     <ul>
@@ -27,6 +40,7 @@
         {{ macros.form_field(form.firstname) }}
         {{ macros.form_field(form.lastname) }}
         {{ macros.form_field(form.email) }}
+        {{ macros.form_field(form.guild_name) }}
         <label class="control-label">Ruokajuoma</label>
         {{ macros.form_field(form.drink) }}
         <label class="control-label">Viinakaato</label>
@@ -40,6 +54,7 @@
         {{ macros.form_field(form.avec_firstname) }}
         {{ macros.form_field(form.avec_lastname) }}
         {{ macros.form_field(form.avec_email) }}
+        {{ macros.form_field(form.avec_guild_name) }}
         <label class="control-label">Ruokajuoma</label>
         {{ macros.form_field(form.avec_drink) }}
         <label class="control-label">Viinakaato</label>
