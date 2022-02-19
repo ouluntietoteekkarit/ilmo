@@ -3,15 +3,15 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from flask import send_from_directory, abort, render_template, flash
-from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List
+from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collection
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
-from .forms import BasicForm
 from .models import BasicModel
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
+    from .forms import BasicForm
 
 
 class FormContext:
@@ -30,7 +30,7 @@ class FormContext:
     def get_event(self) -> Event:
         return self._event
 
-    def get_form_type(self) -> Type[Type[BasicForm]]:
+    def get_form_type(self) -> Type[BasicForm]:
         return self._form
 
     def get_model_type(self) -> Type[BasicModel]:
@@ -68,7 +68,6 @@ class FormController(ABC):
         Can be overridden in inheriting class to alter the behaviour.
         """
         form = self._context.get_form_type()()
-        event = self._context.get_event()
         entries = self._context.get_model_type().query.all()
         registrations = EventRegistrations(entries, self._count_participants(entries))
         return self._render_index_view(registrations, form, datetime.now())
@@ -89,7 +88,7 @@ class FormController(ABC):
     def get_data_csv_request_handler(self, request) -> Any:
         return _export_to_csv(self._context.get_model_type().__tablename__)
 
-    def _find_from_entries(self, entries: Iterable[BasicModel], form: BasicForm) -> bool:
+    def _find_from_entries(self, entries: Iterable[BasicModel], form: BasicForm) -> Tuple[bool, str]:
         """
         A method to find if the individual described by the form is
         found in the entries. Can be overridden in inheriting classes
@@ -98,10 +97,10 @@ class FormController(ABC):
         firstname = form.get_firstname()
         lastname = form.get_lastname()
         email = form.get_email()
-        for entry in entries:
-            if (entry.get_firstname() == firstname and entry.get_lastname() == lastname) or entry.get_email() == email:
-                return True
-        return False
+        for m in entries:
+            if m.get_firstname() == firstname and m.get_lastname() == lastname and m.get_email() == email:
+                return True, ''
+        return False, ''
 
     def _count_participants(self, entries) -> int:
         """
@@ -109,6 +108,13 @@ class FormController(ABC):
         Can be overridden in inheriting classes to alter behaviour.
         """
         return len(entries)
+
+    def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[BasicModel]) -> Dict[str, int]:
+        """
+        A method to count the number of event participants per quota.
+        Can be overridden in inheriting classes to alter behaviour.
+        """
+        return dict.fromkeys(event_quotas.keys(), len(entries))
 
     def _get_email_recipient(self, model: BasicModel) -> List[EmailRecipient]:
         """
@@ -147,7 +153,7 @@ class FormController(ABC):
 
         model = self._form_to_model(form, nowtime)
         if self._insert_model(model):
-            reserve = registrations.get_participant_count() >= event.get_participant_limit()
+            reserve = registrations.get_participant_count() + model.get_participant_count() >= event.get_participant_limit()
             flash(_make_success_msg(reserve))
             self._send_emails(model, reserve)
 
@@ -180,14 +186,28 @@ class FormController(ABC):
         if nowtime > event.get_end_time():
             return 'Ilmoittautuminen on päättynyt'
 
-        count = registrations.get_participant_count() + form.get_participant_count()
-        if count > event.get_max_limit():
-            return 'Ilmoittautuminen on jo täynnä'
+        msg = self._check_quotas(event.get_quotas(), registrations, form.get_quota_counts())
+        if len(msg) != 0:
+            return msg
 
-        if self._find_from_entries(registrations.get_entries(), form):
-            return 'Olet jo ilmoittautunut'
+        (found, msg) = self._find_from_entries(registrations.get_entries(), form)
+        if found:
+            return msg or 'Olet jo ilmoittautunut'
 
         return ""
+
+    def _check_quotas(self, event_quotas: Dict[str, Quota],
+                      registrations: EventRegistrations, form_quotas: Iterable[Quota]) -> str:
+        registration_quotas = self._count_registration_quotas(event_quotas, registrations.get_entries())
+        for form_quota in form_quotas:
+            name = form_quota.get_name()
+            registration_quotas[name] += form_quota.get_quota()
+            if registration_quotas[name] > event_quotas[name].get_max_quota():
+                if name != Quota.default_quota_name():
+                    return 'Ilmoittautuminen on jo täynnä kiintiön {} osalta'.format(name)
+                return 'Ilmoittautuminen on jo täynnä'
+
+        return ''
 
     def _insert_model(self, model: BasicModel) -> bool:
         try:
@@ -260,20 +280,52 @@ class DataTableInfo:
         return self._attribute_names
 
 
+class Quota:
+    def __init__(self, name: str, quota: int, reserve_quota: int = 0):
+        self._name = name
+        self._quota = quota
+        self._reserve_quota = reserve_quota
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_quota(self) -> int:
+        return self._quota
+
+    def get_reserve_quota(self) -> int:
+        return self._reserve_quota
+
+    def get_max_quota(self) -> int:
+        return self._quota + self._reserve_quota
+
+    @staticmethod
+    def default_quota_name() -> str:
+        return '_'
+
+    @staticmethod
+    def default_quota(quota: int, reserve_quota: int) -> Quota:
+        return Quota(Quota.default_quota_name(), quota, reserve_quota)
+
+
 class Event(object):
     """
     A readonly class containing event's information.
     """
 
     def __init__(self, title: str, start_time: datetime,
-                 end_time: datetime, participant_limit: int,
-                 participant_reserve: int, list_participant_name: bool):
+                 end_time: datetime, quotas: Iterable[Quota],
+                 list_participant_name: bool):
         self.title = title
         self._start_time = start_time
         self._end_time = end_time
-        self._participant_limit = participant_limit
-        self._participant_reserve = participant_reserve
-        self._list_paticipant_names = list_participant_name
+        self._list_participant_names = list_participant_name
+        self._participant_limit = 0
+        self._max_participant_limit = 0
+        self._quotas = {}
+        for quota in quotas:
+            self._quotas[quota.get_name()] = quota
+            self._participant_limit += quota.get_quota()
+            self._max_participant_limit += quota.get_max_quota()
 
     def get_title(self) -> str:
         return self.title
@@ -284,17 +336,18 @@ class Event(object):
     def get_end_time(self) -> datetime:
         return self._end_time
 
+    def get_quotas(self) -> Dict[str, Quota]:
+        return self._quotas
+
     def get_participant_limit(self) -> int:
         return self._participant_limit
 
-    def get_participant_reserve(self) -> int:
-        return self._participant_reserve
+    def get_max_limit(self) -> int:
+        return self._max_participant_limit
 
     def get_list_participant_name(self) -> bool:
-        return self._list_paticipant_names
+        return self._list_participant_names
 
-    def get_max_limit(self) -> int:
-        return self._participant_limit + self._participant_reserve
 
 
 def _export_to_csv(table_name: str) -> Any:

@@ -8,7 +8,7 @@ from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIfValue, PhoneNumberField, get_str_choices, BasicForm
-from .forms_util.form_controller import FormController, DataTableInfo, Event, EventRegistrations
+from .forms_util.form_controller import FormController, DataTableInfo, Event, EventRegistrations, Quota
 from .forms_util.models import BasicModel, PhoneNumberColumn, basic_model_csv_map, phone_number_csv_map
 
 _form_name = file_path_to_form_name(__file__)
@@ -84,6 +84,14 @@ class _Model(BasicModel, PhoneNumberColumn):
     etunimi5 = db.Column(db.String(64))
     sukunimi5 = db.Column(db.String(64))
 
+    def get_participant_count(self) -> int:
+        return int(bool(self.firstname and self.lastname)) \
+             + int(bool(self.etunimi1 and self.sukunimi1)) \
+             + int(bool(self.etunimi2 and self.sukunimi2)) \
+             + int(bool(self.etunimi3 and self.sukunimi3)) \
+             + int(bool(self.etunimi4 and self.sukunimi4)) \
+             + int(bool(self.etunimi5 and self.sukunimi5))
+
 
 class _Controller(FormController):
 
@@ -149,8 +157,8 @@ _data_table_info = DataTableInfo([
     ('sukunimi4', 'sukunimi4'),
     ('etunimi5', 'etunimi5'),
     ('sukunimi5', 'sukunimi5')])
-_event = Event('Pakopelipäivä ilmoittautuminen', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
-               20, 0, _Form.asks_name_consent)
+_event = Event('OTY:n Pakopelipäivä', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
+               [Quota.default_quota(20, 0)], _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, False, _form_name,
                           _event, _Form, _Model, _data_table_info)
 

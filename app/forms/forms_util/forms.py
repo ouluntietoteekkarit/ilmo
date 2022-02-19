@@ -1,9 +1,10 @@
 from typing import List, Tuple, Iterable
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SelectField
+from wtforms import StringField, BooleanField, SelectField, FormField
 from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
 
+from app.forms.forms_util.form_controller import Quota
 from app.forms.forms_util.guilds import Guild
 
 
@@ -57,6 +58,47 @@ class RequiredIfValue(InputRequired):
             Optional().__call__(form, field)
 
 
+class MergeFormField(FormField):
+    """
+    Encapsulate a form as a field in another form.
+    Overrides populate_obj to produce flat objects
+    instead of maintaining the form's object hierarchy.
+    No attribute name mangling takes place.
+
+    :param form_class:
+        A subclass of Form that will be encapsulated.
+    :param separator:
+        A string which will be suffixed to this field's name to create the
+        prefix to enclosed fields. The default is fine for most uses.
+    """
+    def populate_obj(self, obj, name):
+        tmp = type('', (object,), dict())()
+        self.form.populate_obj(tmp)
+        for attr in vars(tmp):
+            setattr(obj, attr, getattr(tmp, attr))
+
+
+class FlatFormField(FormField):
+    """
+    Encapsulate a form as a field in another form.
+    Overrides populate_obj to produce flat objects
+    instead of maintaining the form's object hierarchy.
+    The attribute names of the enclosed form are
+    prefixed with this field's name and an underscore.
+
+    :param form_class:
+        A subclass of Form that will be encapsulated.
+    :param separator:
+        A string which will be suffixed to this field's name to create the
+        prefix to enclosed fields. The default is fine for most uses.
+    """
+    def populate_obj(self, obj, name):
+        tmp = type('', (object,), dict())()
+        self.form.populate_obj(tmp)
+        for attr in vars(tmp):
+            setattr(obj, self.name + '_' + attr, getattr(tmp, attr))
+
+
 def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
     choices = []
     for val in values:
@@ -70,6 +112,12 @@ def get_guild_choices(guilds: Iterable[Guild]) -> list:
         choices.append((guild.get_name(), guild.get_name()))
     return choices
 
+
+def get_quota_choices(quotas: Iterable[Quota]):
+    choices = []
+    for quota in quotas:
+        choices.append((quota.get_name(), quota.get_name()))
+    return choices
 
 # MEMO: Must have same attribute names as BasicModel
 class BasicForm(FlaskForm):
@@ -93,12 +141,12 @@ class BasicForm(FlaskForm):
     def get_privacy_consent(self) -> bool:
         return self.privacy_consent.data
 
-    def get_participant_count(self) -> int:
+    def get_quota_counts(self) -> List[Quota]:
         """
         Returns the number of participants this form covers.
         Overriding this method allows handling group registrations.
         """
-        return 1
+        return [Quota(Quota.default_quota_name(), 1)]
 
 
 class ShowNameConsentField:

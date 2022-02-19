@@ -7,11 +7,10 @@ from app import db
 from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIf, get_str_choices, BasicForm, ShowNameConsentField
-from .forms_util.form_controller import FormController, DataTableInfo, Event
+from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.models import BasicModel, basic_model_csv_map
 
 _form_name = file_path_to_form_name(__file__)
-
 
 _DRINK_ALCOHOLIC = 'Alkoholillinen'
 _DRINK_NON_ALCOHOLIC = 'Alkoholiton'
@@ -78,7 +77,7 @@ class _Controller(FormController):
             return ' '.join([
                 make_greet_line(recipient),
                 "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
-                "\n\n", "Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
+                "\n\n Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
                 "kanssa 17€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille ",
                 "FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, ",
                 "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
@@ -93,9 +92,9 @@ _data_table_info = DataTableInfo(basic_model_csv_map() + [
         ('mieto', 'mieto'),
         ('pitsa', 'pitsa'),
         ('allergiat', 'allergia')])
-_event = Event('OTiT Pitsakaljasitsit ilmoittautuminen', datetime(2021, 10, 26, 12, 00, 00),
-               datetime(2021, 11, 9, 23, 59, 59), 60, 30, _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, False, _form_name,
+_event = Event('OTiTin Pitsakaljasitsit', datetime(2021, 10, 26, 12, 00, 00),
+               datetime(2025, 11, 9, 23, 59, 59), [Quota.default_quota(60, 30)], _Form.asks_name_consent)
+_module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
 

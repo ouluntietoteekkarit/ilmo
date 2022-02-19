@@ -2,10 +2,10 @@ from datetime import datetime
 from typing import List, Iterable, Tuple
 
 from app.email import EmailRecipient, make_greet_line
-from .forms_util.form_controller import FormController, DataTableInfo, Event
+from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import PhoneNumberField, DepartureBusstopField, ShowNameConsentField, \
-    BindingRegistrationConsentField, BasicForm
+    BindingRegistrationConsentField, BasicForm, get_str_choices
 from .forms_util.models import BasicModel, DepartureBusstopColumn, PhoneNumberColumn, basic_model_csv_map, \
     phone_number_csv_map, departure_busstop_csv_map, binding_registration_csv_map
 from .forms_util.models import BindingRegistrationConsentColumn
@@ -25,17 +25,10 @@ def _get_departure_stops() -> List[str]:
     ]
 
 
-def _get_choise(values: Iterable[str]) -> List[Tuple[str, str]]:
-    choices = []
-    for val in values:
-        choices.append((val, val))
-    return choices
-
-
 @BindingRegistrationConsentField(
     'Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *')
 @ShowNameConsentField()
-@DepartureBusstopField(_get_choise(_get_departure_stops()))
+@DepartureBusstopField(get_str_choices(_get_departure_stops()))
 @PhoneNumberField()
 class _Form(BasicForm):
     pass
@@ -84,8 +77,8 @@ _data_table_info = DataTableInfo(basic_model_csv_map() +
                                  phone_number_csv_map() +
                                  departure_busstop_csv_map() +
                                  binding_registration_csv_map())
-_event = Event('OTiT KMP ilmoittautuminen', datetime(2021, 11, 19, 13, 37, 37),
-               datetime(2021, 12, 3, 2, 00, 00), 15, 15, _Form.asks_name_consent)
+_event = Event('OTiT KMP', datetime(2021, 11, 19, 13, 37, 37),
+               datetime(2021, 12, 3, 2, 00, 00), [Quota.default_quota(15, 15)], _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, False, _form_name,
                           _event, _Form, _Model, _data_table_info)
 

@@ -3,6 +3,7 @@
 
 {%- block content -%}
     <div class="container p-3">
+        <h1>{{ event.get_title() }}</h1>
         {%- block event_info -%}{%- endblock -%}
         <h6>{{ macros.privacy_statement(module_info) }}</h6>
     </div>
@@ -10,7 +11,6 @@
         <hr />
         {%- if event.get_start_time() < nowtime < event.get_end_time() -%}
             <div>
-                <h2>{{ event.get_title() }}</h2>
                 {{ macros.registration_ends(event) }}
                 <h5>* merkityt kohdat ovat pakollisia</h5>
             </div>

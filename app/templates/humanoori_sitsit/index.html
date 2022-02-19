@@ -1,0 +1,89 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/humanoori_background.jpg') }}");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
+
+        div.container {
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
+{%- endblock -%}
+
+
+{%- block event_info -%}
+    <p>OTiTin, Prosen ja Communican yhteiset humanöörisitsit ovat täällä taas! <br \>
+    Sitsit pidetään Walhallassa maanantaina 14.3. klo 18:00 alkaen. Tulkaahan ajoissa paikalle!<br />
+    Pukukoodina toimii Cocktail Lasten synttäri -twistillä<br />
+    Jatkoilla lämpenee sauna, joten sinne OPMx2
+    </p>
+    <h3>Maksuohjeet:</h3>
+    <ul>
+        <li>Tilinumero: FI52 5741 3620 5641 27</li>
+        <li>Saaja: Communica ry</li>
+        <li>Summa: 23€ (46€ jos avec)</li>
+        <li>Viesti: Oma nimi (+ avec) Humanöörisitsit</li>
+        <li>Eräpäivä: 14.3.2022</li>
+    </ul>
+{%- endblock -%}
+
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ macros.form_field(form.firstname) }}
+        {{ macros.form_field(form.lastname) }}
+        {{ macros.form_field(form.email) }}
+        {{ macros.form_field(form.guild_name) }}
+        <label class="control-label">Ruokajuoma</label>
+        {{ macros.form_field(form.drink) }}
+        <label class="control-label">Viinakaato</label>
+        {{ macros.form_field(form.liquor) }}
+        <label class="control-label">Viini</label>
+        {{ macros.form_field(form.wine) }}
+        {{ macros.form_field(form.allergies) }}
+        {{ macros.form_field(form.seating_preference) }}
+        <br />
+        <h4>Avecin tiedot</h4>
+        {{ macros.form_field(form.avec_firstname) }}
+        {{ macros.form_field(form.avec_lastname) }}
+        {{ macros.form_field(form.avec_email) }}
+        {{ macros.form_field(form.avec_guild_name) }}
+        <label class="control-label">Ruokajuoma</label>
+        {{ macros.form_field(form.avec_drink) }}
+        <label class="control-label">Viinakaato</label>
+        {{ macros.form_field(form.avec_liquor) }}
+        <label class="control-label">Viini</label>
+        {{ macros.form_field(form.avec_wine) }}
+        {{ macros.form_field(form.avec_allergies) }}
+        {{ macros.form_field(form.avec_seating_preference) }}
+
+        {{ macros.form_field(form.show_name_consent) }}
+        {{ macros.form_field(form.privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
+
+
+{%- block participant_list -%}
+    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, 0, event.get_participant_limit()) -%}
+        <p>{{ entry.firstname }} {{ entry.lastname }}
+        {%- if entry.avec_firstname and entry.avec_lastname %}
+            & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
+        {%- endif -%}
+        </p>
+    {%- endcall -%}
+    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, event.get_participant_limit(), event.get_max_limit()) -%}
+        <p>{{ entry.firstname }} {{ entry.lastname }}
+        {%- if entry.avec_firstname and entry.avec_lastname %}
+            & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
+        {%- endif -%}
+        (Varasijalla)
+        </p>
+    {%- endcall -%}
+{%- endblock -%}
