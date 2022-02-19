@@ -5,9 +5,10 @@ from typing import List
 
 from app import db
 from app.email import EmailRecipient, make_greet_line
-from .forms_util.form_controller import FormController, DataTableInfo, Event
+from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import PhoneNumberField, DepartureBusstopField, BasicForm, ShowNameConsentField, get_str_choices
+from .forms_util.forms import PhoneNumberField, DepartureBusstopField, BasicForm, ShowNameConsentField, get_str_choices, \
+    get_quota_choices
 from .forms_util.models import BasicModel, PhoneNumberColumn, DepartureBusstopColumn, basic_model_csv_map, \
     departure_busstop_csv_map, phone_number_csv_map
 
@@ -31,12 +32,12 @@ def _get_departure_stops() -> List[str]:
     ]
 
 
-def _get_participants() -> List[str]:
+def _get_quotas() -> List[Quota]:
     return [
-        _PARTICIPANT_FUKSI,
-        _PARTICIPANT_PRO,
-        _PARTICIPANT_BOARD_MEMBER,
-        _PARTICIPANT_OTHER
+        Quota(_PARTICIPANT_FUKSI, 15, 5),
+        Quota(_PARTICIPANT_PRO, 15, 5),
+        Quota(_PARTICIPANT_BOARD_MEMBER, 15, 5),
+        Quota(_PARTICIPANT_OTHER, 15, 5)
     ]
 
 
@@ -49,7 +50,7 @@ class _Model(BasicModel, PhoneNumberColumn, DepartureBusstopColumn):
 @DepartureBusstopField(get_str_choices(_get_departure_stops()))
 @PhoneNumberField()
 class _Form(BasicForm):
-    kiintio = SelectField('Kiintiö *', choices=get_str_choices(_get_participants()), validators=[DataRequired()])
+    kiintio = SelectField('Kiintiö *', choices=get_quota_choices(_get_quotas()), validators=[DataRequired()])
 
 
 class _Controller(FormController):
@@ -86,7 +87,7 @@ _data_table_info = DataTableInfo(basic_model_csv_map() +
                                  departure_busstop_csv_map() +
                                  [('kiintio', 'kiintio')])
 _event = Event('OTiTin Fuksicursio', datetime(2021, 10, 29, 12, 00, 00),
-               datetime(2021, 11, 4, 21, 00, 00), 5, 20, _Form.asks_name_consent)
+               datetime(2021, 11, 4, 21, 00, 00), _get_quotas(), _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
 

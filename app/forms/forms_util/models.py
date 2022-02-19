@@ -33,6 +33,9 @@ class BasicModel(db.Model):
     def get_datetime(self):
         return self.datetime
 
+    def get_participant_count(self) -> int:
+        return 1
+
 
 class PhoneNumberColumn:
     phone_number = db.Column(db.String(32))

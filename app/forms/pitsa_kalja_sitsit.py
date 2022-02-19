@@ -7,7 +7,7 @@ from app import db
 from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIf, get_str_choices, BasicForm, ShowNameConsentField
-from .forms_util.form_controller import FormController, DataTableInfo, Event
+from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.models import BasicModel, basic_model_csv_map
 
 _form_name = file_path_to_form_name(__file__)
@@ -93,7 +93,7 @@ _data_table_info = DataTableInfo(basic_model_csv_map() + [
         ('pitsa', 'pitsa'),
         ('allergiat', 'allergia')])
 _event = Event('OTiTin Pitsakaljasitsit', datetime(2021, 10, 26, 12, 00, 00),
-               datetime(2025, 11, 9, 23, 59, 59), 60, 30, _Form.asks_name_consent)
+               datetime(2025, 11, 9, 23, 59, 59), [Quota.default_quota(60, 30)], _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
 

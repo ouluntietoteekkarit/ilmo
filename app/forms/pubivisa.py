@@ -9,7 +9,7 @@ from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import ShowNameConsentField, BindingRegistrationConsentField, BasicForm, PhoneNumberField, \
     GuildField, get_guild_choices
 from .forms_util.guilds import *
-from .forms_util.form_controller import FormController, DataTableInfo, Event
+from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.models import BasicModel, BindingRegistrationConsentColumn, basic_model_csv_map, \
     binding_registration_csv_map, PhoneNumberColumn, GuildColumn, phone_number_csv_map, guild_name_csv_map
 
@@ -41,11 +41,12 @@ class _Form(BasicForm):
     email3 = StringField('Sähköposti', validators=[length(max=100)])
     kilta3 = SelectField('Kilta', choices=get_guild_choices(get_all_guilds()))
 
-    def get_participant_count(self) -> int:
-        return int(bool(self.firstname.data and self.lastname.data)) \
-               + int(bool(self.etunimi1.data and self.sukunimi1.data)) \
-               + int(bool(self.etunimi2.data and self.sukunimi2.data)) \
-               + int(bool(self.etunimi3.data and self.sukunimi3.data))
+    def get_quota_counts(self) -> List[Quota]:
+        quota = int(bool(self.firstname.data and self.lastname.data))\
+              + int(bool(self.etunimi1.data and self.sukunimi1.data))\
+              + int(bool(self.etunimi2.data and self.sukunimi2.data))\
+              + int(bool(self.etunimi3.data and self.sukunimi3.data))
+        return [Quota(Quota.default_quota_name(), quota)]
 
 
 class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
@@ -74,6 +75,11 @@ class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationCons
 
     personcount = db.Column(db.Integer())
 
+    def get_participant_count(self) -> int:
+        return int(bool(self.firstname and self.lastname)) \
+             + int(bool(self.etunimi1 and self.sukunimi1)) \
+             + int(bool(self.etunimi2 and self.sukunimi2)) \
+             + int(bool(self.etunimi3 and self.sukunimi3)) \
 
 class _Controller(FormController):
 
@@ -108,7 +114,7 @@ class _Controller(FormController):
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
         model = super()._form_to_model(form, nowtime)
-        model.personcount = form.get_participant_count()
+        model.personcount = form.get_quota_counts()[0].get_quota()
         return model
 
 
@@ -135,7 +141,7 @@ _data_table_info = DataTableInfo(
      ('phone3', 'phone3'),
      ('kilta3', 'kilta3')])
 _event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
-               datetime(2020, 10, 10, 23, 59, 59), 50, 0, _Form.asks_name_consent)
+               datetime(2020, 10, 10, 23, 59, 59), [Quota.default_quota(50, 0)], _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, False, _form_name,
                           _event, _Form, _Model, _data_table_info)
 

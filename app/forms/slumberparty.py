@@ -5,7 +5,7 @@ from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import PhoneNumberField, GuildField, BasicForm, ShowNameConsentField, \
     BindingRegistrationConsentField, get_guild_choices
 from .forms_util.guilds import *
-from .forms_util.form_controller import FormController, DataTableInfo, Event
+from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.models import BasicModel, GuildColumn, BindingRegistrationConsentColumn, PhoneNumberColumn, \
     basic_model_csv_map, phone_number_csv_map, guild_name_csv_map, binding_registration_csv_map
 
@@ -47,7 +47,7 @@ _data_table_info = DataTableInfo(basic_model_csv_map() +
                                  guild_name_csv_map() +
                                  binding_registration_csv_map())
 _event = Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00),
-               datetime(2020, 10, 27, 23, 59, 59), 50, 0, _Form.asks_name_consent)
+               datetime(2020, 10, 27, 23, 59, 59), [Quota.default_quota(50, 0)], _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, False, _form_name,
                           _event, _Form, _Model, _data_table_info)
 

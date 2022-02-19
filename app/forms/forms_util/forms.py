@@ -1,10 +1,10 @@
 from typing import List, Tuple, Iterable
 
 from flask_wtf import FlaskForm
-from wtforms import Form, widgets
 from wtforms import StringField, BooleanField, SelectField, FormField
 from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
 
+from app.forms.forms_util.form_controller import Quota
 from app.forms.forms_util.guilds import Guild
 
 
@@ -113,6 +113,12 @@ def get_guild_choices(guilds: Iterable[Guild]) -> list:
     return choices
 
 
+def get_quota_choices(quotas: Iterable[Quota]):
+    choices = []
+    for quota in quotas:
+        choices.append((quota.get_name(), quota.get_name()))
+    return choices
+
 # MEMO: Must have same attribute names as BasicModel
 class BasicForm(FlaskForm):
     firstname = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
@@ -135,12 +141,12 @@ class BasicForm(FlaskForm):
     def get_privacy_consent(self) -> bool:
         return self.privacy_consent.data
 
-    def get_participant_count(self) -> int:
+    def get_quota_counts(self) -> List[Quota]:
         """
         Returns the number of participants this form covers.
         Overriding this method allows handling group registrations.
         """
-        return 1
+        return [Quota(Quota.default_quota_name(), 1)]
 
 
 class ShowNameConsentField:
