@@ -2,7 +2,7 @@ import shlex
 import os
 
 
-_EMAIL_SENDER_BOT = 'no-reply@otitkakspistenolla.oulu.fi'
+_EMAIL_SENDER_BOT = 'no-reply@otit.fi'
 
 
 class EmailRecipient:

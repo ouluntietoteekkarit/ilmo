@@ -25,7 +25,7 @@ class _Controller(FormController):
 _data_table_info = DataTableInfo(basic_model_csv_map())
 _event = Event('OTiT KMP', datetime(2022, 2, 28, 12, 00, 00),
                datetime(2022, 3, 13, 23, 59, 59), [Quota.default_quota(45, 15)], _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, True, _form_name,
+_module_info = ModuleInfo(_Controller, False, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
 
