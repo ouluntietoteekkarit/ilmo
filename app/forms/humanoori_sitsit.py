@@ -121,8 +121,10 @@ class _Controller(FormController):
     # MEMO: "Evil" Covariant parameters
     def _find_from_entries(self, entries: Iterable[_Model], form: _Form) -> Tuple[bool, str]:
         def try_find(m: _Model, firstname: str, lastname: str, email: str):
-            return ((m.get_firstname() == firstname and m.get_lastname() == lastname) or m.get_email() == email) or \
-                   ((m.avec_firstname == firstname and m.avec_lastname == lastname) or m.avec_email == email)
+            return (firstname != '' and lastname != '' and email != '') and (
+                   (m.get_firstname() == firstname and m.get_lastname() == lastname and m.get_email() == email) or
+                   (m.avec_firstname == firstname and m.avec_lastname == lastname and m.avec_email == email)
+            )
 
         participant_firstname = form.get_firstname()
         participant_lastname = form.get_lastname()
