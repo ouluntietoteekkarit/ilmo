@@ -8,8 +8,11 @@ from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import BasicForm, ShowNameConsentField, get_str_choices, RequiredIf, GuildField, \
-    get_quota_choices
+from .forms_util.forms import BasicForm, get_str_choices, RequiredIf, get_quota_choices, \
+    BasicParticipantForm, ParticipantFormBuilder, make_field_firstname, make_field_lastname, make_field_email, \
+    AttachableRadioField, AttachableStringField, ATTRIBUTE_NAME_FIRSTNAME, make_field_quota, FormBuilder, \
+    make_field_required_participants, make_field_optional_participants, make_field_privacy_consent, \
+    make_field_name_consent
 from .forms_util.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA, Guild
 from .forms_util.models import BasicModel, basic_model_csv_map, GuildColumn
 
@@ -54,28 +57,52 @@ def _get_quotas() -> List[Quota]:
     ]
 
 
-@GuildField(get_quota_choices(_get_quotas()))
-@ShowNameConsentField()
-class _Form(BasicForm):
-    drink = RadioField('Juoma *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
-    liquor = RadioField('Viinakaato *', choices=get_str_choices(_get_liquors()), validators=[DataRequired()])
-    wine = RadioField('Viini *', choices=get_str_choices(_get_wines()), validators=[DataRequired()])
+class _BaseParticipant(BasicParticipantForm):
     allergies = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
     seating_preference = StringField('Pöytäseuratoive', validators=[length(max=50)])
 
-    avec_firstname = StringField('Etunimi', validators=[length(max=50)])
-    avec_lastname = StringField('Sukunimi', validators=[RequiredIf(other_field_name='avec_firstname'), length(max=50)])
-    avec_email = StringField('Sähköposti', validators=[RequiredIf(other_field_name='avec_firstname'), Email(), length(max=100)])
-    avec_guild_name = SelectField('Kilta *', choices=get_quota_choices(_get_quotas()), validators=[DataRequired()])
-    avec_drink = RadioField('Juoma', choices=get_str_choices(_get_drinks()), validators=[RequiredIf(other_field_name='avec_firstname')])
-    avec_liquor = RadioField('Viinakaato', choices=get_str_choices(_get_liquors()), validators=[RequiredIf(other_field_name='avec_firstname')])
-    avec_wine = RadioField('Viini', choices=get_str_choices(_get_wines()), validators=[RequiredIf(other_field_name='avec_firstname')])
-    avec_allergies = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
-    avec_seating_preference = StringField('Pöytäseuratoive', validators=[length(max=50)])
+    def get_quota_name(self) -> str:
+        return self.guild_name.data
 
-    def get_quota_counts(self) -> List[Quota]:
-        return [Quota(self.guild_name.data, int(bool(self.firstname.data and self.lastname.data))),
-                Quota(self.avec_guild_name.data, int(bool(self.avec_firstname.data and self.avec_lastname.data)))]
+
+def _make_field_drink(validators: Iterable):
+    return AttachableRadioField('drink', 'Juoma *', validators, None, get_str_choices(_get_drinks()))
+
+
+def _make_field_liquor(validators: Iterable):
+    return AttachableRadioField('liquor', 'Viinakaato *', validators, None, get_str_choices(_get_liquors()))
+
+
+def _make_field_wine(validators: Iterable):
+    return AttachableRadioField('wine', 'Viini *', validators, None, get_str_choices(_get_wines()))
+
+
+_Participant = ParticipantFormBuilder().add_fields([
+        make_field_firstname([DataRequired]),
+        make_field_lastname([DataRequired]),
+        make_field_email([DataRequired]),
+        make_field_quota('Kilta *', get_quota_choices(_get_quotas()), [DataRequired]),
+        _make_field_drink([DataRequired]),
+        _make_field_liquor([DataRequired]),
+        _make_field_wine([DataRequired])
+    ]).build(_BaseParticipant)
+
+_AvecParticipant = ParticipantFormBuilder().add_fields([
+        make_field_firstname(),
+        make_field_lastname([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+        make_field_email([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+        make_field_quota('Kilta *', get_quota_choices(_get_quotas()), [RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+        _make_field_drink([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+        _make_field_liquor([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+        _make_field_wine([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)])
+    ]).build(_BaseParticipant)
+
+_Form = FormBuilder().add_fields([
+    make_field_required_participants(_Participant, 1),
+    make_field_optional_participants(_AvecParticipant, 1),
+    make_field_name_consent(),
+    make_field_privacy_consent()
+])
 
 
 class _Model(BasicModel, GuildColumn):
@@ -100,46 +127,14 @@ class _Model(BasicModel, GuildColumn):
         return int(bool(self.firstname and self.lastname)) \
              + int(bool(self.avec_firstname and self.avec_lastname))
 
+    def get_quota_counts(self) -> List[Quota]:
+        return [
+            Quota(self.guild_name, int(bool(self.firstname))),
+            Quota(self.avec_guild_name, int(bool(self.avec_firstname)))
+        ]
+
 
 class _Controller(FormController):
-
-    def _count_participants(self, entries: Iterable[_Model]) -> int:
-        total_count = 0
-        for m in entries:
-            total_count += m.get_participant_count()
-
-        return total_count
-
-    def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[_Model]) -> Dict[str, int]:
-        registration_quotas = dict.fromkeys(event_quotas.keys(), 0)
-        for entry in entries:
-            registration_quotas[entry.guild_name] += int(bool(entry.firstname))
-            registration_quotas[entry.avec_guild_name] += int(bool(entry.avec_firstname))
-
-        return registration_quotas
-
-    # MEMO: "Evil" Covariant parameters
-    def _find_from_entries(self, entries: Iterable[_Model], form: _Form) -> Tuple[bool, str]:
-        def try_find(m: _Model, firstname: str, lastname: str, email: str):
-            return ((m.get_firstname() == firstname and m.get_lastname() == lastname) or m.get_email() == email) or \
-                   ((m.avec_firstname == firstname and m.avec_lastname == lastname) or m.avec_email == email)
-
-        participant_firstname = form.get_firstname()
-        participant_lastname = form.get_lastname()
-        participant_email = form.get_email()
-        avec_firstname = form.avec_firstname.data
-        avec_lastname = form.avec_lastname.data
-        avec_email = form.avec_email.data
-        for entry in entries:
-            if try_find(entry, participant_firstname, participant_lastname, participant_email):
-                return True, ''
-            if try_find(entry, avec_firstname, avec_lastname, avec_email):
-                return True, 'Avecisi on jo ilmoittautunut'
-
-        if participant_firstname == avec_firstname and participant_lastname == avec_lastname and participant_email == avec_email:
-            return True, 'Et voi olla oma avecisi'
-
-        return False, ''
 
     # MEMO: "Evil" Covariant parameter
     def _get_email_recipient(self, model: _Model) -> List[EmailRecipient]:

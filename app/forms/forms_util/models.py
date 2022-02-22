@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 from app import db
+from .form_controller import Quota
 
 
 # MEMO: Must have same attribute names as BasicForm
@@ -35,6 +36,9 @@ class BasicModel(db.Model):
 
     def get_participant_count(self) -> int:
         return 1
+
+    def get_quota_counts(self) -> List[Quota]:
+        return [Quota.default_quota(1, 0)]
 
 
 class PhoneNumberColumn:

@@ -3,9 +3,11 @@ from pathlib import Path
 from typing import Type, Union, TYPE_CHECKING, Tuple
 from os.path import split, splitext
 
-from .forms import BasicForm
+from .forms import make_basic_form_type
 from .models import BasicModel
 from .form_controller import FormContext
+
+BasicForm = make_basic_form_type()
 
 if TYPE_CHECKING:
     from .form_controller import FormController, Event, DataTableInfo

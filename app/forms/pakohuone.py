@@ -2,12 +2,13 @@ from wtforms import StringField, RadioField
 from wtforms.validators import DataRequired, length
 from datetime import datetime
 import json
-from typing import Any
+from typing import Any, List
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIfValue, PhoneNumberField, get_str_choices, BasicForm
+from .forms_util.forms import RequiredIfValue, PhoneNumberField, get_str_choices, BasicForm, ParticipantForm, \
+    make_basic_form_type, BasicParticipantForm, LastnameField, FirstnameField
 from .forms_util.form_controller import FormController, DataTableInfo, Event, EventRegistrations, Quota
 from .forms_util.models import BasicModel, PhoneNumberColumn, basic_model_csv_map, phone_number_csv_map
 
@@ -39,35 +40,27 @@ def _get_game_times():
     ]
 
 
+@LastnameField()
+@FirstnameField()
+class _BaseParticipant(BasicParticipantForm):
+    pass
+
+
+
 @PhoneNumberField()
-class _Form(BasicForm):
+class _Form(make_basic_form_type(ParticipantForm, ParticipantForm, 5, 1)):
     aika = RadioField('Aika *', choices=get_str_choices(_get_game_times()), validators=[DataRequired()])
     huone1800 = RadioField('Huone (18:00) *', choices=get_str_choices(_get_escape_games()),
                            validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
     huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_escape_games()),
                            validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
 
-    etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi1 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-
-    etunimi2 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi2 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-
-    etunimi3 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi3 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-
-    etunimi4 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi4 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-
-    etunimi5 = StringField('Etunimi', validators=[length(max=50)])
-    sukunimi5 = StringField('Sukunimi', validators=[length(max=50)])
-
 
 class _Model(BasicModel, PhoneNumberColumn):
     __tablename__ = _form_name
     aika = db.Column(db.String(16))
-    huone1800 = db.Column(db.String(128))
-    huone1930 = db.Column(db.String(128))
+    huone1800 = db.Column(db.String(64))
+    huone1930 = db.Column(db.String(64))
 
     etunimi1 = db.Column(db.String(64))
     sukunimi1 = db.Column(db.String(64))
@@ -91,6 +84,16 @@ class _Model(BasicModel, PhoneNumberColumn):
              + int(bool(self.etunimi3 and self.sukunimi3)) \
              + int(bool(self.etunimi4 and self.sukunimi4)) \
              + int(bool(self.etunimi5 and self.sukunimi5))
+
+    def get_quota_counts(self) -> List[Quota]:
+        return [
+            Quota.default_quota(int(bool(self.firstname and self.lastname)), 0),
+            Quota.default_quota(int(bool(self.etunimi1 and self.sukunimi1)), 0),
+            Quota.default_quota(int(bool(self.etunimi2 and self.sukunimi2)), 0),
+            Quota.default_quota(int(bool(self.etunimi3 and self.sukunimi3)), 0),
+            Quota.default_quota(int(bool(self.etunimi4 and self.sukunimi4)), 0),
+            Quota.default_quota(int(bool(self.etunimi5 and self.sukunimi5)), 0)
+        ]
 
 
 class _Controller(FormController):

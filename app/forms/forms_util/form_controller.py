@@ -7,11 +7,11 @@ from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collec
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
-from .models import BasicModel
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
     from .forms import BasicForm
+    from .models import BasicModel
 
 
 class FormContext:
@@ -45,14 +45,14 @@ class EventRegistrations:
     A class to hold dynamic registration data
     """
 
-    def __init__(self, entries, participant_count: int):
+    def __init__(self, entries: Iterable, participant_count: int):
         self._entries = entries
         self._participant_count = participant_count
 
-    def get_entries(self):
+    def get_entries(self) -> Iterable:
         return self._entries
 
-    def get_participant_count(self):
+    def get_participant_count(self) -> int:
         return self._participant_count
 
 
@@ -88,33 +88,67 @@ class FormController(ABC):
     def get_data_csv_request_handler(self, request) -> Any:
         return _export_to_csv(self._context.get_model_type().__tablename__)
 
+    def _matching_identity(self, firstname0, firstname1, lastname0, lastname1, email0, email1):
+        return firstname0 != '' and lastname0 != '' and email0 != '' and\
+            firstname0 == firstname1 and lastname0 == lastname1 and email0 == email1
+
     def _find_from_entries(self, entries: Iterable[BasicModel], form: BasicForm) -> Tuple[bool, str]:
         """
         A method to find if the individual described by the form is
         found in the entries. Can be overridden in inheriting classes
         to alter behaviour.
         """
-        firstname = form.get_firstname()
-        lastname = form.get_lastname()
-        email = form.get_email()
-        for m in entries:
-            if m.get_firstname() == firstname and m.get_lastname() == lastname and m.get_email() == email:
-                return True, ''
+        participants = list(form.get_required_participants()) + list(form.get_optional_participants())
+        for participant in participants:
+            firstname = participant.get_firstname()
+            lastname = participant.get_lastname()
+            email = participant.get_email()
+            for m in entries:
+                if self._matching_identity(
+                        m.get_firstname(), firstname,
+                        m.get_lastname(), lastname,
+                        m.get_email(), email):
+                    return True, '{} {} on jo ilmoittautunut.'.format(firstname, lastname)
+
         return False, ''
 
-    def _count_participants(self, entries) -> int:
+    def _find_in_self(self, form: BasicForm) -> Tuple[bool, str]:
+        """
+        Ensure that form itself contains each participant only once.
+        """
+        participants = list(form.get_required_participants()) + list(form.get_optional_participants())
+
+        length = len(participants) - 1
+        for i in range(0, length):
+            for j in range(i + 1, length):
+                if self._matching_identity(
+                        participants[i].get_firstname(), participants[j].get_firstname(),
+                        participants[i].get_lastname(), participants[j].get_lastname(),
+                        participants[i].get_email(), participants[j].get_email()):
+                    return True, 'Et voi ilmoittaa samaa henkilöä kahdesti: {} {}'.format(participants[i].get_firstname(), participants[i].get_lastname())
+
+        return False, ''
+
+    def _count_participants(self, entries: Iterable[BasicModel]) -> int:
         """
         A method to count the number of event participants.
-        Can be overridden in inheriting classes to alter behaviour.
         """
-        return len(entries)
+        total_count = 0
+        for m in entries:
+            total_count += m.get_participant_count()
+
+        return total_count
 
     def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[BasicModel]) -> Dict[str, int]:
         """
         A method to count the number of event participants per quota.
-        Can be overridden in inheriting classes to alter behaviour.
         """
-        return dict.fromkeys(event_quotas.keys(), len(entries))
+        registration_quotas = dict.fromkeys(event_quotas.keys(), 0)
+        for entry in entries:
+            for quota in entry.get_quota_counts():
+                registration_quotas[quota.get_name()] += quota.get_quota()
+
+        return registration_quotas
 
     def _get_email_recipient(self, model: BasicModel) -> List[EmailRecipient]:
         """
@@ -177,8 +211,15 @@ class FormController(ABC):
         """
         event = self._context.get_event()
 
-        if not form.validate_on_submit():
+        valid_participants = []
+        form.validate()
+        valid = form.get_privacy_consent().validate(form)
+        valid = valid and form.get_required_participants().validate(form)
+        if not valid:
             return 'Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot'
+
+        for participant in form.get_optional_participants():
+            asd = participant.validate(form)
 
         if nowtime < event.get_start_time():
             return 'Ilmoittautuminen ei ole alkanut'
@@ -194,10 +235,17 @@ class FormController(ABC):
         if found:
             return msg or 'Olet jo ilmoittautunut'
 
+        (found, msg) = self._find_in_self(form)
+        if found:
+            return msg
+
         return ""
 
     def _check_quotas(self, event_quotas: Dict[str, Quota],
                       registrations: EventRegistrations, form_quotas: Iterable[Quota]) -> str:
+        """
+        Ensure that no quota has been exceeded
+        """
         registration_quotas = self._count_registration_quotas(event_quotas, registrations.get_entries())
         for form_quota in form_quotas:
             name = form_quota.get_name()

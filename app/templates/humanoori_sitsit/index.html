@@ -35,35 +35,27 @@
 {%- endblock -%}
 
 
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.guild_name) }}
+    <label class="control-label">Ruokajuoma</label>
+    {{ macros.form_field(form.drink) }}
+    <label class="control-label">Viinakaato</label>
+    {{ macros.form_field(form.liquor) }}
+    <label class="control-label">Viini</label>
+    {{ macros.form_field(form.wine) }}
+    {{ macros.form_field(form.allergies) }}
+    {{ macros.form_field(form.seating_preference) }}
+{% endmacro %}
+
 {%- block registration_form -%}
     {%- call macros.registration_form_routine(form) -%}
-        {{ macros.form_field(form.firstname) }}
-        {{ macros.form_field(form.lastname) }}
-        {{ macros.form_field(form.email) }}
-        {{ macros.form_field(form.guild_name) }}
-        <label class="control-label">Ruokajuoma</label>
-        {{ macros.form_field(form.drink) }}
-        <label class="control-label">Viinakaato</label>
-        {{ macros.form_field(form.liquor) }}
-        <label class="control-label">Viini</label>
-        {{ macros.form_field(form.wine) }}
-        {{ macros.form_field(form.allergies) }}
-        {{ macros.form_field(form.seating_preference) }}
+        {{ participant_form(form.required_participants[0]) }}
         <br />
         <h4>Avecin tiedot</h4>
-        {{ macros.form_field(form.avec_firstname) }}
-        {{ macros.form_field(form.avec_lastname) }}
-        {{ macros.form_field(form.avec_email) }}
-        {{ macros.form_field(form.avec_guild_name) }}
-        <label class="control-label">Ruokajuoma</label>
-        {{ macros.form_field(form.avec_drink) }}
-        <label class="control-label">Viinakaato</label>
-        {{ macros.form_field(form.avec_liquor) }}
-        <label class="control-label">Viini</label>
-        {{ macros.form_field(form.avec_wine) }}
-        {{ macros.form_field(form.avec_allergies) }}
-        {{ macros.form_field(form.avec_seating_preference) }}
-
+        {{ participant_form(form.optional_participants[0]) }}
         {{ macros.form_field(form.show_name_consent) }}
         {{ macros.form_field(form.privacy_consent) }}
     {%- endcall -%}

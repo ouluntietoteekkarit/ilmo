@@ -79,7 +79,16 @@ class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationCons
         return int(bool(self.firstname and self.lastname)) \
              + int(bool(self.etunimi1 and self.sukunimi1)) \
              + int(bool(self.etunimi2 and self.sukunimi2)) \
-             + int(bool(self.etunimi3 and self.sukunimi3)) \
+             + int(bool(self.etunimi3 and self.sukunimi3))
+
+    def get_quota_counts(self) -> List[Quota]:
+        return [
+            Quota(self.kilta0, int(bool(self.firstname and self.lastname))),
+            Quota(self.kilta1, int(bool(self.etunimi1 and self.sukunimi1))),
+            Quota(self.kilta2, int(bool(self.etunimi2 and self.sukunimi2))),
+            Quota(self.kilta3, int(bool(self.etunimi3 and self.sukunimi3))),
+        ]
+
 
 class _Controller(FormController):
 
