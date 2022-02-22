@@ -18,25 +18,142 @@ ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
 ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
 
 
-def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
-    choices = []
-    for val in values:
-        choices.append((val, val))
-    return choices
+
+class BasicParticipantForm(Form):
+    # MEMO: Default implementations for methods required by system logic.
+    #       Exceptions make it easier to spot programming errors.
+
+    def get_firstname(self) -> str:
+        raise Exception("Not implemented")
+
+    def get_lastname(self) -> str:
+        raise Exception("Not implemented")
+
+    def get_email(self) -> str:
+        return ''
+
+    def get_quota_name(self) -> str:
+        return Quota.default_quota_name()
+
+    def is_filled(self) -> bool:
+        return bool(self.get_firstname() and self.get_lastname())
 
 
-def get_guild_choices(guilds: Iterable[Guild]) -> list:
-    choices = []
-    for guild in guilds:
-        choices.append((guild.get_name(), guild.get_name()))
-    return choices
+# MEMO: Must have same attribute names as BasicModel
+class BasicForm(FlaskForm):
+    asks_name_consent = False
+
+    # MEMO: Default implementations for methods required by system logic.
+    #       Exceptions make it easier to spot programming errors.
+
+    def get_privacy_consent(self) -> BooleanField:
+        raise Exception("Mandatory form field not implemented")
+
+    def get_required_participants(self) -> Union[Iterable[BasicParticipantForm], FieldList]:
+        raise Exception("Mandatory form field not implemented")
+
+    def get_optional_participants(self) -> Union[Iterable[BasicParticipantForm], FieldList]:
+        return []
+
+    def get_participant_count(self) -> int:
+        count = 0
+        for p in self.get_required_participants():
+            count += int(p.is_filled())
+
+        for p in self.get_optional_participants():
+            count += int(p.is_filled())
+
+        return count
+
+    def get_quota_counts(self) -> List[Quota]:
+        """Returns the number of participants this form covers."""
+        quotas = []
+        for p in self.get_required_participants():
+            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
+
+        for p in self.get_optional_participants():
+            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
+
+        return quotas
 
 
-def get_quota_choices(quotas: Iterable[Quota]):
-    choices = []
-    for quota in quotas:
-        choices.append((quota.get_name(), quota.get_name()))
-    return choices
+class BaseBuilder(ABC):
+    def __init__(self):
+        self._fields: List[AttachableField] = []
+
+    def reset(self) -> BaseBuilder:
+        self._fields = []
+        return self
+
+    def add_field(self, field: AttachableField) -> ParticipantFormBuilder:
+        self._fields.append(field)
+        return self
+
+    def add_fields(self, fields: Iterable[AttachableField]) -> ParticipantFormBuilder:
+        for field in fields:
+            self.add_field(field)
+
+        return self
+
+    @abstractmethod
+    def build(self, base_type: Type[BasicParticipantForm] = None) -> Type[Form]:
+        pass
+
+
+class FormBuilder(BaseBuilder):
+
+    def build(self, base_type: Type[BasicForm] = None) -> Type[BasicForm]:
+        if not base_type:
+            class TmpForm(BasicForm):
+                pass
+
+            base_type = TmpForm
+
+        has_required_participants = hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
+        has_privacy_consent = hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
+        asks_name = hasattr(base_type, ATTRIBUTE_NAME_NAME_CONSENT)
+
+        for field in self._fields:
+            field.attach_to(base_type)
+            has_required_participants = has_required_participants or field.get_attribute_name() == ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS
+            has_privacy_consent = has_privacy_consent or field.get_attribute_name() == ATTRIBUTE_NAME_PRIVACY_CONSENT
+            asks_name = asks_name or field.get_attribute_name() == ATTRIBUTE_NAME_NAME_CONSENT
+
+        if not has_required_participants:
+            raise Exception("Required participants is a mandatory attribute of BasicForm.")
+
+        if not has_privacy_consent:
+            raise Exception("Privacy consent is a mandatory attribute of BasicForm.")
+
+        base_type.asks_name_consent = asks_name
+
+        return base_type
+
+
+class ParticipantFormBuilder(BaseBuilder):
+
+    def build(self, base_type: Type[BasicParticipantForm] = None) -> Type[BasicParticipantForm]:
+        if not base_type:
+            class TmpForm(BasicParticipantForm):
+                pass
+
+            base_type = TmpForm
+
+        has_firstname = hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME)
+        has_lastname = hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
+
+        for field in self._fields:
+            field.attach_to(base_type)
+            has_firstname = has_firstname or field.get_attribute_name() == ATTRIBUTE_NAME_FIRSTNAME
+            has_lastname = has_lastname or field.get_attribute_name() == ATTRIBUTE_NAME_LASTNAME
+
+        if not has_firstname:
+            raise Exception("Firstname is a mandatory attribute of BasicParticipantForm.")
+
+        if not has_lastname:
+            raise Exception("Lastname is a mandatory attribute of BasicParticipantForm.")
+
+        return base_type
 
 
 class RequiredIf(InputRequired):
@@ -296,129 +413,38 @@ def make_field_optional_participants(form_type: Type[BasicParticipantForm], coun
     return AttachableFieldListField(ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, '', [], get_optional_participants, FormField(form_type), count, count)
 
 
-class BasicParticipantForm(Form):
-    # MEMO: Default implementations for methods required by system logic.
-    #       Exceptions make it easier to spot programming errors.
-
-    def get_firstname(self) -> str:
-        raise Exception("Not implemented")
-
-    def get_lastname(self) -> str:
-        raise Exception("Not implemented")
-
-    def get_email(self) -> str:
-        return ''
-
-    def get_quota_name(self) -> str:
-        return Quota.default_quota_name()
-
-    def is_filled(self) -> bool:
-        return bool(self.get_firstname() and self.get_lastname())
+def make_default_form() -> Type[BasicForm]:
+    _Participant = make_default_participant_form()
+    return FormBuilder().add_fields([
+        make_field_required_participants(_Participant),
+        make_field_privacy_consent()
+    ]).build()
 
 
-# MEMO: Must have same attribute names as BasicModel
-class BasicForm(FlaskForm):
-    asks_name_consent = False
-
-    # MEMO: Default implementations for methods required by system logic.
-    #       Exceptions make it easier to spot programming errors.
-
-    def get_privacy_consent(self) -> BooleanField:
-        raise Exception("Mandatory form field not implemented")
-
-    def get_required_participants(self) -> Union[Iterable[BasicParticipantForm], FieldList]:
-        raise Exception("Mandatory form field not implemented")
-
-    def get_optional_participants(self) -> Union[Iterable[BasicParticipantForm], FieldList]:
-        return []
-
-    def get_quota_counts(self) -> List[Quota]:
-        """Returns the number of participants this form covers."""
-        quotas = []
-        for p in self.get_required_participants():
-            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
-
-        for p in self.get_optional_participants():
-            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
-
-        return quotas
+def make_default_participant_form() -> Type[BasicParticipantForm]:
+    return ParticipantFormBuilder().add_fields([
+        make_field_firstname([InputRequired()]),
+        make_field_lastname([InputRequired()]),
+        make_field_email([InputRequired()])
+    ]).build()
 
 
-class BaseBuilder(ABC):
-    def __init__(self):
-        self._fields: List[AttachableField] = []
-
-    def reset(self) -> BaseBuilder:
-        self._fields = []
-        return self
-
-    def add_field(self, field: AttachableField) -> ParticipantFormBuilder:
-        self._fields.append(field)
-        return self
-
-    def add_fields(self, fields: Iterable[AttachableField]) -> ParticipantFormBuilder:
-        for field in fields:
-            self.add_field(field)
-
-        return self
-
-    @abstractmethod
-    def build(self, base_type: Type[BasicParticipantForm] = None) -> Type[Form]:
-        pass
+def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
+    choices = []
+    for val in values:
+        choices.append((val, val))
+    return choices
 
 
-class FormBuilder(BaseBuilder):
-
-    def build(self, base_type: Type[BasicForm] = None) -> Type[BasicForm]:
-        if not base_type:
-            class TmpForm(BasicForm):
-                pass
-
-            base_type = TmpForm
-
-        has_required_participants = False
-        has_privacy_consent = False
-        asks_name = False
-
-        for field in self._fields:
-            field.attach_to(base_type)
-            has_required_participants = has_required_participants or field.get_attribute_name() == ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS
-            has_privacy_consent = has_privacy_consent or field.get_attribute_name() == ATTRIBUTE_NAME_PRIVACY_CONSENT
-            asks_name = asks_name or field.get_attribute_name() == ATTRIBUTE_NAME_NAME_CONSENT
-
-        if not has_required_participants:
-            raise Exception("Required participants is a mandatory attribute of BasicForm.")
-
-        if not has_privacy_consent:
-            raise Exception("Privacy consent is a mandatory attribute of BasicForm.")
-
-        base_type.asks_name_consent = asks_name
-
-        return base_type
+def get_guild_choices(guilds: Iterable[Guild]) -> list:
+    choices = []
+    for guild in guilds:
+        choices.append((guild.get_name(), guild.get_name()))
+    return choices
 
 
-class ParticipantFormBuilder(BaseBuilder):
-
-    def build(self, base_type: Type[BasicParticipantForm] = None) -> Type[BasicParticipantForm]:
-        if not base_type:
-            class TmpForm(BasicParticipantForm):
-                pass
-
-            base_type = TmpForm
-
-        has_firstname = False
-        has_lastname = False
-
-        for field in self._fields:
-            field.attach_to(base_type)
-            has_firstname = has_firstname or field.get_attribute_name() == ATTRIBUTE_NAME_FIRSTNAME
-            has_lastname = has_lastname or field.get_attribute_name() == ATTRIBUTE_NAME_LASTNAME
-
-        if not has_firstname:
-            raise Exception("Firstname is a mandatory attribute of BasicParticipantForm.")
-
-        if not has_lastname:
-            raise Exception("Lastname is a mandatory attribute of BasicParticipantForm.")
-
-        return base_type
-
+def get_quota_choices(quotas: Iterable[Quota]):
+    choices = []
+    for quota in quotas:
+        choices.append((quota.get_name(), quota.get_name()))
+    return choices

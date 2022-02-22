@@ -1,9 +1,12 @@
 from datetime import datetime
 
+from wtforms.validators import InputRequired
+
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import PhoneNumberField, GuildField, BasicForm, ShowNameConsentField, \
-    BindingRegistrationConsentField, get_guild_choices
+from .forms_util.forms import get_guild_choices, ParticipantFormBuilder, FormBuilder, make_default_participant_form, \
+    make_field_phone_number, make_field_quota, make_field_binding_registration_consent, make_field_name_consent, \
+    make_field_required_participants, make_field_privacy_consent
 from .forms_util.guilds import *
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.models import BasicModel, GuildColumn, BindingRegistrationConsentColumn, PhoneNumberColumn, \
@@ -12,12 +15,17 @@ from .forms_util.models import BasicModel, GuildColumn, BindingRegistrationConse
 _form_name = file_path_to_form_name(__file__)
 
 
-@BindingRegistrationConsentField()
-@ShowNameConsentField()
-@GuildField(get_guild_choices(get_all_guilds()))
-@PhoneNumberField()
-class _Form(BasicForm):
-    pass
+_Participant = ParticipantFormBuilder().add_fields([
+    make_field_phone_number([InputRequired()]),
+    make_field_quota('Kilta *', get_guild_choices(get_all_guilds())),
+]).build(make_default_participant_form())
+
+_Form = FormBuilder().add_fields([
+    make_field_required_participants(_Participant),
+    make_field_name_consent(),
+    make_field_binding_registration_consent(),
+    make_field_privacy_consent()
+]).build()
 
 
 class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):

@@ -1,5 +1,4 @@
-from wtforms import SelectField
-from wtforms.validators import DataRequired
+from wtforms.validators import InputRequired
 from datetime import datetime
 from typing import List
 
@@ -7,8 +6,9 @@ from app import db
 from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import PhoneNumberField, DepartureBusstopField, BasicForm, ShowNameConsentField, get_str_choices, \
-    get_quota_choices
+from .forms_util.forms import make_field_phone_number, make_field_departure_location, \
+    make_field_name_consent, get_str_choices, get_quota_choices, FormBuilder, make_field_quota, \
+    make_field_privacy_consent, make_field_required_participants, make_default_participant_form
 from .forms_util.models import BasicModel, PhoneNumberColumn, DepartureBusstopColumn, basic_model_csv_map, \
     departure_busstop_csv_map, phone_number_csv_map
 
@@ -41,16 +41,20 @@ def _get_quotas() -> List[Quota]:
     ]
 
 
+_Participant = make_default_participant_form()
+_Form = FormBuilder().add_fields([
+    make_field_required_participants(_Participant),
+    make_field_phone_number([InputRequired()]),
+    make_field_departure_location(get_str_choices(_get_departure_stops()), [InputRequired()]),
+    make_field_quota('Kiintiö *', get_quota_choices(_get_quotas()), [InputRequired()]),
+    make_field_name_consent(),
+    make_field_privacy_consent()
+]).build()
+
+
 class _Model(BasicModel, PhoneNumberColumn, DepartureBusstopColumn):
     __tablename__ = _form_name
     kiintio = db.Column(db.String(32))
-
-
-@ShowNameConsentField()
-@DepartureBusstopField(get_str_choices(_get_departure_stops()))
-@PhoneNumberField()
-class _Form(BasicForm):
-    kiintio = SelectField('Kiintiö *', choices=get_quota_choices(_get_quotas()), validators=[DataRequired()])
 
 
 class _Controller(FormController):

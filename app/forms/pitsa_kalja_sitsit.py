@@ -6,7 +6,8 @@ from typing import List
 from app import db
 from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIf, get_str_choices, BasicForm, ShowNameConsentField
+from .forms_util.forms import RequiredIf, get_str_choices, FormBuilder, make_default_participant_form,\
+    make_field_required_participants, make_field_name_consent, make_field_privacy_consent
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.models import BasicModel, basic_model_csv_map
 
@@ -45,12 +46,16 @@ def _get_pizzas() -> List[str]:
     ]
 
 
-@ShowNameConsentField()
-class _Form(BasicForm):
-    alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
-    mieto = SelectField('Mieto juoma *', choices=get_str_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value=_DRINK_ALCOHOLIC)])
-    pitsa = SelectField('Pitsa *', choices=get_str_choices(_get_pizzas()), validators=[DataRequired()])
-    allergiat = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
+_Participant = make_default_participant_form()
+_Form = FormBuilder().add_fields([
+    make_field_required_participants(_Participant, 1),
+    make_field_name_consent(),
+    make_field_privacy_consent()
+]).build()
+_Form.alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
+_Form.mieto = SelectField('Mieto juoma *', choices=get_str_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value=_DRINK_ALCOHOLIC)])
+_Form.pitsa = SelectField('Pitsa *', choices=get_str_choices(_get_pizzas()), validators=[DataRequired()])
+_Form.allergiat = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
 
 
 class _Model(BasicModel):

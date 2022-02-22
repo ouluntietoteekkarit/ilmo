@@ -1,13 +1,15 @@
-from wtforms import StringField, SelectField
-from wtforms.validators import DataRequired, Email, length
+from wtforms import StringField
+from wtforms.validators import DataRequired, length, InputRequired
 from datetime import datetime
 from typing import List
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line, make_fullname_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import ShowNameConsentField, BindingRegistrationConsentField, BasicForm, PhoneNumberField, \
-    GuildField, get_guild_choices
+from .forms_util.forms import get_guild_choices, FormBuilder, ParticipantFormBuilder, \
+    make_field_binding_registration_consent, make_field_name_consent, make_field_quota, make_field_phone_number, \
+    make_field_email, make_field_lastname, make_field_firstname, make_field_required_participants, \
+    make_field_optional_participants, make_field_privacy_consent
 from .forms_util.guilds import *
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.models import BasicModel, BindingRegistrationConsentColumn, basic_model_csv_map, \
@@ -16,37 +18,23 @@ from .forms_util.models import BasicModel, BindingRegistrationConsentColumn, bas
 _form_name = file_path_to_form_name(__file__)
 
 
-@BindingRegistrationConsentField()
-@ShowNameConsentField('Sallin joukkueen nimen julkaisemisen osallistujalistassa')
-@GuildField(get_guild_choices(get_all_guilds()))
-@PhoneNumberField()
-class _Form(BasicForm):
-    teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
+_Participant = ParticipantFormBuilder().add_fields([
+    make_field_firstname([InputRequired()]),
+    make_field_lastname([InputRequired()]),
+    make_field_email([InputRequired()]),
+    make_field_phone_number([InputRequired()]),
+    make_field_quota('Kilta *', get_guild_choices(get_all_guilds()), [InputRequired()]),
+]).build()
 
-    etunimi1 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi1 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    phone1 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    email1 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta1 = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()), validators=[DataRequired()])
+_Form = FormBuilder().add_fields([
+    make_field_required_participants(_Participant, 3),
+    make_field_optional_participants(_Participant, 1),
+    make_field_name_consent('Sallin joukkueen nimen julkaisemisen osallistujalistassa'),
+    make_field_binding_registration_consent(),
+    make_field_privacy_consent()
+]).build()
 
-    etunimi2 = StringField('Etunimi *', validators=[DataRequired(), length(max=50)])
-    sukunimi2 = StringField('Sukunimi *', validators=[DataRequired(), length(max=50)])
-    phone2 = StringField('Puhelinnumero *', validators=[DataRequired(), length(max=20)])
-    email2 = StringField('Sähköposti *', validators=[DataRequired(), Email(), length(max=100)])
-    kilta2 = SelectField('Kilta *', choices=get_guild_choices(get_all_guilds()), validators=[DataRequired()])
-
-    etunimi3 = StringField('Etunimi', validators=[length(max=50)])
-    sukunimi3 = StringField('Sukunimi', validators=[length(max=50)])
-    phone3 = StringField('Puhelinnumero', validators=[length(max=20)])
-    email3 = StringField('Sähköposti', validators=[length(max=100)])
-    kilta3 = SelectField('Kilta', choices=get_guild_choices(get_all_guilds()))
-
-    def get_quota_counts(self) -> List[Quota]:
-        quota = int(bool(self.firstname.data and self.lastname.data))\
-              + int(bool(self.etunimi1.data and self.sukunimi1.data))\
-              + int(bool(self.etunimi2.data and self.sukunimi2.data))\
-              + int(bool(self.etunimi3.data and self.sukunimi3.data))
-        return [Quota(Quota.default_quota_name(), quota)]
+_Form.teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
 
 
 class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
@@ -92,12 +80,6 @@ class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationCons
 
 class _Controller(FormController):
 
-    def _count_participants(self, entries) -> int:
-        total_count = 0
-        for entry in entries:
-            total_count += entry.personcount
-        return total_count
-
     # MEMO: "Evil" Covariant parameter
     def _get_email_recipient(self, model: _Model) -> List[EmailRecipient]:
         return [
@@ -123,7 +105,7 @@ class _Controller(FormController):
 
     def _form_to_model(self, form: _Form, nowtime) -> _Model:
         model = super()._form_to_model(form, nowtime)
-        model.personcount = form.get_quota_counts()[0].get_quota()
+        model.personcount = form.get_participant_count()
         return model
 
 

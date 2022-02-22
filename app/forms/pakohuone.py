@@ -1,5 +1,5 @@
-from wtforms import StringField, RadioField
-from wtforms.validators import DataRequired, length
+from wtforms import RadioField
+from wtforms.validators import DataRequired, InputRequired
 from datetime import datetime
 import json
 from typing import Any, List
@@ -7,8 +7,9 @@ from typing import Any, List
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIfValue, PhoneNumberField, get_str_choices, BasicForm, ParticipantForm, \
-    make_basic_form_type, BasicParticipantForm, LastnameField, FirstnameField
+from .forms_util.forms import RequiredIfValue, get_str_choices, BasicForm, ParticipantFormBuilder, \
+    make_field_firstname, make_field_lastname, make_field_phone_number, FormBuilder, make_field_required_participants,\
+    make_field_privacy_consent, make_field_optional_participants, ATTRIBUTE_NAME_FIRSTNAME, RequiredIf
 from .forms_util.form_controller import FormController, DataTableInfo, Event, EventRegistrations, Quota
 from .forms_util.models import BasicModel, PhoneNumberColumn, basic_model_csv_map, phone_number_csv_map
 
@@ -40,20 +41,28 @@ def _get_game_times():
     ]
 
 
-@LastnameField()
-@FirstnameField()
-class _BaseParticipant(BasicParticipantForm):
-    pass
+_Participant = ParticipantFormBuilder().add_fields([
+    make_field_firstname([InputRequired()]),
+    make_field_lastname([InputRequired()])
+]).build()
 
+_OptionalParticipant = ParticipantFormBuilder().add_fields([
+    make_field_firstname(),
+    make_field_lastname([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)])
+]).build()
 
+_Form = FormBuilder().add_fields([
+    make_field_phone_number([InputRequired()]),
+    make_field_required_participants(_Participant, 5),
+    make_field_optional_participants(_OptionalParticipant, 1),
+    make_field_privacy_consent()
+]).build()
 
-@PhoneNumberField()
-class _Form(make_basic_form_type(ParticipantForm, ParticipantForm, 5, 1)):
-    aika = RadioField('Aika *', choices=get_str_choices(_get_game_times()), validators=[DataRequired()])
-    huone1800 = RadioField('Huone (18:00) *', choices=get_str_choices(_get_escape_games()),
-                           validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
-    huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_escape_games()),
-                           validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
+_Form.aika = RadioField('Aika *', choices=get_str_choices(_get_game_times()), validators=[DataRequired()])
+_Form.huone1800 = RadioField('Huone (18:00) *', choices=get_str_choices(_get_escape_games()),
+                             validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
+_Form.huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_escape_games()),
+                             validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
 
 
 class _Model(BasicModel, PhoneNumberColumn):

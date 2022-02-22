@@ -1,19 +1,18 @@
 from datetime import datetime
-from typing import List, Iterable, Tuple, Dict, Collection
+from typing import List, Iterable
 
-from wtforms import RadioField, StringField, SelectField
-from wtforms.validators import DataRequired, length, Email
+from wtforms import StringField
+from wtforms.validators import DataRequired, length
 
 from app import db
-from app.email import EmailRecipient, make_greet_line, make_signature_line
+from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import BasicForm, get_str_choices, RequiredIf, get_quota_choices, \
-    BasicParticipantForm, ParticipantFormBuilder, make_field_firstname, make_field_lastname, make_field_email, \
-    AttachableRadioField, AttachableStringField, ATTRIBUTE_NAME_FIRSTNAME, make_field_quota, FormBuilder, \
-    make_field_required_participants, make_field_optional_participants, make_field_privacy_consent, \
-    make_field_name_consent
-from .forms_util.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA, Guild
+from .forms_util.forms import get_str_choices, RequiredIf, get_quota_choices, BasicParticipantForm,\
+    ParticipantFormBuilder, make_field_firstname, make_field_lastname, make_field_email, AttachableRadioField,\
+    ATTRIBUTE_NAME_FIRSTNAME, make_field_quota, FormBuilder, make_field_required_participants,\
+    make_field_optional_participants, make_field_privacy_consent, make_field_name_consent
+from .forms_util.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA
 from .forms_util.models import BasicModel, basic_model_csv_map, GuildColumn
 
 _form_name = file_path_to_form_name(__file__)
@@ -78,31 +77,31 @@ def _make_field_wine(validators: Iterable):
 
 
 _Participant = ParticipantFormBuilder().add_fields([
-        make_field_firstname([DataRequired]),
-        make_field_lastname([DataRequired]),
-        make_field_email([DataRequired]),
-        make_field_quota('Kilta *', get_quota_choices(_get_quotas()), [DataRequired]),
-        _make_field_drink([DataRequired]),
-        _make_field_liquor([DataRequired]),
-        _make_field_wine([DataRequired])
-    ]).build(_BaseParticipant)
+    make_field_firstname([DataRequired()]),
+    make_field_lastname([DataRequired()]),
+    make_field_email([DataRequired()]),
+    make_field_quota('Kilta *', get_quota_choices(_get_quotas()), [DataRequired()]),
+    _make_field_drink([DataRequired()]),
+    _make_field_liquor([DataRequired()]),
+    _make_field_wine([DataRequired()])
+]).build(_BaseParticipant)
 
 _AvecParticipant = ParticipantFormBuilder().add_fields([
-        make_field_firstname(),
-        make_field_lastname([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-        make_field_email([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-        make_field_quota('Kilta *', get_quota_choices(_get_quotas()), [RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-        _make_field_drink([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-        _make_field_liquor([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-        _make_field_wine([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)])
-    ]).build(_BaseParticipant)
+    make_field_firstname(),
+    make_field_lastname([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+    make_field_email([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+    make_field_quota('Kilta *', get_quota_choices(_get_quotas()), [RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+    _make_field_drink([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+    _make_field_liquor([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
+    _make_field_wine([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)])
+]).build(_BaseParticipant)
 
 _Form = FormBuilder().add_fields([
     make_field_required_participants(_Participant, 1),
     make_field_optional_participants(_AvecParticipant, 1),
     make_field_name_consent(),
     make_field_privacy_consent()
-])
+]).build()
 
 
 class _Model(BasicModel, GuildColumn):
