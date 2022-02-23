@@ -8,10 +8,11 @@ from app import db
 from app.email import EmailRecipient, make_greet_line
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import get_str_choices, RequiredIf, get_quota_choices, BasicParticipantForm,\
-    ParticipantFormBuilder, make_field_firstname, make_field_lastname, make_field_email, AttachableRadioField,\
-    ATTRIBUTE_NAME_FIRSTNAME, make_field_quota, FormBuilder, make_field_required_participants,\
-    make_field_optional_participants, make_field_privacy_consent, make_field_name_consent
+from .forms_util.forms import get_str_choices, RequiredIf, get_quota_choices, BasicParticipantForm, \
+    ParticipantFormBuilder, make_field_firstname, make_field_lastname, make_field_email, AttachableRadioField, \
+    ATTRIBUTE_NAME_FIRSTNAME, make_field_quota, FormBuilder, make_field_required_participants, \
+    make_field_optional_participants, make_field_privacy_consent, make_field_name_consent, FormAttributesBuilder, \
+    make_field_form_attributes
 from .forms_util.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA
 from .forms_util.models import BasicModel, basic_model_csv_map, GuildColumn
 
@@ -96,11 +97,15 @@ _AvecParticipant = ParticipantFormBuilder().add_fields([
     _make_field_wine([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)])
 ]).build(_BaseParticipant)
 
+_FormAttrs = FormAttributesBuilder().add_fields([
+    make_field_name_consent(),
+    make_field_privacy_consent()
+]).build()
+
 _Form = FormBuilder().add_fields([
     make_field_required_participants(_Participant, 1),
     make_field_optional_participants(_AvecParticipant, 1),
-    make_field_name_consent(),
-    make_field_privacy_consent()
+    make_field_form_attributes(_FormAttrs)
 ]).build()
 
 

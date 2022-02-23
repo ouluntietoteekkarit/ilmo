@@ -211,15 +211,8 @@ class FormController(ABC):
         """
         event = self._context.get_event()
 
-        valid_participants = []
-        form.validate()
-        valid = form.get_privacy_consent().validate(form)
-        valid = valid and form.get_required_participants().validate(form)
-        if not valid:
+        if not self._validate_form(form):
             return 'Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot'
-
-        for participant in form.get_optional_participants():
-            asd = participant.validate(form)
 
         if nowtime < event.get_start_time():
             return 'Ilmoittautuminen ei ole alkanut'
@@ -240,6 +233,17 @@ class FormController(ABC):
             return msg
 
         return ""
+
+    def _validate_form(self, form: BasicForm) -> bool:
+        valid = form.get_required_participants().validate(form)
+        valid = form.get_form_attributes().validate() and valid
+        for participant in form.get_optional_participants():
+            for field in participant:
+                if field.raw_data:
+                    valid = participant.validate() and valid
+                    break
+
+        return valid
 
     def _check_quotas(self, event_quotas: Dict[str, Quota],
                       registrations: EventRegistrations, form_quotas: Iterable[Quota]) -> str:

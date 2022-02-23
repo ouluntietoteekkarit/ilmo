@@ -14,9 +14,9 @@ ATTRIBUTE_NAME_LASTNAME = 'lastname'
 ATTRIBUTE_NAME_EMAIL = 'email'
 ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS = 'required_participants'
 ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS = 'optional_participants'
+ATTRIBUTE_NAME_FORM_ATTRIBUTES = 'form_attributes'
 ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
 ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
-
 
 
 class BasicParticipantForm(Form):
@@ -39,18 +39,26 @@ class BasicParticipantForm(Form):
         return bool(self.get_firstname() and self.get_lastname())
 
 
-# MEMO: Must have same attribute names as BasicModel
-class BasicForm(FlaskForm):
+class FormAttributesForm(Form):
     asks_name_consent = False
 
     # MEMO: Default implementations for methods required by system logic.
     #       Exceptions make it easier to spot programming errors.
 
     def get_privacy_consent(self) -> BooleanField:
-        raise Exception("Mandatory form field not implemented")
+        raise Exception("Mandatory form field not implemented.")
+
+
+# MEMO: Must have same attribute names as BasicModel
+class BasicForm(FlaskForm):
+    # MEMO: Default implementations for methods required by system logic.
+    #       Exceptions make it easier to spot programming errors.
+
+    def get_form_attributes(self) -> FormAttributesForm:
+        raise Exception("Mandatory form field not implemented.")
 
     def get_required_participants(self) -> Union[Iterable[BasicParticipantForm], FieldList]:
-        raise Exception("Mandatory form field not implemented")
+        raise Exception("Mandatory form field not implemented.")
 
     def get_optional_participants(self) -> Union[Iterable[BasicParticipantForm], FieldList]:
         return []
@@ -110,20 +118,15 @@ class FormBuilder(BaseBuilder):
             base_type = TmpForm
 
         has_required_participants = hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
-        has_privacy_consent = hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
         asks_name = hasattr(base_type, ATTRIBUTE_NAME_NAME_CONSENT)
 
         for field in self._fields:
             field.attach_to(base_type)
             has_required_participants = has_required_participants or field.get_attribute_name() == ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS
-            has_privacy_consent = has_privacy_consent or field.get_attribute_name() == ATTRIBUTE_NAME_PRIVACY_CONSENT
             asks_name = asks_name or field.get_attribute_name() == ATTRIBUTE_NAME_NAME_CONSENT
 
         if not has_required_participants:
             raise Exception("Required participants is a mandatory attribute of BasicForm.")
-
-        if not has_privacy_consent:
-            raise Exception("Privacy consent is a mandatory attribute of BasicForm.")
 
         base_type.asks_name_consent = asks_name
 
@@ -152,6 +155,26 @@ class ParticipantFormBuilder(BaseBuilder):
 
         if not has_lastname:
             raise Exception("Lastname is a mandatory attribute of BasicParticipantForm.")
+
+        return base_type
+
+
+class FormAttributesBuilder(BaseBuilder):
+
+    def build(self, base_type: Type[FormAttributesForm] = None) -> Type[FormAttributesForm]:
+        if not base_type:
+            class TmpForm(FormAttributesForm):
+                pass
+
+            base_type = TmpForm
+
+        has_privacy_consent = hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
+        for field in self._fields:
+            field.attach_to(base_type)
+            has_privacy_consent = has_privacy_consent or field.get_attribute_name() == ATTRIBUTE_NAME_PRIVACY_CONSENT
+
+        if not has_privacy_consent:
+            raise Exception("Privacy consent is a mandatory attribute of FormAttributesForm.")
 
         return base_type
 
@@ -329,6 +352,20 @@ class AttachableFieldListField(AttachableField):
         return self._attach(form, FieldList(self.field, min_entries=self._min_entries, max_entries=self._max_entries))
 
 
+class AttachableFormField(AttachableField):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 validators: Iterable,
+                 getter: Union[Callable[[Any], Any], None],
+                 form_type: Type[FormAttributesForm]):
+        super().__init__(attribute, label, validators, getter)
+        self._form_type = form_type
+
+    def attach_to(self, form: Type[Form]) -> Type[Form]:
+        return self._attach(form, FormField(self._form_type))
+
+
 def make_field_firstname(extra_validators: Iterable = []) -> AttachableField:
     # MEMO: Must have same attribute names as FirstnameColumn
     def get_firstname(self) -> str:
@@ -413,6 +450,13 @@ def make_field_optional_participants(form_type: Type[BasicParticipantForm], coun
     return AttachableFieldListField(ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, '', [], get_optional_participants, FormField(form_type), count, count)
 
 
+def make_field_form_attributes(form_type: Type[FormAttributesForm]):
+    def get_form_attributes(self) -> FormAttributesForm:
+        return self.form_attributes.data
+
+    return AttachableFormField(ATTRIBUTE_NAME_FORM_ATTRIBUTES, '', [], get_form_attributes, form_type)
+
+
 def make_default_form() -> Type[BasicForm]:
     _Participant = make_default_participant_form()
     return FormBuilder().add_fields([
@@ -426,6 +470,12 @@ def make_default_participant_form() -> Type[BasicParticipantForm]:
         make_field_firstname([InputRequired()]),
         make_field_lastname([InputRequired()]),
         make_field_email([InputRequired()])
+    ]).build()
+
+
+def make_default_form_attributes_form() -> Type[FormAttributesForm]:
+    return FormAttributesBuilder().add_fields([
+        make_field_privacy_consent()
     ]).build()
 
 
