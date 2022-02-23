@@ -42,12 +42,6 @@ class BasicParticipantForm(Form):
 class FormAttributesForm(Form):
     asks_name_consent = False
 
-    # MEMO: Default implementations for methods required by system logic.
-    #       Exceptions make it easier to spot programming errors.
-
-    def get_privacy_consent(self) -> BooleanField:
-        raise Exception("Mandatory form field not implemented.")
-
 
 # MEMO: Must have same attribute names as BasicModel
 class BasicForm(FlaskForm):
@@ -93,18 +87,18 @@ class BaseBuilder(ABC):
         self._fields = []
         return self
 
-    def add_field(self, field: AttachableField) -> ParticipantFormBuilder:
+    def add_field(self, field: AttachableField) -> BaseBuilder:
         self._fields.append(field)
         return self
 
-    def add_fields(self, fields: Iterable[AttachableField]) -> ParticipantFormBuilder:
+    def add_fields(self, fields: Iterable[AttachableField]) -> BaseBuilder:
         for field in fields:
             self.add_field(field)
 
         return self
 
     @abstractmethod
-    def build(self, base_type: Type[BasicParticipantForm] = None) -> Type[Form]:
+    def build(self, base_type: Type[Form] = None) -> Type[Form]:
         pass
 
 
@@ -430,10 +424,8 @@ def make_field_binding_registration_consent(txt: str = 'Ymmärrän, että ilmoit
 
 def make_field_privacy_consent(txt: str = 'Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *'):
     # MEMO: Must have same attribute names as model type
-    def get_privacy_consent(self) -> BooleanField:
-        return self.privacy_consent
 
-    return AttachableBoolField(ATTRIBUTE_NAME_PRIVACY_CONSENT, txt, [DataRequired()], get_privacy_consent)
+    return AttachableBoolField(ATTRIBUTE_NAME_PRIVACY_CONSENT, txt, [DataRequired()], None)
 
 
 def make_field_required_participants(form_type: Type[BasicParticipantForm], count: int = 1) -> AttachableField:
