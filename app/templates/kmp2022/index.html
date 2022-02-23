@@ -20,23 +20,32 @@
 {%- block extra_js -%}
     <script>
         function main(){
-            const quotaNode = document.getElementById('quota');
-            const accomodationForm = document.getElementById('accomodation_form')
+            var quotaNode = document.getElementById('quota');
+            var accomodationForm = document.getElementById('accomodation_form')
             if (!quotaNode || !accomodationForm) {
                 return;
             }
             quotaNode.onchange = function () {
-                const show = this.value === this.children[0].value ? '' : 'none';
+                var show = this.value === this.children[0].value ? '' : 'none';
                 accomodationForm.style.display = show;
             };
+            quotaNode.onchange();
         }
         main ();
     </script>
 {%- endblock -%}
 
 {%- block event_info -%}
-    <p>KMP tulee taas!
-    Tämän vuoden KMP järjestetään 18. - 20.3.</p>
+    <p> TiTeenien taistot/KMP tulee!</p>
+    <p>Heipä hei rakkaat kiltalaiset! TiTeenien taistot järjestetään 18. - 20.3.
+        Tampereella, jonne lähdemme kiltana täysin taisteluvalmiuksin! Tapahtumassa
+        on hotelli-/kerrossänkymajoitus. Saamme myöhemmin tiedon hotelli- ja
+        kerrossänkypaikkojen jakautumisesta. Osallistumisen hinta on OTiTlaisille
+        60€, johon sisältyy ruokailu, majoitus, titeenigaala ja meno-paluukuljetus
+        Tampereelle. SIKkiläisille osallistumisen hinta on 35€, johon sisältyy
+        titeenigaala ja meno-paluukuljetus Tampereelle. Mahdollinen hotellimajoitus
+        on 3 henkilön huoneissa (huonekavereita kannattaa miettiä ennen ilmoittautumista.
+        Ilmoittautumisen jälkeen valintaa ei voi muuttaa).</p>
 {% endblock %}
 
 {%- block registration_form -%}

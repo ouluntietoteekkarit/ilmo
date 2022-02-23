@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 
 from wtforms import SelectField, StringField
-from wtforms.validators import InputRequired, length
+from wtforms.validators import InputRequired, length, DataRequired
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
@@ -11,7 +11,7 @@ from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import BasicForm, get_str_choices, GuildField, get_quota_choices, RequiredIfValue, \
     DepartureBusstopField
 from .forms_util.guilds import GUILD_SIK, GUILD_OTIT
-from .forms_util.models import BasicModel, basic_model_csv_map, DepartureBusstopColumn
+from .forms_util.models import BasicModel, basic_model_csv_map, DepartureBusstopColumn, departure_busstop_csv_map
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -31,6 +31,7 @@ _ROOM_COMPOSITION_NO_PREFERENCE = 'Ei väliä'
 
 def _get_sexes() -> List[str]:
     return [
+        '',
         'Mies',
         'Nainen',
         'Muu'
@@ -54,6 +55,7 @@ def _get_departure_stops() -> List[str]:
 
 def _get_room_sex_options() -> List[str]:
     return [
+        '',
         _ROOM_COMPOSITION_SAME_SEX,
         _ROOM_COMPOSITION_NO_PREFERENCE
     ]
@@ -67,12 +69,13 @@ class _Form(BasicForm):
         RequiredIfValue(other_field_name='quota', value=_QUOTA_WITH_ACCOMODATION)])
     room_sex_composition = SelectField(
         'Haluatko majoittua samaa sukupuolta olevien kanssa?',
-        choices=get_str_choices(_get_room_sex_options()))
+        choices=get_str_choices(_get_room_sex_options()), validators=[])
     sex = SelectField('Sukupuoli', choices=get_str_choices(_get_sexes()), validators=[
         RequiredIfValue(other_field_name='room_sex_composition', value=_ROOM_COMPOSITION_SAME_SEX)])
-    allergies = StringField('Erityisruokavaliot/allergiat', validators=[
-        length(max=200),
-        RequiredIfValue(other_field_name='quota', value=_QUOTA_WITH_ACCOMODATION)])
+    allergies = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
+
+    def get_quota_counts(self) -> List[Quota]:
+        return [Quota(self.quota.data, 1)]
 
 
 class _Model(BasicModel, DepartureBusstopColumn):
@@ -90,8 +93,16 @@ class _Controller(FormController):
         return ""
 
 
-_data_table_info = DataTableInfo(basic_model_csv_map())
-_event = Event('OTiT KMP', datetime(2021, 2, 28, 12, 00, 00),
+_data_table_info = DataTableInfo(
+    basic_model_csv_map() +
+    departure_busstop_csv_map() +
+    [('quota', 'kiintiö'),
+     ('roommate_preference', 'huonekaveri toiveet'),
+     ('room_sex_composition', 'huonekaverien sukupuoli'),
+     ('sex', 'sukupuoli'),
+     ('allergies', 'erikoisruokavaliot')]
+)
+_event = Event('OTiT KMP', datetime(2021, 2, 25, 13, 37, 00),
                datetime(2022, 3, 13, 23, 59, 59), _get_quotas(), _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
