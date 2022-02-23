@@ -103,7 +103,7 @@ _data_table_info = DataTableInfo(
      ('allergies', 'erikoisruokavaliot')]
 )
 _event = Event('OTiT KMP', datetime(2021, 2, 25, 13, 37, 00),
-               datetime(2022, 3, 13, 23, 59, 59), _get_quotas(), _Form.asks_name_consent)
+               datetime(2022, 3, 10, 0, 0, 0), _get_quotas(), _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
