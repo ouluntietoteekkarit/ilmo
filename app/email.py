@@ -1,3 +1,4 @@
+import base64
 import shlex
 import os
 
@@ -27,7 +28,9 @@ def kapsi_url(path: str):
 
 
 def send_email(msg: str, subject: str, recipient: EmailRecipient):
-    cmd = "echo {} | mail -aFrom:{} -s {} {}".format(
+    # MEMO: Subject must use encoded word
+    subject = _encode_word(subject)
+    cmd = "echo {} | mail  --content-type='text/html; charset=utf-8' --append=From:{} -s {} {}".format(
         shlex.quote(msg),
         _EMAIL_SENDER_BOT,
         shlex.quote(subject),
@@ -52,3 +55,13 @@ def make_fullname(firstname: str, lastname: str) -> str:
 
 def make_fullname_line(firstname: str, lastname: str) -> str:
     return make_fullname(firstname, lastname) + "\n"
+
+
+def _encode_word(data: str):
+    # MEMO:
+    #       https://en.wikipedia.org/wiki/MIME#Encoded-Word
+    #       https://datatracker.ietf.org/doc/html/rfc2047
+    data = data.encode('utf8')
+    data = base64.b64encode(data)
+    data = data.decode('ascii')
+    return "=?UTF-8?B?{}?=".format(data)
