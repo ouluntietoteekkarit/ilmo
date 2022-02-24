@@ -9,7 +9,7 @@ from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations, Quota
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import BasicForm, get_str_choices, GuildField, get_quota_choices, RequiredIfValue, \
-    DepartureBusstopField
+    DepartureBusstopField, ShowNameConsentField
 from .forms_util.guilds import GUILD_SIK, GUILD_OTIT
 from .forms_util.models import BasicModel, basic_model_csv_map, DepartureBusstopColumn, departure_busstop_csv_map
 
@@ -20,9 +20,9 @@ _QUOTA_WITH_ACCOMODATION = GUILD_OTIT + ' (majoituksella)'
 _QUOTA_WITHOUT_ACCOMICATION = GUILD_SIK + ' (ei majoitusta)'
 
 
-_DEPARTURE_BUS_STOP_UNI = 'Yliopisto'
-_DEPARTURE_BUS_STOP_MERIKOSKI = 'Tuira'
-_DEPARTURE_BUS_STATION = 'Keskusta'
+_DEPARTURE_BUS_STOP_UNI = 'Yliopisto (X-oven edestä)'
+_DEPARTURE_BUS_STOP_MERIKOSKI = 'Tuira (Merikoskenkadun bussipysäkki)'
+_DEPARTURE_BUS_STATION = 'Keskusta (Linja-autoasema)'
 
 
 _ROOM_COMPOSITION_SAME_SEX = 'Samaa sukupuolta'
@@ -60,7 +60,7 @@ def _get_room_sex_options() -> List[str]:
         _ROOM_COMPOSITION_NO_PREFERENCE
     ]
 
-
+@ShowNameConsentField()
 @DepartureBusstopField(get_str_choices(_get_departure_stops()))
 class _Form(BasicForm):
     quota = SelectField('Kiintiö *', choices=get_quota_choices(_get_quotas()), validators=[InputRequired()])
