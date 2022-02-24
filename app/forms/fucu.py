@@ -88,7 +88,7 @@ _data_table_info = DataTableInfo(basic_model_csv_map() +
                                  [('kiintio', 'kiintio')])
 _event = Event('OTiTin Fuksicursio', datetime(2021, 10, 29, 12, 00, 00),
                datetime(2021, 11, 4, 21, 00, 00), _get_quotas(), _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, True, _form_name,
+_module_info = ModuleInfo(_Controller, False, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
 
