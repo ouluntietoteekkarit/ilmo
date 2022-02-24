@@ -90,7 +90,23 @@ class _Model(BasicModel, DepartureBusstopColumn):
 class _Controller(FormController):
     # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
-        return ""
+        if reserve:
+            return """{}Olet ilmoittautunut OTiTin ja SIKin KMP:lle. Olet varasijalla. Jos KMP:lle jää jostain syystä vapaita
+paikkoja, sinuun voidaan olla yhteydessä.
+
+Jos tulee kysyttävää voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi.
+
+Älä vastaa tähän sähköpostiin. Viesti ei mene mihinkään. """.format(make_greet_line(recipient))
+        else:
+            return """{}Ole ilmoittautunut OTiTin ja SIKin KMP:lle. KMP järjestetään 18. - 20.3. Tampereella.
+
+Tässä vielä maksuohjeet:
+OTiT-laisille summa on 60€. SIKkiläisille summa 35€. Osallistumismaksu maksetaan tilille 
+FI03 4744 3020 0116 87. Maksun saajan nimi: Oulun Tietoteekkarit ry. Viestiksi KMP + oma nimi.
+
+Jos tulee kysyttävää voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi.
+
+Älä vastaa tähän sähköpostiin. Viesti ei mene mihinkään. """.format(make_greet_line(recipient))
 
 
 _data_table_info = DataTableInfo(
