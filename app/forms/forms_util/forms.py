@@ -66,8 +66,8 @@ class FormBuilder(BaseBuilder):
             base_type = TmpForm
 
         required = {
-            'has_required_participants': hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
-            'asks_name': hasattr(base_type, ATTRIBUTE_NAME_NAME_CONSENT),
+            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
+            ATTRIBUTE_NAME_NAME_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_NAME_CONSENT),
         }
 
         for field in self._fields:
@@ -76,11 +76,9 @@ class FormBuilder(BaseBuilder):
             if field.get_attribute_name() in required:
                 required[field.get_attribute_name()] = True
 
-        for value in required.values():
+        for value in required.items():
             if not value:
                 raise Exception(ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS + "is a mandatory attribute of " + BasicForm.__name__)
-
-        base_type.asks_name_consent = asks_name
 
         return base_type
 
@@ -232,31 +230,17 @@ class AttachableField(BaseAttachable):
         self._validators = validators
         self._getter = getter
 
-    def _attach(self, form: Type[Form], field: Field) -> Type[Form]:
-        setattr(form, self._attribute_name, field)
-        if self._getter:
-            setattr(form, self._getter.__name__, self._getter)
-
-        return form
-
-    def get_attribute_name(self) -> str:
-        return self._attribute_name
-
-    @abstractmethod
-    def attach_to(self, form: Type[Form]) -> Type[Form]:
-        pass
-
 
 class AttachableStringField(AttachableField):
 
-    def attach_to(self, form: Type[Form]) -> Type[Form]:
-        return self._attach(form, StringField(self._label, validators=self._validators))
+    def _make_field_value(self) -> Any:
+        return StringField(self._label, validators=self._validators)
 
 
 class AttachableBoolField(AttachableField):
 
-    def attach_to(self, form: Type[Form]) -> Type[Form]:
-        return self._attach(form, BooleanField(self._label, validators=self._validators))
+    def _make_field_value(self) -> Any:
+        return BooleanField(self._label, validators=self._validators)
 
 
 class AttachableSelectField(AttachableField):
@@ -269,8 +253,8 @@ class AttachableSelectField(AttachableField):
         super().__init__(attribute, label, validators, getter)
         self._choice = choices
 
-    def attach_to(self, form: Type[Form]) -> Type[Form]:
-        return self._attach(form, SelectField(self._label, choices=self._choice, validators=self._validators))
+    def _make_field_value(self) -> Any:
+        return SelectField(self._label, choices=self._choice, validators=self._validators)
 
 
 class AttachableRadioField(AttachableField):
@@ -283,8 +267,8 @@ class AttachableRadioField(AttachableField):
         super().__init__(attribute, label, validators, getter)
         self._choices = choices
 
-    def attach_to(self, form: Type[Form]) -> Type[Form]:
-        return self._attach(form, RadioField(self._label, choices=self._choices, validators=self._validators))
+    def _make_field_value(self) -> Any:
+        return RadioField(self._label, choices=self._choices, validators=self._validators)
 
 
 class AttachableFieldListField(AttachableField):
@@ -301,8 +285,8 @@ class AttachableFieldListField(AttachableField):
         self._min_entries = min_entries
         self._max_entries = max_entries
 
-    def attach_to(self, form: Type[Form]) -> Type[Form]:
-        return self._attach(form, FieldList(self.field, min_entries=self._min_entries, max_entries=self._max_entries))
+    def _make_field_value(self) -> Any:
+        return FieldList(self.field, min_entries=self._min_entries, max_entries=self._max_entries)
 
 
 class AttachableFormField(AttachableField):
@@ -315,8 +299,8 @@ class AttachableFormField(AttachableField):
         super().__init__(attribute, label, validators, getter)
         self._form_type = form_type
 
-    def attach_to(self, form: Type[Form]) -> Type[Form]:
-        return self._attach(form, FormField(self._form_type))
+    def _make_field_value(self) -> Any:
+        return FormField(self._form_type)
 
 
 def make_field_firstname(extra_validators: Iterable = []) -> AttachableField:

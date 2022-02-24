@@ -91,14 +91,9 @@ class ModelBuilder(BaseBuilder):
 
             base_type = TmpModel
 
-        has_required_participants = hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
-
-        for column in self._columns:
-            column.attach_to(base_type)
-            has_required_participants = has_required_participants or column.get_attribute_name() == ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS
-
-        if not has_required_participants:
-            raise Exception(ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS + "is a mandatory attribute of " + BasicModel.__name__)
+        required = {
+            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
+        }
 
         return base_type
 
@@ -112,19 +107,10 @@ class ParticipantModelBuilder(BaseBuilder):
 
             base_type = TmpModel
 
-        has_firstname = hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME)
-        has_lastname = hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
-
-        for column in self._columns:
-            column.attach_to(base_type)
-            has_firstname = has_firstname or column.get_attribute_name() == ATTRIBUTE_NAME_FIRSTNAME
-            has_lastname = has_lastname or column.get_attribute_name() == ATTRIBUTE_NAME_LASTNAME
-
-        if not has_firstname:
-            raise Exception(ATTRIBUTE_NAME_FIRSTNAME + " is a mandatory attribute of " + BasicParticipantModel.__name__)
-
-        if not has_lastname:
-            raise Exception(ATTRIBUTE_NAME_LASTNAME + " is a mandatory attribute of " + BasicParticipantModel.__name__)
+        required = {
+            ATTRIBUTE_NAME_FIRSTNAME: hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME),
+            ATTRIBUTE_NAME_LASTNAME: hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
+        }
 
         return base_type
 
@@ -138,14 +124,9 @@ class ModelAttributesBuilder(BaseBuilder):
 
             base_type = TmpModel
 
-        has_privacy_consent = hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
-
-        for column in self._columns:
-            column.attach_to(base_type)
-            has_privacy_consent = has_privacy_consent or column.get_attribute_name() == ATTRIBUTE_NAME_PRIVACY_CONSENT
-
-        if not has_privacy_consent:
-            raise Exception(ATTRIBUTE_NAME_PRIVACY_CONSENT + " is a mandatory attribute of " + ModelAttributesModel.__name__)
+        require = {
+            ATTRIBUTE_NAME_PRIVACY_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
+        }
 
         return base_type
 
