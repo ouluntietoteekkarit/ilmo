@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Iterable, Type, Union, Any, Callable
+from typing import List, Tuple, Iterable, Type, Union, Any, Callable, Dict
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SelectField, FormField, Form, FieldList, Field, RadioField
@@ -8,7 +8,8 @@ from wtforms.validators import InputRequired, Optional, DataRequired, length, Em
 
 from app.forms.forms_util.form_controller import Quota
 from app.forms.forms_util.guilds import Guild
-from app.forms.forms_util.lib import BaseAttachable
+from app.forms.forms_util.lib import BaseAttachableAttribute, BaseFormComponent, BaseModel, BaseAttributes, \
+    BaseParticipant, BaseTypeBuilder
 
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
@@ -20,43 +21,20 @@ ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
 ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
 
 
-class BasicParticipantForm(Form):
+class BasicParticipantForm(Form, BaseParticipant):
     pass
 
 
-class FormAttributesForm(Form):
+class FormAttributesForm(Form, BaseAttributes):
     asks_name_consent = False
 
 
 # MEMO: Must have same attribute names as BasicModel
-class BasicForm(FlaskForm):
+class BasicForm(FlaskForm, BaseModel):
     pass
 
 
-class BaseBuilder(ABC):
-    def __init__(self):
-        self._fields: List[AttachableField] = []
-
-    def reset(self) -> BaseBuilder:
-        self._fields = []
-        return self
-
-    def add_field(self, field: AttachableField) -> BaseBuilder:
-        self._fields.append(field)
-        return self
-
-    def add_fields(self, fields: Iterable[AttachableField]) -> BaseBuilder:
-        for field in fields:
-            self.add_field(field)
-
-        return self
-
-    @abstractmethod
-    def build(self, base_type: Type[Form] = None) -> Type[Form]:
-        pass
-
-
-class FormBuilder(BaseBuilder):
+class FormBuilder(BaseTypeBuilder):
 
     def build(self, base_type: Type[BasicForm] = None) -> Type[BasicForm]:
         if not base_type:
@@ -66,24 +44,12 @@ class FormBuilder(BaseBuilder):
             base_type = TmpForm
 
         required = {
-            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
-            ATTRIBUTE_NAME_NAME_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_NAME_CONSENT),
+            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
         }
-
-        for field in self._fields:
-            field.attach_to(base_type)
-
-            if field.get_attribute_name() in required:
-                required[field.get_attribute_name()] = True
-
-        for value in required.items():
-            if not value:
-                raise Exception(ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS + "is a mandatory attribute of " + BasicForm.__name__)
-
-        return base_type
+        return self._do_build(base_type, required)
 
 
-class ParticipantFormBuilder(BaseBuilder):
+class ParticipantFormBuilder(BaseTypeBuilder):
 
     def build(self, base_type: Type[BasicParticipantForm] = None) -> Type[BasicParticipantForm]:
         if not base_type:
@@ -92,24 +58,14 @@ class ParticipantFormBuilder(BaseBuilder):
 
             base_type = TmpForm
 
-        has_firstname = hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME)
-        has_lastname = hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
-
-        for field in self._fields:
-            field.attach_to(base_type)
-            has_firstname = has_firstname or field.get_attribute_name() == ATTRIBUTE_NAME_FIRSTNAME
-            has_lastname = has_lastname or field.get_attribute_name() == ATTRIBUTE_NAME_LASTNAME
-
-        if not has_firstname:
-            raise Exception(ATTRIBUTE_NAME_FIRSTNAME + " is a mandatory attribute of " + BasicParticipantForm.__name__)
-
-        if not has_lastname:
-            raise Exception(ATTRIBUTE_NAME_LASTNAME + " is a mandatory attribute of " + BasicParticipantForm.__name__)
-
-        return base_type
+        required = {
+            ATTRIBUTE_NAME_FIRSTNAME: hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME),
+            ATTRIBUTE_NAME_LASTNAME: hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
+        }
+        return self._do_build(base_type, required)
 
 
-class FormAttributesBuilder(BaseBuilder):
+class FormAttributesBuilder(BaseTypeBuilder):
 
     def build(self, base_type: Type[FormAttributesForm] = None) -> Type[FormAttributesForm]:
         if not base_type:
@@ -118,16 +74,10 @@ class FormAttributesBuilder(BaseBuilder):
 
             base_type = TmpForm
 
-        has_privacy_consent = hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
-
-        for field in self._fields:
-            field.attach_to(base_type)
-            has_privacy_consent = has_privacy_consent or field.get_attribute_name() == ATTRIBUTE_NAME_PRIVACY_CONSENT
-
-        if not has_privacy_consent:
-            raise Exception("Privacy consent is a mandatory attribute of FormAttributesForm.")
-
-        return base_type
+        required = {
+            ATTRIBUTE_NAME_PRIVACY_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
+        }
+        return self._do_build(base_type, required)
 
 
 class RequiredIf(InputRequired):
@@ -223,7 +173,7 @@ class FlatFormField(FormField):
             setattr(obj, self.name + '_' + attr, getattr(tmp, attr))
 
 
-class AttachableField(BaseAttachable):
+class AttachableField(BaseAttachableAttribute):
     def __init__(self, attribute_name: str, label: str, validators: Iterable, getter: Union[Callable[[Any], Any], None]):
         self._attribute_name = attribute_name
         self._label = label

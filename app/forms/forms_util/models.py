@@ -1,18 +1,17 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from typing import List, Tuple, Iterable, Type, Union, Callable, Any
 
-from sqlalchemy import Table, MetaData
+from abc import ABC
+from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict
 
 from app import db
-from .form_controller import Quota
 
 
 # MEMO: Must have same attribute names as BasicForm
 from .forms import ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_NAME_CONSENT, \
     ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, \
     ATTRIBUTE_NAME_OTHER_ATTRIBUTES
-from .lib import BaseParticipant, BaseAttributes, BaseModel, BaseAttachable
+from .lib import BaseParticipant, BaseAttributes, BaseModel, BaseAttachableAttribute, BaseFormComponent, \
+    BaseTypeBuilder, AttributeFactory, TypeFactory
 
 """
 class BasicModel(db.Model):
@@ -58,31 +57,39 @@ class BasicModel(db.Model, BaseModel):
     id = db.Column(db.Integer(), primary_key=True)
 
 
-class BaseBuilder(ABC):
-    def __init__(self, form_name: str):
-        self._columns: List[AttachableColumn] = []
-        self._form_name = form_name
+class DbTypeFactory(TypeFactory):
 
-    def reset(self) -> BaseBuilder:
-        self._columns = []
-        return self
+    def make_form_class(self):
+        pass
 
-    def add_column(self, column: AttachableColumn) -> BaseBuilder:
-        self._columns.append(column)
-        return self
-
-    def add_columns(self, columns: Iterable[AttachableColumn]) -> BaseBuilder:
-        for column in columns:
-            self.add_column(column)
-
-        return self
-
-    @abstractmethod
-    def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
+    def make_model_class(self):
         pass
 
 
-class ModelBuilder(BaseBuilder):
+class DbAttributeFactory(AttributeFactory):
+
+    def make_int_attribute(self) -> BaseAttachableAttribute:
+        pass
+
+    def make_string_attribute(self) -> BaseAttachableAttribute:
+        pass
+
+    def make_bool_attribute(self) -> BaseAttachableAttribute:
+        pass
+
+    def make_datetime_attribute(self) -> BaseAttachableAttribute:
+        pass
+
+    def make_list_attribute(self) -> BaseAttachableAttribute:
+        pass
+
+
+class BaseDbBuilder(BaseTypeBuilder, ABC):
+    def __init__(self, form_name: str):
+        self._form_name = form_name
+
+
+class ModelBuilder(BaseDbBuilder):
 
     def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
         if not base_type:
@@ -94,11 +101,10 @@ class ModelBuilder(BaseBuilder):
         required = {
             ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
         }
+        return self._do_build(base_type, required)
 
-        return base_type
 
-
-class ParticipantModelBuilder(BaseBuilder):
+class ParticipantModelBuilder(BaseDbBuilder):
 
     def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
         if not base_type:
@@ -111,11 +117,10 @@ class ParticipantModelBuilder(BaseBuilder):
             ATTRIBUTE_NAME_FIRSTNAME: hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME),
             ATTRIBUTE_NAME_LASTNAME: hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
         }
+        return self._do_build(base_type, required)
 
-        return base_type
 
-
-class ModelAttributesBuilder(BaseBuilder):
+class ModelAttributesBuilder(BaseDbBuilder):
 
     def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
         if not base_type:
@@ -124,15 +129,15 @@ class ModelAttributesBuilder(BaseBuilder):
 
             base_type = TmpModel
 
-        require = {
+        required = {
             ATTRIBUTE_NAME_PRIVACY_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
         }
+        return self._do_build(base_type, required)
 
-        return base_type
 
-
-class AttachableColumn(BaseAttachable):
+class AttachableColumn(BaseAttachableAttribute, ABC):
     pass
+
 
 class AttachableStringColumn(AttachableColumn):
 

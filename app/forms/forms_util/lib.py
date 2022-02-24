@@ -1,21 +1,43 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List, Union, Callable, Any, Type
+from typing import List, Union, Callable, Any, Type, Dict, Iterable
 
 from app.forms.forms_util.form_controller import Quota
 
 
-class TypeFactory(ABC):
+class TypeFactory:
     def __init__(self):
         pass
 
+    def make_form_class(self):
+        pass
+
+    def make_model_class(self):
+        pass
+
+
+class AttributeFactory(ABC):
+
     @abstractmethod
-    def makeFormClass(self):
+    def make_int_attribute(self) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def makeModelClass(self):
+    def make_string_attribute(self) -> BaseAttachableAttribute:
         pass
+
+    @abstractmethod
+    def make_bool_attribute(self) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_datetime_attribute(self) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_list_attribute(self) -> BaseAttachableAttribute:
+        pass
+
 
 # MEMO: Must not have meta class.
 class BaseFormComponent:
@@ -80,7 +102,7 @@ class BaseModel(BaseFormComponent):
         return quotas
 
 
-class BaseAttachable(ABC):
+class BaseAttachableAttribute(ABC):
     def __init(self, attribute_name: str, getter: Union[Callable[[Any], Any], None]):
         self._attribute_name = attribute_name
         self._getter = getter
@@ -93,6 +115,44 @@ class BaseAttachable(ABC):
         if self._getter:
             setattr(component, self._getter.__name__, self._getter)
 
+        return component
+
     @abstractmethod
     def _make_field_value(self) -> Any:
         pass
+
+
+class BaseTypeBuilder(ABC):
+    def __init__(self):
+        self._fields: List[BaseAttachableAttribute] = []
+
+    def reset(self) -> BaseTypeBuilder:
+        self._fields = []
+        return self
+
+    def add_field(self, field: BaseAttachableAttribute) -> BaseTypeBuilder:
+        self._fields.append(field)
+        return self
+
+    def add_fields(self, fields: Iterable[BaseAttachableAttribute]) -> BaseTypeBuilder:
+        for field in fields:
+            self.add_field(field)
+
+        return self
+
+    @abstractmethod
+    def build(self, base_type: Type[BaseFormComponent] = None) -> Type[BaseFormComponent]:
+        pass
+
+    def _do_build(self, base_type: Type[BaseFormComponent], required: Dict[str, bool]):
+        for field in self._fields:
+            field.attach_to(base_type)
+
+            if field.get_attribute_name() in required:
+                required[field.get_attribute_name()] = True
+
+        for attr, value in required.items():
+            if not value:
+                raise Exception(attr + "is a mandatory attribute of " + base_type.__name__)
+
+class BaseAttributeParameters(ABC):
