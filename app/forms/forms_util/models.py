@@ -59,19 +59,25 @@ class BasicModel(db.Model, BaseModel):
 
 
 class DbTypeFactory(TypeFactory):
+    def __init__(self, required_participant_attributes: Iterable[BaseAttributeParameters],
+                 optional_participant_attributes: Iterable[BaseAttributeParameters],
+                 other_attributes: Iterable[BaseAttributeParameters],
+                 form_name: str):
+        super().__init__(required_participant_attributes, optional_participant_attributes, other_attributes)
+        self._form_name = form_name
 
     def make_type(self):
         factory = DbAttributeFactory()
-        required_participant: Type[BasicParticipantModel] = ParticipantModelBuilder().add_fields(
+        required_participant: Type[BasicParticipantModel] = ParticipantModelBuilder(self._form_name).add_fields(
             self._parameters_to_fields(factory, self._required_participant_attributes)
         ).build()
-        optional_participant: Type[BasicParticipantModel] = ParticipantModelBuilder().add_fields(
+        optional_participant: Type[BasicParticipantModel] = ParticipantModelBuilder(self._form_name).add_fields(
             self._parameters_to_fields(factory, self._optional_participant_attributes)
         ).build()
-        other_attributes: Type[ModelAttributesModel] = ModelAttributesBuilder().add_fields(
+        other_attributes: Type[ModelAttributesModel] = ModelAttributesBuilder(self._form_name).add_fields(
             self._parameters_to_fields(factory, self._other_attributes)
         ).build()
-        return ModelBuilder().add_fields([
+        return ModelBuilder(self._form_name).add_fields([
             make_column_required_participants(required_participant),
             make_column_optional_participants(optional_participant),
             make_column_form_attributes(other_attributes)

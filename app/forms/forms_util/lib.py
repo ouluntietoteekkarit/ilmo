@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Union, Callable, Any, Type, Dict, Iterable
+from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator
 
 from app.forms.forms_util.form_controller import Quota
 
@@ -25,25 +25,25 @@ class TypeFactory(ABC):
         self._optional_participant_attributes = optional_participant_attributes
         self._other_attributes = other_attributes
 
-    def _parameters_to_fields(self, factory: AttributeFactory, params_collection: Iterable[BaseAttributeParameters]) -> List[BaseAttachableAttribute]:
-        fields = []
+    def _parameters_to_fields(self,
+                              factory: AttributeFactory,
+                              params_collection: Iterable[BaseAttributeParameters]
+                              ) -> Iterator[BaseAttachableAttribute]:
         for params in params_collection:
             if isinstance(params, IntAttributeParameters):
-                fields.append(factory.make_int_attribute(params))
+                yield factory.make_int_attribute(params)
             elif isinstance(params, StringAttributeParameters):
-                fields.append(factory.make_string_attribute(params))
+                yield factory.make_string_attribute(params)
             elif isinstance(params, BoolAttributeParameters):
-                fields.append(factory.make_bool_attribute(params))
+                yield factory.make_bool_attribute(params)
             elif isinstance(params, DatetimeAttributeParameters):
-                fields.append(factory.make_datetime_attribute(params))
+                yield factory.make_datetime_attribute(params)
             elif isinstance(params, ListAttributeParameters):
-                fields.append(factory.make_list_attribute(params))
+                yield factory.make_list_attribute(params)
             elif isinstance(params, ObjectAttributeParameters):
-                fields.append(factory.make_object_attribute(params))
+                yield factory.make_object_attribute(params)
             else:
                 raise Exception("Invalid attribute parameter type.")
-
-        return fields
 
     @abstractmethod
     def make_type(self) -> Type[BaseModel]:

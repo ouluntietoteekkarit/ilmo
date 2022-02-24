@@ -318,8 +318,8 @@ class FormAttributeFactory(AttributeFactory):
 
     def make_datetime_attribute(self, params: DatetimeAttributeParameters) -> BaseAttachableAttribute:
         # MEMO: Ensures crash if format is missing
-        format = params.get_extra()['format']
-        return AttachableDatetimeField(*self._params_to_args(params), format)
+        date_format = params.get_extra()['format']
+        return AttachableDatetimeField(*self._params_to_args(params), date_format)
 
     def make_list_attribute(self, params: ListAttributeParameters) -> BaseAttachableAttribute:
         # MEMO: Ensures crash if field is missing
