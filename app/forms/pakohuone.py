@@ -9,7 +9,8 @@ from app.email import EmailRecipient, make_greet_line, make_signature_line
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import RequiredIfValue, get_str_choices, BasicForm, ParticipantFormBuilder, \
     make_field_firstname, make_field_lastname, make_field_phone_number, FormBuilder, make_field_required_participants,\
-    make_field_privacy_consent, make_field_optional_participants, ATTRIBUTE_NAME_FIRSTNAME, RequiredIf
+    make_field_privacy_consent, make_field_optional_participants, RequiredIf
+from .forms_util.lib import ATTRIBUTE_NAME_FIRSTNAME
 from .forms_util.form_controller import FormController, DataTableInfo, Event, EventRegistrations, Quota
 from .forms_util.models import BasicModel, basic_model_csv_map, phone_number_csv_map
 

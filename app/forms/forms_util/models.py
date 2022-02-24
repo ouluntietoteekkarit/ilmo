@@ -7,11 +7,12 @@ from app import db
 
 
 # MEMO: Must have same attribute names as BasicForm
-from .forms import ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_NAME_CONSENT, \
-    ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, \
-    ATTRIBUTE_NAME_OTHER_ATTRIBUTES
 from .lib import BaseParticipant, BaseAttributes, BaseModel, BaseAttachableAttribute, BaseFormComponent, \
-    BaseTypeBuilder, AttributeFactory, TypeFactory
+    BaseTypeBuilder, AttributeFactory, TypeFactory, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
+    ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, \
+    ATTRIBUTE_NAME_OTHER_ATTRIBUTES, ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_NAME_CONSENT, \
+    BaseAttributeParameters, ObjectAttributeParameters, ListAttributeParameters, DatetimeAttributeParameters, \
+    BoolAttributeParameters, StringAttributeParameters, IntAttributeParameters
 
 """
 class BasicModel(db.Model):
@@ -59,29 +60,55 @@ class BasicModel(db.Model, BaseModel):
 
 class DbTypeFactory(TypeFactory):
 
-    def make_form_class(self):
-        pass
-
-    def make_model_class(self):
-        pass
+    def make_type(self):
+        factory = DbAttributeFactory()
+        required_participant: Type[BasicParticipantModel] = ParticipantModelBuilder().add_fields(
+            self._parameters_to_fields(factory, self._required_participant_attributes)
+        ).build()
+        optional_participant: Type[BasicParticipantModel] = ParticipantModelBuilder().add_fields(
+            self._parameters_to_fields(factory, self._optional_participant_attributes)
+        ).build()
+        other_attributes: Type[ModelAttributesModel] = ModelAttributesBuilder().add_fields(
+            self._parameters_to_fields(factory, self._other_attributes)
+        ).build()
+        return ModelBuilder().add_fields([
+            make_column_required_participants(required_participant),
+            make_column_optional_participants(optional_participant),
+            make_column_form_attributes(other_attributes)
+        ]).build()
 
 
 class DbAttributeFactory(AttributeFactory):
 
-    def make_int_attribute(self) -> BaseAttachableAttribute:
-        pass
+    def _params_to_args(self, params: BaseAttributeParameters) -> Tuple[str, Union[Callable[[Any], Any], None]]:
+        return (
+            params.get_attribute(),
+            params.get_getter()
+        )
 
-    def make_string_attribute(self) -> BaseAttachableAttribute:
-        pass
+    def make_int_attribute(self, params: IntAttributeParameters) -> BaseAttachableAttribute:
+        return AttachableIntColumn(*self._params_to_args(params))
 
-    def make_bool_attribute(self) -> BaseAttachableAttribute:
-        pass
+    def make_string_attribute(self, params: StringAttributeParameters) -> BaseAttachableAttribute:
+        # MEMO: Ensures crash if length is missing
+        length = params.get_extra()['length']
+        return AttachableStringColumn(*self._params_to_args(params), length)
 
-    def make_datetime_attribute(self) -> BaseAttachableAttribute:
-        pass
+    def make_bool_attribute(self, params: BoolAttributeParameters) -> BaseAttachableAttribute:
+        return AttachableBoolColumn(*self._params_to_args(params))
 
-    def make_list_attribute(self) -> BaseAttachableAttribute:
-        pass
+    def make_datetime_attribute(self, params: DatetimeAttributeParameters) -> BaseAttachableAttribute:
+        return AttachableDatetimeColumn(*self._params_to_args(params))
+
+    def make_list_attribute(self, params: ListAttributeParameters) -> BaseAttachableAttribute:
+        # MEMO: Ensures crash if model_class is missing
+        model_type = params.get_extra()['model_class']
+        return AttachableRelationshipColumn(*self._params_to_args(params))
+
+    def make_object_attribute(self, params: ObjectAttributeParameters) -> BaseAttachableAttribute:
+        # MEMO: Ensures crash if model_class is missing
+        model_type = params.get_extra()['model_class']
+        return AttachableRelationshipColumn(*self._params_to_args(params))
 
 
 class BaseDbBuilder(BaseTypeBuilder, ABC):
@@ -136,7 +163,8 @@ class ModelAttributesBuilder(BaseDbBuilder):
 
 
 class AttachableColumn(BaseAttachableAttribute, ABC):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(AttachableColumn, self).__init__(*args, **kwargs)
 
 
 class AttachableStringColumn(AttachableColumn):

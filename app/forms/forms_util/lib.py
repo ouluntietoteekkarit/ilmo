@@ -1,41 +1,79 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import List, Union, Callable, Any, Type, Dict, Iterable
 
 from app.forms.forms_util.form_controller import Quota
 
 
-class TypeFactory:
-    def __init__(self):
-        pass
+ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
+ATTRIBUTE_NAME_LASTNAME = 'lastname'
+ATTRIBUTE_NAME_EMAIL = 'email'
+ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS = 'required_participants'
+ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS = 'optional_participants'
+ATTRIBUTE_NAME_OTHER_ATTRIBUTES = 'other_attributes'
+ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
+ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
 
-    def make_form_class(self):
-        pass
 
-    def make_model_class(self):
+class TypeFactory(ABC):
+    def __init__(self,
+                 required_participant_attributes: Iterable[BaseAttributeParameters],
+                 optional_participant_attributes: Iterable[BaseAttributeParameters],
+                 other_attributes: Iterable[BaseAttributeParameters]):
+        self._required_participant_attributes = required_participant_attributes
+        self._optional_participant_attributes = optional_participant_attributes
+        self._other_attributes = other_attributes
+
+    def _parameters_to_fields(self, factory: AttributeFactory, params_collection: Iterable[BaseAttributeParameters]) -> List[BaseAttachableAttribute]:
+        fields = []
+        for params in params_collection:
+            if isinstance(params, IntAttributeParameters):
+                fields.append(factory.make_int_attribute(params))
+            elif isinstance(params, StringAttributeParameters):
+                fields.append(factory.make_string_attribute(params))
+            elif isinstance(params, BoolAttributeParameters):
+                fields.append(factory.make_bool_attribute(params))
+            elif isinstance(params, DatetimeAttributeParameters):
+                fields.append(factory.make_datetime_attribute(params))
+            elif isinstance(params, ListAttributeParameters):
+                fields.append(factory.make_list_attribute(params))
+            elif isinstance(params, ObjectAttributeParameters):
+                fields.append(factory.make_object_attribute(params))
+            else:
+                raise Exception("Invalid attribute parameter type.")
+
+        return fields
+
+    @abstractmethod
+    def make_type(self) -> Type[BaseModel]:
         pass
 
 
 class AttributeFactory(ABC):
 
     @abstractmethod
-    def make_int_attribute(self) -> BaseAttachableAttribute:
+    def make_int_attribute(self, params: IntAttributeParameters) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_string_attribute(self) -> BaseAttachableAttribute:
+    def make_string_attribute(self, params: StringAttributeParameters) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_bool_attribute(self) -> BaseAttachableAttribute:
+    def make_bool_attribute(self, params: BoolAttributeParameters) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_datetime_attribute(self) -> BaseAttachableAttribute:
+    def make_datetime_attribute(self, params: DatetimeAttributeParameters) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_list_attribute(self) -> BaseAttachableAttribute:
+    def make_list_attribute(self, params: ListAttributeParameters) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_object_attribute(self, params: ObjectAttributeParameters) -> BaseAttachableAttribute:
         pass
 
 
@@ -122,6 +160,15 @@ class BaseAttachableAttribute(ABC):
         pass
 
 
+class NullAttachableAttribute(BaseAttachableAttribute):
+
+    def attach_to(self, component: Type[BaseFormComponent]) -> Type[BaseFormComponent]:
+        return component
+
+    def _make_field_value(self) -> Any:
+        return None
+
+
 class BaseTypeBuilder(ABC):
     def __init__(self):
         self._fields: List[BaseAttachableAttribute] = []
@@ -155,4 +202,55 @@ class BaseTypeBuilder(ABC):
             if not value:
                 raise Exception(attr + "is a mandatory attribute of " + base_type.__name__)
 
+
 class BaseAttributeParameters(ABC):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 getter: Union[Callable[[Any], Any], None],
+                 **extra: Dict[str, Any]):
+        self._attribute = attribute
+        self._label = label
+        self._getter = getter
+        self._extra = extra
+
+    def get_attribute(self) -> str:
+        return self._attribute
+
+    def get_label(self) -> str:
+        return self._label
+
+    def get_getter(self) -> Union[Callable[[Any], Any], None]:
+        return self._getter
+
+    def get_extra(self) -> Dict[str, Any]:
+        return self._extra
+
+    def try_get_extra(self, key: str, default_value: Any) -> Any:
+        return self._extra[key] if key in self._extra else default_value
+
+
+class IntAttributeParameters(BaseAttributeParameters):
+    pass
+
+
+class StringAttributeParameters(BaseAttributeParameters):
+    pass
+
+
+class BoolAttributeParameters(BaseAttributeParameters):
+    pass
+
+
+class DatetimeAttributeParameters(BaseAttributeParameters):
+    pass
+
+
+class ListAttributeParameters(BaseAttributeParameters):
+    pass
+
+
+class ObjectAttributeParameters(BaseAttributeParameters):
+    pass
+
+

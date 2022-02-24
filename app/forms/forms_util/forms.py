@@ -1,24 +1,21 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from typing import List, Tuple, Iterable, Type, Union, Any, Callable, Dict
+
+from abc import ABC
+from typing import List, Tuple, Iterable, Type, Union, Any, Callable
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SelectField, FormField, Form, FieldList, Field, RadioField
+from wtforms import StringField, BooleanField, SelectField, FormField, Form, FieldList, Field, RadioField, IntegerField, \
+    DateTimeField
 from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
 
 from app.forms.forms_util.form_controller import Quota
 from app.forms.forms_util.guilds import Guild
-from app.forms.forms_util.lib import BaseAttachableAttribute, BaseFormComponent, BaseModel, BaseAttributes, \
-    BaseParticipant, BaseTypeBuilder
-
-ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
-ATTRIBUTE_NAME_LASTNAME = 'lastname'
-ATTRIBUTE_NAME_EMAIL = 'email'
-ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS = 'required_participants'
-ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS = 'optional_participants'
-ATTRIBUTE_NAME_OTHER_ATTRIBUTES = 'other_attributes'
-ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
-ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
+from app.forms.forms_util.lib import BaseAttachableAttribute, BaseModel, BaseAttributes, \
+    BaseParticipant, BaseTypeBuilder, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, ATTRIBUTE_NAME_EMAIL, \
+    ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, ATTRIBUTE_NAME_OTHER_ATTRIBUTES, \
+    ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_NAME_CONSENT, AttributeFactory, ObjectAttributeParameters, \
+    IntAttributeParameters, ListAttributeParameters, DatetimeAttributeParameters, BoolAttributeParameters, \
+    StringAttributeParameters, BaseAttributeParameters, TypeFactory
 
 
 class BasicParticipantForm(Form, BaseParticipant):
@@ -34,7 +31,11 @@ class BasicForm(FlaskForm, BaseModel):
     pass
 
 
-class FormBuilder(BaseTypeBuilder):
+class BaseFormBuilder(BaseTypeBuilder, ABC):
+    pass
+
+
+class FormBuilder(BaseFormBuilder):
 
     def build(self, base_type: Type[BasicForm] = None) -> Type[BasicForm]:
         if not base_type:
@@ -49,7 +50,7 @@ class FormBuilder(BaseTypeBuilder):
         return self._do_build(base_type, required)
 
 
-class ParticipantFormBuilder(BaseTypeBuilder):
+class ParticipantFormBuilder(BaseFormBuilder):
 
     def build(self, base_type: Type[BasicParticipantForm] = None) -> Type[BasicParticipantForm]:
         if not base_type:
@@ -65,7 +66,7 @@ class ParticipantFormBuilder(BaseTypeBuilder):
         return self._do_build(base_type, required)
 
 
-class FormAttributesBuilder(BaseTypeBuilder):
+class FormAttributesBuilder(BaseFormBuilder):
 
     def build(self, base_type: Type[FormAttributesForm] = None) -> Type[FormAttributesForm]:
         if not base_type:
@@ -173,12 +174,18 @@ class FlatFormField(FormField):
             setattr(obj, self.name + '_' + attr, getattr(tmp, attr))
 
 
-class AttachableField(BaseAttachableAttribute):
+class AttachableField(BaseAttachableAttribute, ABC):
     def __init__(self, attribute_name: str, label: str, validators: Iterable, getter: Union[Callable[[Any], Any], None]):
         self._attribute_name = attribute_name
         self._label = label
         self._validators = validators
         self._getter = getter
+
+
+class AttachableIntField(AttachableField):
+
+    def _make_field_value(self) -> Any:
+        return IntegerField(self._label, validators=self._validators)
 
 
 class AttachableStringField(AttachableField):
@@ -191,6 +198,20 @@ class AttachableBoolField(AttachableField):
 
     def _make_field_value(self) -> Any:
         return BooleanField(self._label, validators=self._validators)
+
+
+class AttachableDatetimeField(AttachableField):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 validators: Iterable,
+                 getter: Union[Callable[[Any], Any], None],
+                 format: str):
+        super().__init__(attribute, label, validators, getter)
+        self._format = format
+
+    def _make_field_value(self) -> Any:
+        return DateTimeField(self._label, validators=self._validators, format=self._format)
 
 
 class AttachableSelectField(AttachableField):
@@ -251,6 +272,66 @@ class AttachableFormField(AttachableField):
 
     def _make_field_value(self) -> Any:
         return FormField(self._form_type)
+
+
+class FormTypeFactory(TypeFactory):
+
+    def make_type(self):
+        factory = FormAttributeFactory()
+        required_participant: Type[BasicParticipantForm] = ParticipantFormBuilder().add_fields(
+            self._parameters_to_fields(factory, self._required_participant_attributes)
+        ).build()
+        optional_participant: Type[BasicParticipantForm] = ParticipantFormBuilder().add_fields(
+            self._parameters_to_fields(factory, self._optional_participant_attributes)
+        ).build()
+        other_attributes: Type[FormAttributesForm] = FormAttributesBuilder().add_fields(
+            self._parameters_to_fields(factory, self._other_attributes)
+        ).build()
+        return FormBuilder().add_fields([
+            make_field_required_participants(required_participant, 1),
+            make_field_optional_participants(optional_participant, 1),
+            make_field_form_attributes(other_attributes)
+        ]).build()
+
+
+class FormAttributeFactory(AttributeFactory):
+
+    def _get_validators(self, params: BaseAttributeParameters):
+        return params.try_get_extra('validators', [])
+
+    def _params_to_args(self, params: BaseAttributeParameters) -> Tuple[str, str, Iterable, Union[Callable[[Any], Any], None]]:
+        return (
+            params.get_attribute(),
+            params.get_label(),
+            self._get_validators(params),
+            params.get_getter()
+        )
+
+    def make_int_attribute(self, params: IntAttributeParameters) -> BaseAttachableAttribute:
+        return AttachableIntField(*self._params_to_args(params))
+
+    def make_string_attribute(self, params: StringAttributeParameters) -> BaseAttachableAttribute:
+        return AttachableStringField(*self._params_to_args(params))
+
+    def make_bool_attribute(self, params: BoolAttributeParameters) -> BaseAttachableAttribute:
+        return AttachableBoolField(*self._params_to_args(params))
+
+    def make_datetime_attribute(self, params: DatetimeAttributeParameters) -> BaseAttachableAttribute:
+        # MEMO: Ensures crash if format is missing
+        format = params.get_extra()['format']
+        return AttachableDatetimeField(*self._params_to_args(params), format)
+
+    def make_list_attribute(self, params: ListAttributeParameters) -> BaseAttachableAttribute:
+        # MEMO: Ensures crash if field is missing
+        field = params.get_extra()['field']
+        min_entries = params.try_get_extra('min_entries', 0)
+        max_entries = params.try_get_extra('max_entries', 0)
+        return AttachableFieldListField(*self._params_to_args(), field, min_entries, max_entries)
+
+    def make_object_attribute(self, params: ObjectAttributeParameters) -> BaseAttachableAttribute:
+        # MEMO: Ensures crash if form_type is missing
+        form_type = params.get_extra()['form_type']
+        return AttachableFormField(*self._params_to_args(), form_type)
 
 
 def make_field_firstname(extra_validators: Iterable = []) -> AttachableField:
