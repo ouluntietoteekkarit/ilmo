@@ -1,11 +1,73 @@
 {%- extends "form.html" -%}
 {%- import "macros.html" as macros -%}
 
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/bus3_.jpg') }}");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
+
+        div.container {
+            max-width: 900px;
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block extra_js -%}
+    <script>
+        function main(){
+            var quotaNode = document.getElementById('quota');
+            var accomodationForm = document.getElementById('accomodation_form')
+            if (!quotaNode || !accomodationForm) {
+                return;
+            }
+            quotaNode.onchange = function () {
+                var show = this.value === this.children[0].value ? '' : 'none';
+                accomodationForm.style.display = show;
+            };
+            quotaNode.onchange();
+        }
+        main ();
+    </script>
+{%- endblock -%}
+
 {%- block event_info -%}
-    <p>KMP tulee taas!
-    Tämän vuoden KMP järjestetään 18. - 20.3.</p>
+    <p>TiTeenien taistot/KMP tulee!</p>
+    <p>Heipä hei rakkaat kiltalaiset! TiTeenien taistot järjestetään 18. - 20.3.
+        Tampereella, jonne lähdemme kiltana täysin taisteluvalmiuksin! Tapahtumassa
+        on hotelli-/kerrossänkymajoitus. Saamme myöhemmin tiedon hotelli- ja
+        kerrossänkypaikkojen jakautumisesta. Osallistumisen hinta on OTiTlaisille
+        60€, johon sisältyy ruokailu, majoitus, titeenigaala ja meno-paluukuljetus
+        Tampereelle. SIKkiläisille osallistumisen hinta on 35€, johon sisältyy
+        kampuksella tapahtuvat kisailut ja meno-paluukuljetus Tampereelle. Mahdollinen
+        hotellimajoitus on 3 henkilön huoneissa (huonekavereita kannattaa miettiä
+        ennen ilmoittautumista. Ilmoittautumisen jälkeen valintaa ei voi muuttaa).</p>
+    <p>Osallistumismaksu maksetaan tilille FI03 4744 3020 0116 87. Maksun saajan nimi:
+    Oulun Tietoteekkarit ry. Viestiksi KMP + oma nimi.</p>
 {% endblock %}
 
 {%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        <h4>Henkilötiedot</h4>
+        {{ macros.form_field(form.firstname) }}
+        {{ macros.form_field(form.lastname) }}
+        {{ macros.form_field(form.email) }}
+        {{ macros.form_field(form.quota) }}
+        {{ macros.form_field(form.departure_busstop) }}
+        <br />
+        <div id="accomodation_form">
+            <h4>Majoitustiedot</h4>
+            {{ macros.form_field(form.roommate_preference) }}
+            {{ macros.form_field(form.room_sex_composition) }}
+            {{ macros.form_field(form.sex) }}
+            {{ macros.form_field(form.allergies) }}
+        </div>
 
+        {{ macros.form_field(form.show_name_consent) }}
+        {{ macros.form_field(form.privacy_consent) }}
+    {%- endcall -%}
 {% endblock %}
