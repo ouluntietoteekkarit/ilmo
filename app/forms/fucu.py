@@ -9,8 +9,7 @@ from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import make_field_phone_number, make_field_departure_location, \
     make_field_name_consent, get_str_choices, get_quota_choices, FormBuilder, make_field_quota, \
     make_field_privacy_consent, make_field_required_participants, make_default_participant_form
-from .forms_util.models import BasicModel, PhoneNumberColumn, DepartureBusstopColumn, basic_model_csv_map, \
-    departure_busstop_csv_map, phone_number_csv_map
+from .forms_util.models import BasicModel, basic_model_csv_map, departure_busstop_csv_map, phone_number_csv_map
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -52,7 +51,7 @@ _Form = FormBuilder().add_fields([
 ]).build()
 
 
-class _Model(BasicModel, PhoneNumberColumn, DepartureBusstopColumn):
+class _Model(BasicModel): #, PhoneNumberColumn, DepartureBusstopColumn):
     __tablename__ = _form_name
     kiintio = db.Column(db.String(32))
 

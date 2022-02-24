@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from wtforms import Form
 from wtforms.validators import InputRequired
 
 from app.email import EmailRecipient, make_greet_line, make_signature_line
@@ -9,11 +10,10 @@ from .forms_util.forms import get_guild_choices, ParticipantFormBuilder, FormBui
     make_field_required_participants, make_field_privacy_consent
 from .forms_util.guilds import *
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
-from .forms_util.models import BasicModel, GuildColumn, BindingRegistrationConsentColumn, PhoneNumberColumn, \
-    basic_model_csv_map, phone_number_csv_map, guild_name_csv_map, binding_registration_csv_map
+from .forms_util.models import BasicModel, basic_model_csv_map, phone_number_csv_map, guild_name_csv_map, \
+    binding_registration_csv_map
 
 _form_name = file_path_to_form_name(__file__)
-
 
 _Participant = ParticipantFormBuilder().add_fields([
     make_field_phone_number([InputRequired()]),
@@ -28,7 +28,17 @@ _Form = FormBuilder().add_fields([
 ]).build()
 
 
-class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
+class foo:
+
+    def foo(self):
+        raise Exception("asd")
+
+
+class bar(Form, foo):
+    pass
+
+
+class _Model(BasicModel): #, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
     __tablename__ = _form_name
 
 

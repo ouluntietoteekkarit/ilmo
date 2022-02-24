@@ -9,9 +9,8 @@ from .forms_util.forms import get_guild_choices, FormBuilder, make_default_form,
 from .forms_util.guilds import *
 from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
-from .forms_util.models import BasicModel, PhoneNumberColumn, GuildColumn, basic_model_csv_map, \
-    binding_registration_csv_map, guild_name_csv_map, phone_number_csv_map
-from .forms_util.models import BindingRegistrationConsentColumn
+from .forms_util.models import BasicModel, basic_model_csv_map, binding_registration_csv_map, \
+    guild_name_csv_map, phone_number_csv_map
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -26,7 +25,7 @@ _Form = FormBuilder().add_fields([
 ]).build(make_default_form())
 
 
-class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
+class _Model(BasicModel): #, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
     __tablename__ = _form_name
 
 

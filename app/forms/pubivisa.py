@@ -12,8 +12,8 @@ from .forms_util.forms import get_guild_choices, FormBuilder, ParticipantFormBui
     make_field_optional_participants, make_field_privacy_consent
 from .forms_util.guilds import *
 from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
-from .forms_util.models import BasicModel, BindingRegistrationConsentColumn, basic_model_csv_map, \
-    binding_registration_csv_map, PhoneNumberColumn, GuildColumn, phone_number_csv_map, guild_name_csv_map
+from .forms_util.models import BasicModel, basic_model_csv_map, binding_registration_csv_map,\
+    phone_number_csv_map, guild_name_csv_map
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -37,7 +37,7 @@ _Form = FormBuilder().add_fields([
 _Form.teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
 
 
-class _Model(BasicModel, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
+class _Model(BasicModel): #, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
     __tablename__ = _form_name
     teamname = db.Column(db.String(128))
 

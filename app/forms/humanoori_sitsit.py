@@ -14,7 +14,7 @@ from .forms_util.forms import get_str_choices, RequiredIf, get_quota_choices, Ba
     make_field_optional_participants, make_field_privacy_consent, make_field_name_consent, FormAttributesBuilder, \
     make_field_form_attributes
 from .forms_util.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA
-from .forms_util.models import BasicModel, basic_model_csv_map, GuildColumn
+from .forms_util.models import BasicModel, basic_model_csv_map
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -109,7 +109,7 @@ _Form = FormBuilder().add_fields([
 ]).build()
 
 
-class _Model(BasicModel, GuildColumn):
+class _Model(BasicModel): #, GuildColumn):
     __tablename__ = _form_name
     drink = db.Column(db.String(32))
     liquor = db.Column(db.String(32))

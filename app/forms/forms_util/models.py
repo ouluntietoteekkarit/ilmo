@@ -9,6 +9,11 @@ from .form_controller import Quota
 
 
 # MEMO: Must have same attribute names as BasicForm
+from .forms import ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_NAME_CONSENT, \
+    ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, \
+    ATTRIBUTE_NAME_OTHER_ATTRIBUTES
+from .lib import BaseParticipant, BaseAttributes, BaseModel, BaseAttachable
+
 """
 class BasicModel(db.Model):
     __abstract__ = True
@@ -37,65 +42,26 @@ class BasicModel(db.Model):
         return [Quota.default_quota(1, 0)]
 """
 
-class BasicParticipantModel(db.Model):
-    # MEMO: Default implementations for methods required by system logic.
-    #       Exceptions make it easier to spot programming errors.
 
-    def get_firstname(self) -> str:
-        raise Exception("Not implemented")
-
-    def get_lastname(self) -> str:
-        raise Exception("Not implemented")
-
-    def get_email(self) -> str:
-        return ''
-
-    def get_quota_name(self) -> str:
-        return Quota.default_quota_name()
-
-    def is_filled(self) -> bool:
-        return bool(self.get_firstname() and self.get_lastname())
+class BasicParticipantModel(db.Model, BaseParticipant):
+    __abstract__ = True
+    id = db.Column(db.Integer(), primary_key=True)
 
 
-class ModelAttributesModel(db.Model):
-    pass
+class ModelAttributesModel(db.Model, BaseAttributes):
+    __abstract__ = True
+    id = db.Column(db.Integer(), primary_key=True)
 
 
-class BasicModel(db.Model):
-
-    def get_model_attributes(self) -> ModelAttributesModel:
-        raise Exception("Mandatory model field not implemented.")
-
-    def get_required_participants(self) -> List[BasicParticipantModel]:
-        raise Exception("Mandatory model field not implemented.")
-
-    def get_optional_participants(self) -> List[BasicParticipantModel]:
-        return []
-
-    def get_participant_count(self) -> int:
-        count = 0
-        for p in self.get_required_participants():
-            count += int(p.is_filled())
-
-        for p in self.get_optional_participants():
-            count += int(p.is_filled())
-
-        return count
-
-    def get_quota_counts(self) -> List[Quota]:
-        quotas = []
-        for p in self.get_required_participants():
-            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
-
-        for p in self.get_optional_participants():
-            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
-
-        return quotas
+class BasicModel(db.Model, BaseModel):
+    __abstract__ = True
+    id = db.Column(db.Integer(), primary_key=True)
 
 
 class BaseBuilder(ABC):
-    def __init__(self):
+    def __init__(self, form_name: str):
         self._columns: List[AttachableColumn] = []
+        self._form_name = form_name
 
     def reset(self) -> BaseBuilder:
         self._columns = []
@@ -112,47 +78,80 @@ class BaseBuilder(ABC):
         return self
 
     @abstractmethod
-    def build(self, base_type: Type[db.Model]) -> Type[db.Model]:
+    def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
         pass
 
 
 class ModelBuilder(BaseBuilder):
 
-    def build(self, base_type: Type[db.Model]) -> Type[db.Model]:
-        pass
+    def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
+        if not base_type:
+            class TmpModel(BasicModel):
+                __tablename__ = self._form_name
+
+            base_type = TmpModel
+
+        has_required_participants = hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
+
+        for column in self._columns:
+            column.attach_to(base_type)
+            has_required_participants = has_required_participants or column.get_attribute_name() == ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS
+
+        if not has_required_participants:
+            raise Exception(ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS + "is a mandatory attribute of " + BasicModel.__name__)
+
+        return base_type
 
 
 class ParticipantModelBuilder(BaseBuilder):
 
-    def build(self, base_type: Type[db.Model]) -> Type[db.Model]:
-        pass
+    def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
+        if not base_type:
+            class TmpModel(BasicParticipantModel):
+                __tablename__ = self._form_name + "_participant"
+
+            base_type = TmpModel
+
+        has_firstname = hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME)
+        has_lastname = hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
+
+        for column in self._columns:
+            column.attach_to(base_type)
+            has_firstname = has_firstname or column.get_attribute_name() == ATTRIBUTE_NAME_FIRSTNAME
+            has_lastname = has_lastname or column.get_attribute_name() == ATTRIBUTE_NAME_LASTNAME
+
+        if not has_firstname:
+            raise Exception(ATTRIBUTE_NAME_FIRSTNAME + " is a mandatory attribute of " + BasicParticipantModel.__name__)
+
+        if not has_lastname:
+            raise Exception(ATTRIBUTE_NAME_LASTNAME + " is a mandatory attribute of " + BasicParticipantModel.__name__)
+
+        return base_type
 
 
 class ModelAttributesBuilder(BaseBuilder):
 
-    def build(self, base_type: Type[db.Model]) -> Type[db.Model]:
-        pass
+    def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
+        if not base_type:
+            class TmpModel(ModelAttributesModel):
+                __tablename__ = self._form_name + "_attributes"
+
+            base_type = TmpModel
+
+        has_privacy_consent = hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
+
+        for column in self._columns:
+            column.attach_to(base_type)
+            has_privacy_consent = has_privacy_consent or column.get_attribute_name() == ATTRIBUTE_NAME_PRIVACY_CONSENT
+
+        if not has_privacy_consent:
+            raise Exception(ATTRIBUTE_NAME_PRIVACY_CONSENT + " is a mandatory attribute of " + ModelAttributesModel.__name__)
+
+        return base_type
 
 
-class AttachableColumn(ABC):
-    def __init__(self, attribute_name: str, getter: Union[Callable[[Any], Any], None]):
-        self._attribute_name = attribute_name
-        self._getter = getter
-
-    def _attach(self, model: Type[db.Model], column: db.Column) -> Type[db.Model]:
-        setattr(model, self._attribute_name, column)
-        if self._getter:
-            setattr(model, self._getter.__name__, self._getter)
-
-        return model
-
-    def get_attribute_name(self) -> str:
-        return self._attribute_name
-
-    @abstractmethod
-    def attach_to(self, form: Type[db.Model]) -> Type[db.Model]:
-        pass
-
+class AttachableColumn(BaseAttachable):
+    pass
 
 class AttachableStringColumn(AttachableColumn):
 
@@ -160,67 +159,116 @@ class AttachableStringColumn(AttachableColumn):
         super().__init__(attribute_name, getter)
         self._length = length
 
-    def attach_to(self, model: Type[db.Model]) -> Type[db.Model]:
-        return self._attach(model, db.Column(db.String(self._length)))
+    def _make_field_value(self) -> Any:
+        return db.Column(db.String(self._length))
 
 
 class AttachableIntColumn(AttachableColumn):
 
-    def attach_to(self, model: Type[db.Model]) -> Type[db.Model]:
-        return self._attach(model, db.Column(db.Integer))
+    def _make_field_value(self) -> Any:
+        return db.Column(db.Integer)
 
 
 class AttachableBoolColumn(AttachableColumn):
 
-    def attach_to(self, model: Type[db.Model]) -> Type[db.Model]:
-        return self._attach(model, db.Column(db.Boolean()))
+    def _make_field_value(self) -> Any:
+        return db.Column(db.Boolean())
 
 
 class AttachableDatetimeColumn(AttachableColumn):
 
-    def attach_to(self, model: Type[db.Model]) -> Type[db.Model]:
-        return self._attach(model, db.Column(db.DateTime()))
+    def _make_field_value(self) -> Any:
+        return db.Column(db.DateTime())
 
 
 class AttachableRelationshipColumn(AttachableColumn):
 
-    def __init__(self, attribute_name: str, getter: Union[Callable[[Any], Any], None], model_class_name: str):
+    def __init__(self, attribute_name: str, getter: Union[Callable[[Any], Any], None], model_class: Type[db.Model]):
         super().__init__(attribute_name, getter)
-        self._model_class_name = model_class_name
+        self._model_class = model_class
 
-    def attach_to(self, model: Type[db.Model]) -> Type[db.Model]:
-        return self._attach(model, db.Column(db.relationship(self._model_class_name)))
+    def _make_field_value(self) -> Any:
+        return db.Column(db.relationship(self._model_class.__name__))
 
 
-class PhoneNumberColumn:
-    phone_number = db.Column(db.String(32))
+def make_column_firstname() -> AttachableColumn:
+    def get_firstname(self) -> str:
+        return getattr(self, ATTRIBUTE_NAME_FIRSTNAME)
 
+    return AttachableStringColumn(ATTRIBUTE_NAME_FIRSTNAME, get_firstname, 50)
+
+
+def make_column_lastname() -> AttachableColumn:
+    def get_lastname(self) -> str:
+        return getattr(self, ATTRIBUTE_NAME_LASTNAME)
+
+    return AttachableStringColumn(ATTRIBUTE_NAME_LASTNAME, get_lastname, 50)
+
+
+def make_column_email() -> AttachableColumn:
+    def get_email(self) -> str:
+        return getattr(self, ATTRIBUTE_NAME_EMAIL)
+
+    return AttachableStringColumn(ATTRIBUTE_NAME_EMAIL, get_email, 100)
+
+
+def make_column_phone_number() -> AttachableColumn:
     def get_phone_number(self) -> str:
-        return self.phone_number
+        return getattr(self, 'phone_number')
+
+    return AttachableStringColumn('phone_number', get_phone_number, 20)
 
 
-# MEMO: Must have same attribute names as DepartureBusstopField
-class DepartureBusstopColumn:
-    departure_busstop = db.Column(db.String(64))
+def make_column_departure_location() -> AttachableColumn:
+    def get_departure_location(self) -> str:
+        return getattr(self, 'departure_busstop')
 
-    def get_departure_busstop(self) -> str:
-        return self.departure_busstop
-
-
-# MEMO: Must have same attribute names as GuildField
-class GuildColumn:
-    guild_name = db.Column(db.String(16))
-
-    def get_guild_name(self) -> str:
-        return self.guild_name
+    return AttachableStringColumn('departure_location', get_departure_location, 50)
 
 
-# MEMO: Must have same attribute names as BindingRegistrationConsentField
-class BindingRegistrationConsentColumn:
-    binding_registration_consent = db.Column(db.Boolean())
+def make_column_quota() -> AttachableColumn:
+    def get_quota(self) -> str:
+        return getattr(self, 'quota')
 
-    def get_binding_registration_consent(self) -> bool:
-        return self.binding_registration_consent
+    return AttachableStringColumn('quota', get_quota, 50)
+
+
+def make_column_name_consent() -> AttachableColumn:
+    def get_name_consent(self) -> bool:
+        return getattr(self, ATTRIBUTE_NAME_NAME_CONSENT)
+
+    return AttachableBoolColumn(ATTRIBUTE_NAME_NAME_CONSENT, get_name_consent)
+
+
+def make_column_binding_registration_consent() -> AttachableColumn:
+    return AttachableBoolColumn('binding_registration_consent', None)
+
+
+def make_column_privacy_consent() -> AttachableColumn:
+    return AttachableBoolColumn(ATTRIBUTE_NAME_PRIVACY_CONSENT, None)
+
+
+def make_column_required_participants(model_type: Type[BasicParticipantModel]) -> AttachableColumn:
+    # TODO: Add typing
+    def get_required_participants(self):
+        return getattr(self, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
+
+    return AttachableRelationshipColumn(ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, get_required_participants, model_type)
+
+
+def make_column_optional_participants(model_type: Type[BasicParticipantModel]) -> AttachableColumn:
+    # TODO: Add typing
+    def get_optional_participants(self):
+        return getattr(self, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS)
+
+    return AttachableRelationshipColumn(ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, get_optional_participants, model_type)
+
+
+def make_column_form_attributes(model_type: Type[ModelAttributesModel]) -> AttachableColumn:
+    def get_other_attributes(self) -> ModelAttributesModel:
+        return getattr(self, ATTRIBUTE_NAME_OTHER_ATTRIBUTES)
+
+    return AttachableRelationshipColumn(ATTRIBUTE_NAME_OTHER_ATTRIBUTES, get_other_attributes, model_type)
 
 
 def basic_model_csv_map() -> List[Tuple[str, str]]:

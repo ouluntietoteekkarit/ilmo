@@ -236,7 +236,7 @@ class FormController(ABC):
 
     def _validate_form(self, form: BasicForm) -> bool:
         valid = form.get_required_participants().validate(form)
-        valid = form.get_form_attributes().validate() and valid
+        valid = form.get_other_attributes().validate() and valid
         for participant in form.get_optional_participants():
             for field in participant:
                 if field.raw_data:

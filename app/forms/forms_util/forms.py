@@ -8,35 +8,20 @@ from wtforms.validators import InputRequired, Optional, DataRequired, length, Em
 
 from app.forms.forms_util.form_controller import Quota
 from app.forms.forms_util.guilds import Guild
+from app.forms.forms_util.lib import BaseAttachable
 
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
 ATTRIBUTE_NAME_EMAIL = 'email'
 ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS = 'required_participants'
 ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS = 'optional_participants'
-ATTRIBUTE_NAME_FORM_ATTRIBUTES = 'form_attributes'
+ATTRIBUTE_NAME_OTHER_ATTRIBUTES = 'other_attributes'
 ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
 ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
 
 
 class BasicParticipantForm(Form):
-    # MEMO: Default implementations for methods required by system logic.
-    #       Exceptions make it easier to spot programming errors.
-
-    def get_firstname(self) -> str:
-        raise Exception("Not implemented")
-
-    def get_lastname(self) -> str:
-        raise Exception("Not implemented")
-
-    def get_email(self) -> str:
-        return ''
-
-    def get_quota_name(self) -> str:
-        return Quota.default_quota_name()
-
-    def is_filled(self) -> bool:
-        return bool(self.get_firstname() and self.get_lastname())
+    pass
 
 
 class FormAttributesForm(Form):
@@ -45,38 +30,7 @@ class FormAttributesForm(Form):
 
 # MEMO: Must have same attribute names as BasicModel
 class BasicForm(FlaskForm):
-    # MEMO: Default implementations for methods required by system logic.
-    #       Exceptions make it easier to spot programming errors.
-
-    def get_form_attributes(self) -> FormAttributesForm:
-        raise Exception("Mandatory form field not implemented.")
-
-    def get_required_participants(self) -> Union[Iterable[BasicParticipantForm], FieldList]:
-        raise Exception("Mandatory form field not implemented.")
-
-    def get_optional_participants(self) -> Union[Iterable[BasicParticipantForm], FieldList]:
-        return []
-
-    def get_participant_count(self) -> int:
-        count = 0
-        for p in self.get_required_participants():
-            count += int(p.is_filled())
-
-        for p in self.get_optional_participants():
-            count += int(p.is_filled())
-
-        return count
-
-    def get_quota_counts(self) -> List[Quota]:
-        """Returns the number of participants this form covers."""
-        quotas = []
-        for p in self.get_required_participants():
-            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
-
-        for p in self.get_optional_participants():
-            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
-
-        return quotas
+    pass
 
 
 class BaseBuilder(ABC):
@@ -111,16 +65,20 @@ class FormBuilder(BaseBuilder):
 
             base_type = TmpForm
 
-        has_required_participants = hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
-        asks_name = hasattr(base_type, ATTRIBUTE_NAME_NAME_CONSENT)
+        required = {
+            'has_required_participants': hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
+            'asks_name': hasattr(base_type, ATTRIBUTE_NAME_NAME_CONSENT),
+        }
 
         for field in self._fields:
             field.attach_to(base_type)
-            has_required_participants = has_required_participants or field.get_attribute_name() == ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS
-            asks_name = asks_name or field.get_attribute_name() == ATTRIBUTE_NAME_NAME_CONSENT
 
-        if not has_required_participants:
-            raise Exception("Required participants is a mandatory attribute of BasicForm.")
+            if field.get_attribute_name() in required:
+                required[field.get_attribute_name()] = True
+
+        for value in required.values():
+            if not value:
+                raise Exception(ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS + "is a mandatory attribute of " + BasicForm.__name__)
 
         base_type.asks_name_consent = asks_name
 
@@ -145,10 +103,10 @@ class ParticipantFormBuilder(BaseBuilder):
             has_lastname = has_lastname or field.get_attribute_name() == ATTRIBUTE_NAME_LASTNAME
 
         if not has_firstname:
-            raise Exception("Firstname is a mandatory attribute of BasicParticipantForm.")
+            raise Exception(ATTRIBUTE_NAME_FIRSTNAME + " is a mandatory attribute of " + BasicParticipantForm.__name__)
 
         if not has_lastname:
-            raise Exception("Lastname is a mandatory attribute of BasicParticipantForm.")
+            raise Exception(ATTRIBUTE_NAME_LASTNAME + " is a mandatory attribute of " + BasicParticipantForm.__name__)
 
         return base_type
 
@@ -163,6 +121,7 @@ class FormAttributesBuilder(BaseBuilder):
             base_type = TmpForm
 
         has_privacy_consent = hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
+
         for field in self._fields:
             field.attach_to(base_type)
             has_privacy_consent = has_privacy_consent or field.get_attribute_name() == ATTRIBUTE_NAME_PRIVACY_CONSENT
@@ -266,7 +225,7 @@ class FlatFormField(FormField):
             setattr(obj, self.name + '_' + attr, getattr(tmp, attr))
 
 
-class AttachableField(ABC):
+class AttachableField(BaseAttachable):
     def __init__(self, attribute_name: str, label: str, validators: Iterable, getter: Union[Callable[[Any], Any], None]):
         self._attribute_name = attribute_name
         self._label = label
@@ -363,7 +322,7 @@ class AttachableFormField(AttachableField):
 def make_field_firstname(extra_validators: Iterable = []) -> AttachableField:
     # MEMO: Must have same attribute names as FirstnameColumn
     def get_firstname(self) -> str:
-        return self.firstname.data
+        return getattr(self, ATTRIBUTE_NAME_FIRSTNAME).data
 
     return AttachableStringField(ATTRIBUTE_NAME_FIRSTNAME, 'Etunimi *', [length(max=50)] + list(extra_validators), get_firstname)
 
@@ -371,7 +330,7 @@ def make_field_firstname(extra_validators: Iterable = []) -> AttachableField:
 def make_field_lastname(extra_validators: Iterable = []) -> AttachableField:
     # MEMO: Must have same attribute names as LastnameColumn
     def get_lastname(self) -> str:
-        return self.lastname.data
+        return getattr(self, ATTRIBUTE_NAME_LASTNAME).data
 
     return AttachableStringField(ATTRIBUTE_NAME_LASTNAME, 'Sukunimi *', [length(max=50)] + list(extra_validators), get_lastname)
 
@@ -379,7 +338,7 @@ def make_field_lastname(extra_validators: Iterable = []) -> AttachableField:
 def make_field_email(extra_validators: Iterable = []) -> AttachableField:
     # MEMO: Must have same attribute names as EmailColumn
     def get_email(self) -> str:
-        return self.email.data
+        return getattr(self, ATTRIBUTE_NAME_EMAIL).data
 
     return AttachableStringField(ATTRIBUTE_NAME_EMAIL, 'Sähköposti *', [Email(), length(max=100)] + list(extra_validators), get_email)
 
@@ -394,10 +353,10 @@ def make_field_phone_number(extra_validators: Iterable = []) -> AttachableField:
 
 def make_field_departure_location(choices: List[Tuple[str, str]], extra_validators: Iterable = []) -> AttachableField:
     # MEMO: Must have same attribute names as DepartureBusstopColumn
-    def get_departure_busstop(self) -> str:
-        return self.departure_busstop.data
+    def get_departure_location(self) -> str:
+        return self.departure_location.data
 
-    return AttachableSelectField('departure_busstop', 'Lähtöpaikka *', extra_validators, get_departure_busstop, choices)
+    return AttachableSelectField('departure_location', 'Lähtöpaikka *', [length(max=50)] + list(extra_validators), get_departure_location, choices)
 
 
 def make_field_quota(label: str, choices: List[Tuple[str, str]], extra_validators: Iterable = []) -> AttachableField:
@@ -405,16 +364,18 @@ def make_field_quota(label: str, choices: List[Tuple[str, str]], extra_validator
     def get_quota(self) -> str:
         return self.quota.data
 
-    return AttachableSelectField('quota', label, extra_validators, get_quota, choices)
+    return AttachableSelectField('quota', label, [length(max=50)] + list(extra_validators), get_quota, choices)
 
 
 def make_field_name_consent(txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla') -> AttachableField:
     # MEMO: Must have same attribute name as the correspoding one in BasicModel
+    def get_name_consent(self) -> bool:
+        return getattr(self, ATTRIBUTE_NAME_NAME_CONSENT).data
 
     # MEMO: Come up with a solution to this.
     # form.asks_name_consent = True
 
-    return AttachableBoolField(ATTRIBUTE_NAME_NAME_CONSENT, txt, [], None)
+    return AttachableBoolField(ATTRIBUTE_NAME_NAME_CONSENT, txt, [], get_name_consent)
 
 
 def make_field_binding_registration_consent(txt: str = 'Ymmärrän, että ilmoittautuminen on sitova *') -> AttachableField:
@@ -424,7 +385,6 @@ def make_field_binding_registration_consent(txt: str = 'Ymmärrän, että ilmoit
 
 def make_field_privacy_consent(txt: str = 'Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *'):
     # MEMO: Must have same attribute names as model type
-
     return AttachableBoolField(ATTRIBUTE_NAME_PRIVACY_CONSENT, txt, [DataRequired()], None)
 
 
@@ -442,11 +402,11 @@ def make_field_optional_participants(form_type: Type[BasicParticipantForm], coun
     return AttachableFieldListField(ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, '', [], get_optional_participants, FormField(form_type), count, count)
 
 
-def make_field_form_attributes(form_type: Type[FormAttributesForm]):
-    def get_form_attributes(self) -> FormAttributesForm:
+def make_field_form_attributes(form_type: Type[FormAttributesForm]) -> AttachableField:
+    def get_other_attributes(self) -> FormAttributesForm:
         return self.form_attributes.data
 
-    return AttachableFormField(ATTRIBUTE_NAME_FORM_ATTRIBUTES, '', [], get_form_attributes, form_type)
+    return AttachableFormField(ATTRIBUTE_NAME_OTHER_ATTRIBUTES, '', [], get_other_attributes, form_type)
 
 
 def make_default_form() -> Type[BasicForm]:

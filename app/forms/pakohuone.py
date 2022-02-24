@@ -11,7 +11,7 @@ from .forms_util.forms import RequiredIfValue, get_str_choices, BasicForm, Parti
     make_field_firstname, make_field_lastname, make_field_phone_number, FormBuilder, make_field_required_participants,\
     make_field_privacy_consent, make_field_optional_participants, ATTRIBUTE_NAME_FIRSTNAME, RequiredIf
 from .forms_util.form_controller import FormController, DataTableInfo, Event, EventRegistrations, Quota
-from .forms_util.models import BasicModel, PhoneNumberColumn, basic_model_csv_map, phone_number_csv_map
+from .forms_util.models import BasicModel, basic_model_csv_map, phone_number_csv_map
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -65,7 +65,7 @@ _Form.huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_esc
                              validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
 
 
-class _Model(BasicModel, PhoneNumberColumn):
+class _Model(BasicModel): #, PhoneNumberColumn):
     __tablename__ = _form_name
     aika = db.Column(db.String(16))
     huone1800 = db.Column(db.String(64))
