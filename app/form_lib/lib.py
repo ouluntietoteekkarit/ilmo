@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator
 
 from app.form_lib.form_controller import Quota
@@ -16,34 +17,34 @@ ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS = 'optional_participants'
 ATTRIBUTE_NAME_OTHER_ATTRIBUTES = 'other_attributes'
 ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
 ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
-ATTRIBUTE_NAME_BIDING_REGISTRATION_CONSENT = 'binding_registration_consent'
+ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT = 'binding_registration_consent'
 
 
 class TypeFactory(ABC):
     def __init__(self,
-                 required_participant_attributes: Iterable[BaseAttributeParameters],
-                 optional_participant_attributes: Iterable[BaseAttributeParameters],
-                 other_attributes: Iterable[BaseAttributeParameters]):
+                 required_participant_attributes: Iterable[BaseAttribute],
+                 optional_participant_attributes: Iterable[BaseAttribute],
+                 other_attributes: Iterable[BaseAttribute]):
         self._required_participant_attributes = required_participant_attributes
         self._optional_participant_attributes = optional_participant_attributes
         self._other_attributes = other_attributes
 
     def _parameters_to_fields(self,
                               factory: AttributeFactory,
-                              params_collection: Iterable[BaseAttributeParameters]
+                              params_collection: Iterable[BaseAttribute]
                               ) -> Iterator[BaseAttachableAttribute]:
         for params in params_collection:
-            if isinstance(params, IntAttributeParameters):
+            if isinstance(params, IntAttribute):
                 yield factory.make_int_attribute(params)
-            elif isinstance(params, StringAttributeParameters):
+            elif isinstance(params, StringAttribute):
                 yield factory.make_string_attribute(params)
-            elif isinstance(params, BoolAttributeParameters):
+            elif isinstance(params, BoolAttribute):
                 yield factory.make_bool_attribute(params)
-            elif isinstance(params, DatetimeAttributeParameters):
+            elif isinstance(params, DatetimeAttribute):
                 yield factory.make_datetime_attribute(params)
-            elif isinstance(params, ListAttributeParameters):
+            elif isinstance(params, ListAttribute):
                 yield factory.make_list_attribute(params)
-            elif isinstance(params, ObjectAttributeParameters):
+            elif isinstance(params, ObjectAttribute):
                 yield factory.make_object_attribute(params)
             else:
                 raise Exception("Invalid attribute parameter type.")
@@ -56,27 +57,31 @@ class TypeFactory(ABC):
 class AttributeFactory(ABC):
 
     @abstractmethod
-    def make_int_attribute(self, params: IntAttributeParameters) -> BaseAttachableAttribute:
+    def make_int_attribute(self, params: IntAttribute) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_string_attribute(self, params: StringAttributeParameters) -> BaseAttachableAttribute:
+    def make_string_attribute(self, params: StringAttribute) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_bool_attribute(self, params: BoolAttributeParameters) -> BaseAttachableAttribute:
+    def make_bool_attribute(self, params: BoolAttribute) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_datetime_attribute(self, params: DatetimeAttributeParameters) -> BaseAttachableAttribute:
+    def make_datetime_attribute(self, params: DatetimeAttribute) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_list_attribute(self, params: ListAttributeParameters) -> BaseAttachableAttribute:
+    def make_enum_attribute(self, params: EnumAttribute) -> BaseAttachableAttribute:
         pass
 
     @abstractmethod
-    def make_object_attribute(self, params: ObjectAttributeParameters) -> BaseAttachableAttribute:
+    def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_object_attribute(self, params: ObjectAttribute) -> BaseAttachableAttribute:
         pass
 
 
@@ -103,14 +108,14 @@ class BaseParticipant(BaseFormComponent):
         return bool(self.get_firstname() and self.get_lastname())
 
 
-class BaseAttributes(BaseFormComponent):
+class BaseOtherAttributes(BaseFormComponent):
     """Interface-like class for form's attribute models."""
     pass
 
 
 class BaseModel(BaseFormComponent):
     """Interface-like class for form's data models."""
-    def get_model_attributes(self) -> BaseAttributes:
+    def get_model_attributes(self) -> BaseOtherAttributes:
         raise Exception("Not implemented")
 
     def get_required_participants(self) -> List[BaseParticipant]:
@@ -206,15 +211,15 @@ class BaseTypeBuilder(ABC):
                 raise Exception(attr + "is a mandatory attribute of " + base_type.__name__)
 
 
-class BaseAttributeParameters(ABC):
+class BaseAttribute(ABC):
     def __init__(self,
                  attribute: str,
                  label: str,
-                 getter: Union[Callable[[Any], Any], None],
+                 short_label: str,
                  **extra: Dict[str, Any]):
         self._attribute = attribute
         self._label = label
-        self._getter = getter
+        self._short_label = short_label
         self._extra = extra
 
     def get_attribute(self) -> str:
@@ -223,8 +228,8 @@ class BaseAttributeParameters(ABC):
     def get_label(self) -> str:
         return self._label
 
-    def get_getter(self) -> Union[Callable[[Any], Any], None]:
-        return self._getter
+    def get_short_label(self) -> str:
+        return self._short_label
 
     def get_extra(self) -> Dict[str, Any]:
         return self._extra
@@ -233,27 +238,77 @@ class BaseAttributeParameters(ABC):
         return self._extra[key] if key in self._extra else default_value
 
 
-class IntAttributeParameters(BaseAttributeParameters):
+class IntAttribute(BaseAttribute):
     pass
 
 
-class StringAttributeParameters(BaseAttributeParameters):
+class StringAttribute(BaseAttribute):
+    # TODO: Add length parameter(s)
     pass
 
 
-class BoolAttributeParameters(BaseAttributeParameters):
+class BoolAttribute(BaseAttribute):
     pass
 
 
-class DatetimeAttributeParameters(BaseAttributeParameters):
-    pass
+class DatetimeAttribute(BaseAttribute):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 short_label: str,
+                 datetime_format: str,
+                 **extra: Dict[str, Any]):
+        super().__init__(attribute, label, short_label, **extra)
+        self._datetime_format = datetime_format
+
+    def get_datetime_format(self):
+        return self._datetime_format
 
 
-class ListAttributeParameters(BaseAttributeParameters):
-    pass
+class EnumAttribute(BaseAttribute):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 short_label: str,
+                 enum_type: Type[Enum],
+                 **extra: Dict[str, Any]):
+        super().__init__(attribute, label, short_label, **extra)
+        self._enum_type = enum_type
+
+    def get_enum_type(self):
+        return self._enum_type
 
 
-class ObjectAttributeParameters(BaseAttributeParameters):
-    pass
+class ListAttribute(BaseAttribute):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 short_label: str,
+                 list_type: Type[BaseFormComponent],
+                 count: int,
+                 **extra: Dict[str, Any]):
+        super().__init__(attribute, label, short_label, **extra)
+        self._list_type = list_type
+        self._count = count
+
+    def get_list_type(self) -> Type[BaseFormComponent]:
+        return self._list_type
+
+    def get_count(self) -> int:
+        return self._count
+
+
+class ObjectAttribute(BaseAttribute):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 short_label: str,
+                 object_type: Type[BaseFormComponent],
+                 **extra: Dict[str, Any]):
+        super().__init__(attribute, label, short_label, **extra)
+        self._object_type = object_type
+
+    def get_object_type(self) -> Type[BaseFormComponent]:
+        return self._object_type
 
 
