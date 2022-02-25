@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Dict, Collection
 
 from wtforms import SelectField, StringField
 from wtforms.validators import InputRequired, length, DataRequired
@@ -88,6 +88,14 @@ class _Model(BasicModel, DepartureBusstopColumn):
 
 
 class _Controller(FormController):
+
+    def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[_Model]) -> Dict[str, int]:
+        registration_quotas = dict.fromkeys(event_quotas.keys(), 0)
+        for entry in entries:
+            registration_quotas[entry.quota] += 1
+
+        return registration_quotas
+
     # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
         if reserve:
