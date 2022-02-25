@@ -4,12 +4,12 @@ from typing import List
 from wtforms.validators import InputRequired
 
 from app.email import EmailRecipient, make_greet_line
-from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
-from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import get_str_choices, FormBuilder, make_default_participant_form,\
+from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
+from app.form_lib.forms import get_str_choices, FormBuilder, make_default_participant_form,\
     make_field_required_participants, make_field_departure_location, make_field_phone_number, make_field_name_consent,\
     make_field_binding_registration_consent, make_field_privacy_consent, ParticipantFormBuilder
-from .forms_util.models import BasicModel, basic_model_csv_map, \
+from app.form_lib.models import BasicModel, basic_model_csv_map, \
     phone_number_csv_map, departure_location_csv_map, binding_registration_csv_map
 
 _form_name = file_path_to_form_name(__file__)

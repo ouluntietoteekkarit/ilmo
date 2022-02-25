@@ -1,5 +1,6 @@
+from __future__ import annotations
 from enum import Enum
-from typing import Type, Iterable, Union, Dict, Any
+from typing import Type, Iterable, Union, Dict, Any, TYPE_CHECKING
 
 from wtforms.validators import length, Email
 
@@ -8,7 +9,27 @@ from app.form_lib.lib import BaseAttribute, StringAttribute, ATTRIBUTE_NAME_FIRS
     ATTRIBUTE_NAME_QUOTA, ATTRIBUTE_NAME_NAME_CONSENT, ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT, \
     ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, \
     ATTRIBUTE_NAME_OTHER_ATTRIBUTES, BoolAttribute, BaseParticipant, ListAttribute, \
-    ObjectAttribute, BaseOtherAttributes, EnumAttribute
+    ObjectAttribute, BaseOtherAttributes, EnumAttribute, BaseModel
+
+if TYPE_CHECKING:
+    from app.form_lib.forms import FormTypeFactory
+    from app.form_lib.models import DbTypeFactory
+
+
+def make_types(required_participant_attributes: Iterable[BaseAttribute],
+               optional_participant_attributes: Iterable[BaseAttribute],
+               other_attributes: Iterable[BaseAttribute],
+               form_name: str) -> Dict[str, BaseModel]:
+
+    factories = {
+        '_Form': FormTypeFactory(required_participant_attributes, optional_participant_attributes, other_attributes),
+        '_Model': DbTypeFactory(required_participant_attributes, optional_participant_attributes, other_attributes, form_name)
+    }
+    types = {}
+    for name, factory in factories.items():
+        types[name] = factory.make_type()
+
+    return types
 
 
 def make_attribute_firstname(**extra_args: Dict[str, Any]) -> BaseAttribute:

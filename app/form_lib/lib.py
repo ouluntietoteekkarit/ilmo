@@ -29,26 +29,6 @@ class TypeFactory(ABC):
         self._optional_participant_attributes = optional_participant_attributes
         self._other_attributes = other_attributes
 
-    def _parameters_to_fields(self,
-                              factory: AttributeFactory,
-                              params_collection: Iterable[BaseAttribute]
-                              ) -> Iterator[BaseAttachableAttribute]:
-        for params in params_collection:
-            if isinstance(params, IntAttribute):
-                yield factory.make_int_attribute(params)
-            elif isinstance(params, StringAttribute):
-                yield factory.make_string_attribute(params)
-            elif isinstance(params, BoolAttribute):
-                yield factory.make_bool_attribute(params)
-            elif isinstance(params, DatetimeAttribute):
-                yield factory.make_datetime_attribute(params)
-            elif isinstance(params, ListAttribute):
-                yield factory.make_list_attribute(params)
-            elif isinstance(params, ObjectAttribute):
-                yield factory.make_object_attribute(params)
-            else:
-                raise Exception("Invalid attribute parameter type.")
-
     @abstractmethod
     def make_type(self) -> Type[BaseModel]:
         pass
@@ -243,8 +223,17 @@ class IntAttribute(BaseAttribute):
 
 
 class StringAttribute(BaseAttribute):
-    # TODO: Add length parameter(s)
-    pass
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 short_label: str,
+                 length: int,
+                 **extra: Dict[str, Any]):
+        super().__init__(attribute, label, short_label, **extra)
+        self._length = length
+
+    def get_length(self) -> int:
+        return self._length
 
 
 class BoolAttribute(BaseAttribute):
@@ -312,3 +301,21 @@ class ObjectAttribute(BaseAttribute):
         return self._object_type
 
 
+def attributes_to_fields(factory: AttributeFactory,
+                         params_collection: Iterable[BaseAttribute]
+                         ) -> Iterator[BaseAttachableAttribute]:
+    for params in params_collection:
+        if isinstance(params, IntAttribute):
+            yield factory.make_int_attribute(params)
+        elif isinstance(params, StringAttribute):
+            yield factory.make_string_attribute(params)
+        elif isinstance(params, BoolAttribute):
+            yield factory.make_bool_attribute(params)
+        elif isinstance(params, DatetimeAttribute):
+            yield factory.make_datetime_attribute(params)
+        elif isinstance(params, ListAttribute):
+            yield factory.make_list_attribute(params)
+        elif isinstance(params, ObjectAttribute):
+            yield factory.make_object_attribute(params)
+        else:
+            raise Exception("Invalid attribute parameter type.")

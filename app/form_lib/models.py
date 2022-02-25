@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from abc import ABC
+from enum import Enum
 from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict
 
 from app import db
 from .lib import BaseParticipant, BaseOtherAttributes, BaseModel, BaseAttachableAttribute, BaseFormComponent, \
     BaseTypeBuilder, AttributeFactory, TypeFactory, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
-    ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, \
-    ATTRIBUTE_NAME_OTHER_ATTRIBUTES, ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_NAME_CONSENT, \
-    BaseAttribute, ObjectAttribute, ListAttribute, DatetimeAttribute, \
-    BoolAttribute, StringAttribute, IntAttribute, ATTRIBUTE_NAME_PHONE_NUMBER, \
-    ATTRIBUTE_NAME_DEPARTURE_LOCATION, ATTRIBUTE_NAME_QUOTA, ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT, \
-    EnumAttribute
+    ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, BaseAttribute, ObjectAttribute, \
+    ListAttribute, DatetimeAttribute, BoolAttribute, StringAttribute, IntAttribute, EnumAttribute, \
+    attributes_to_fields
+from .util import make_attribute_required_participants, make_attribute_optional_participants, \
+    make_attribute_form_attributes
 
 """
 class BasicModel(db.Model):
@@ -68,19 +68,21 @@ class DbTypeFactory(TypeFactory):
     def make_type(self):
         factory = _DbAttributeFactory()
         required_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name).add_fields(
-            self._parameters_to_fields(factory, self._required_participant_attributes)
+            attributes_to_fields(factory, self._required_participant_attributes)
         ).build()
         optional_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name).add_fields(
-            self._parameters_to_fields(factory, self._optional_participant_attributes)
+            attributes_to_fields(factory, self._optional_participant_attributes)
         ).build()
         other_attributes: Type[ModelAttributesModel] = _ModelAttributesBuilder(self._form_name).add_fields(
-            self._parameters_to_fields(factory, self._other_attributes)
+            attributes_to_fields(factory, self._other_attributes)
         ).build()
-        return _ModelBuilder(self._form_name).add_fields([
-            make_column_required_participants(required_participant),
-            make_column_optional_participants(optional_participant),
-            make_column_form_attributes(other_attributes)
-        ]).build()
+        return _ModelBuilder(self._form_name).add_fields(
+            attributes_to_fields([
+                make_attribute_required_participants(required_participant),
+                make_attribute_optional_participants(optional_participant),
+                make_attribute_form_attributes(other_attributes)
+            ])
+        ).build()
 
 
 class _DbAttributeFactory(AttributeFactory):
@@ -106,7 +108,7 @@ class _DbAttributeFactory(AttributeFactory):
 
     def make_string_attribute(self, params: StringAttribute) -> BaseAttachableAttribute:
         # MEMO: Ensures crash if length is missing
-        length = params.get_extra()['length']
+        length = params.get_length()
         return _AttachableStringColumn(*self._params_to_args(params), length)
 
     def make_bool_attribute(self, params: BoolAttribute) -> BaseAttachableAttribute:
@@ -116,7 +118,8 @@ class _DbAttributeFactory(AttributeFactory):
         return _AttachableDatetimeColumn(*self._params_to_args(params))
 
     def make_enum_attribute(self, params: EnumAttribute) -> BaseAttachableAttribute:
-        return _AttachableStringColumn(*self._params_to_args(params))
+        enum_type = params.get_enum_type()
+        return _AttachableEnumColumn(*self._params_to_args(params), enum_type)
 
     def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
         list_type = params.get_list_type()
@@ -213,7 +216,9 @@ class _AttachableDatetimeColumn(_AttachableColumn):
 
 class _AttachableEnumColumn(_AttachableColumn):
 
-    def __init__(self, attribute_name: str, getter: Union[Callable[[Any], Any], None], enum_type: Type[Enum]):
+    def __init__(self, attribute_name: str,
+                 getter: Union[Callable[[Any], Any], None],
+                 enum_type: Type[Enum]):
         super().__init__(attribute_name, getter)
         self._enum_type = enum_type
 

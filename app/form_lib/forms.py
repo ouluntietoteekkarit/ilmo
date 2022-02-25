@@ -7,18 +7,17 @@ from typing import List, Tuple, Iterable, Type, Union, Any, Callable
 from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SelectField, FormField, Form, FieldList, Field, RadioField, IntegerField, \
     DateTimeField
-from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
+from wtforms.validators import InputRequired, Optional
 
 from app.form_lib.form_controller import Quota
 from app.form_lib.guilds import Guild
 from app.form_lib.lib import BaseAttachableAttribute, BaseModel, BaseOtherAttributes, \
-    BaseParticipant, BaseTypeBuilder, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, ATTRIBUTE_NAME_EMAIL, \
-    ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, ATTRIBUTE_NAME_OTHER_ATTRIBUTES, \
-    ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_NAME_CONSENT, AttributeFactory, ObjectAttribute, \
-    IntAttribute, ListAttribute, DatetimeAttribute, BoolAttribute, \
-    StringAttribute, BaseAttribute, TypeFactory, ATTRIBUTE_NAME_QUOTA, \
-    ATTRIBUTE_NAME_DEPARTURE_LOCATION, ATTRIBUTE_NAME_PHONE_NUMBER, ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT, \
-    BaseFormComponent, EnumAttribute
+    BaseParticipant, BaseTypeBuilder, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
+    ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, AttributeFactory, \
+    ObjectAttribute, IntAttribute, ListAttribute, DatetimeAttribute, BoolAttribute, \
+    StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, EnumAttribute, attributes_to_fields
+from app.form_lib.util import make_attribute_required_participants, make_attribute_optional_participants,\
+    make_attribute_form_attributes
 
 
 class BasicParticipantForm(Form, BaseParticipant):
@@ -268,19 +267,22 @@ class FormTypeFactory(TypeFactory):
     def make_type(self):
         factory = _FormAttributeFactory()
         required_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(
-            self._parameters_to_fields(factory, self._required_participant_attributes)
+            attributes_to_fields(factory, self._required_participant_attributes)
         ).build()
         optional_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(
-            self._parameters_to_fields(factory, self._optional_participant_attributes)
+            attributes_to_fields(factory, self._optional_participant_attributes)
         ).build()
         other_attributes: Type[FormAttributesForm] = _FormAttributesBuilder().add_fields(
-            self._parameters_to_fields(factory, self._other_attributes)
+            attributes_to_fields(factory, self._other_attributes)
         ).build()
-        return _FormBuilder().add_fields([
-            make_field_required_participants(required_participant, 1),
-            make_field_optional_participants(optional_participant, 1),
-            make_field_form_attributes(other_attributes)
-        ]).build()
+
+        return _FormBuilder().add_fields(
+            attributes_to_fields(factory, [
+                make_attribute_required_participants(required_participant, 1),
+                make_attribute_optional_participants(optional_participant, 1),
+                make_attribute_form_attributes(other_attributes)
+            ])
+        ).build()
 
 
 class _FormAttributeFactory(AttributeFactory):
@@ -322,7 +324,7 @@ class _FormAttributeFactory(AttributeFactory):
 
     def make_enum_attribute(self, params: EnumAttribute) -> BaseAttachableAttribute:
         enum_type = params.get_enum_type()
-        return _Atta
+        return _AttachableEnumField(*self._params_to_args(params), enum_type)
 
     def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
         # MEMO: Ensures crash if field is missing
@@ -334,28 +336,6 @@ class _FormAttributeFactory(AttributeFactory):
         # MEMO: Ensures crash if form_type is missing
         form_type = params.get_object_type()
         return _AttachableFormField(*self._params_to_args(params), form_type)
-
-
-def make_default_form() -> Type[BasicForm]:
-    _Participant = make_default_participant_form()
-    return _FormBuilder().add_fields([
-        make_field_required_participants(_Participant),
-        make_field_privacy_consent()
-    ]).build()
-
-
-def make_default_participant_form() -> Type[BasicParticipantForm]:
-    return _ParticipantFormBuilder().add_fields([
-        make_field_firstname([InputRequired()]),
-        make_field_lastname([InputRequired()]),
-        make_field_email([InputRequired()])
-    ]).build()
-
-
-def make_default_form_attributes_form() -> Type[FormAttributesForm]:
-    return _FormAttributesBuilder().add_fields([
-        make_field_privacy_consent()
-    ]).build()
 
 
 def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
