@@ -9,7 +9,7 @@ from .forms_util.form_module import ModuleInfo, file_path_to_form_name
 from .forms_util.forms import make_field_phone_number, make_field_departure_location, \
     make_field_name_consent, get_str_choices, get_quota_choices, FormBuilder, make_field_quota, \
     make_field_privacy_consent, make_field_required_participants, make_default_participant_form
-from .forms_util.models import BasicModel, basic_model_csv_map, departure_busstop_csv_map, phone_number_csv_map
+from .forms_util.models import BasicModel, basic_model_csv_map, departure_location_csv_map, phone_number_csv_map
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -64,7 +64,7 @@ class _Controller(FormController):
         lastname = recipient.get_lastname()
         email = model.get_email()
         phone_number = model.get_phone_number()
-        departure_location = model.get_departure_busstop()
+        departure_location = model.get_departure_location()
         quota = model.kiintio
         if reserve:
             return ' '.join([
@@ -87,7 +87,7 @@ class _Controller(FormController):
 # MEMO: (attribute, header_text)
 _data_table_info = DataTableInfo(basic_model_csv_map() +
                                  phone_number_csv_map() +
-                                 departure_busstop_csv_map() +
+                                 departure_location_csv_map() +
                                  [('kiintio', 'kiintio')])
 _event = Event('OTiTin Fuksicursio', datetime(2021, 10, 29, 12, 00, 00),
                datetime(2021, 11, 4, 21, 00, 00), _get_quotas(), _Form.asks_name_consent)

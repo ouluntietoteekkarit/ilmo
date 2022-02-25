@@ -12,7 +12,8 @@ from .lib import BaseParticipant, BaseAttributes, BaseModel, BaseAttachableAttri
     ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, \
     ATTRIBUTE_NAME_OTHER_ATTRIBUTES, ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_NAME_CONSENT, \
     BaseAttributeParameters, ObjectAttributeParameters, ListAttributeParameters, DatetimeAttributeParameters, \
-    BoolAttributeParameters, StringAttributeParameters, IntAttributeParameters
+    BoolAttributeParameters, StringAttributeParameters, IntAttributeParameters, ATTRIBUTE_NAME_PHONE_NUMBER, \
+    ATTRIBUTE_NAME_DEPARTURE_LOCATION
 
 """
 class BasicModel(db.Model):
@@ -234,16 +235,16 @@ def make_column_email() -> AttachableColumn:
 
 def make_column_phone_number() -> AttachableColumn:
     def get_phone_number(self) -> str:
-        return getattr(self, 'phone_number')
+        return getattr(self, ATTRIBUTE_NAME_PHONE_NUMBER)
 
-    return AttachableStringColumn('phone_number', get_phone_number, 20)
+    return AttachableStringColumn(ATTRIBUTE_NAME_PHONE_NUMBER, get_phone_number, 20)
 
 
 def make_column_departure_location() -> AttachableColumn:
     def get_departure_location(self) -> str:
-        return getattr(self, 'departure_busstop')
+        return getattr(self, ATTRIBUTE_NAME_DEPARTURE_LOCATION)
 
-    return AttachableStringColumn('departure_location', get_departure_location, 50)
+    return AttachableStringColumn(ATTRIBUTE_NAME_DEPARTURE_LOCATION, get_departure_location, 50)
 
 
 def make_column_quota() -> AttachableColumn:
@@ -317,10 +318,10 @@ def guild_name_csv_map() -> List[Tuple[str, str]]:
     ]
 
 
-def departure_busstop_csv_map() -> List[Tuple[str, str]]:
+def departure_location_csv_map() -> List[Tuple[str, str]]:
     # MEMO: (attribute, header_text)
     return [
-        ('departure_busstop', 'lähtopaikka')
+        ('departure_location', 'lähtopaikka')
     ]
 
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator
 
 from app.forms.forms_util.form_controller import Quota
@@ -9,6 +8,9 @@ from app.forms.forms_util.form_controller import Quota
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
 ATTRIBUTE_NAME_EMAIL = 'email'
+ATTRIBUTE_NAME_QUOTA = 'quota'
+ATTRIBUTE_NAME_PHONE_NUMBER = 'phone_number'
+ATTRIBUTE_NAME_DEPARTURE_LOCATION = 'departure_location'
 ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS = 'required_participants'
 ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS = 'optional_participants'
 ATTRIBUTE_NAME_OTHER_ATTRIBUTES = 'other_attributes'

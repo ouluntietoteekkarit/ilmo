@@ -10,7 +10,7 @@ from .forms_util.forms import get_str_choices, FormBuilder, make_default_partici
     make_field_required_participants, make_field_departure_location, make_field_phone_number, make_field_name_consent,\
     make_field_binding_registration_consent, make_field_privacy_consent, ParticipantFormBuilder
 from .forms_util.models import BasicModel, basic_model_csv_map, \
-    phone_number_csv_map, departure_busstop_csv_map, binding_registration_csv_map
+    phone_number_csv_map, departure_location_csv_map, binding_registration_csv_map
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -52,7 +52,7 @@ class _Controller(FormController):
         lastname = recipient.get_lastname()
         email = recipient.get_email_address()
         phone_number = model.get_phone_number()
-        departure_location = model.get_departure_busstop()
+        departure_location = model.get_departure_location()
         if reserve:
             return ' '.join([
                 make_greet_line(recipient),
@@ -81,7 +81,7 @@ class _Controller(FormController):
 # MEMO: (attribute, header_text)
 _data_table_info = DataTableInfo(basic_model_csv_map() +
                                  phone_number_csv_map() +
-                                 departure_busstop_csv_map() +
+                                 departure_location_csv_map() +
                                  binding_registration_csv_map())
 _event = Event('OTiT KMP', datetime(2021, 11, 19, 13, 37, 37),
                datetime(2021, 12, 3, 2, 00, 00), [Quota.default_quota(15, 15)], _Form.asks_name_consent)

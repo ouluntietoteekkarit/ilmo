@@ -15,7 +15,8 @@ from app.forms.forms_util.lib import BaseAttachableAttribute, BaseModel, BaseAtt
     ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, ATTRIBUTE_NAME_OTHER_ATTRIBUTES, \
     ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_NAME_CONSENT, AttributeFactory, ObjectAttributeParameters, \
     IntAttributeParameters, ListAttributeParameters, DatetimeAttributeParameters, BoolAttributeParameters, \
-    StringAttributeParameters, BaseAttributeParameters, TypeFactory
+    StringAttributeParameters, BaseAttributeParameters, TypeFactory, ATTRIBUTE_NAME_QUOTA, \
+    ATTRIBUTE_NAME_DEPARTURE_LOCATION, ATTRIBUTE_NAME_PHONE_NUMBER
 
 
 class BasicParticipantForm(Form, BaseParticipant):
@@ -361,25 +362,25 @@ def make_field_email(extra_validators: Iterable = []) -> AttachableField:
 def make_field_phone_number(extra_validators: Iterable = []) -> AttachableField:
     # MEMO: Must have same attribute names as PhoneNumberColumn
     def get_phone_number(self) -> str:
-        return self.phone_number.data
+        return getattr(self, ATTRIBUTE_NAME_PHONE_NUMBER).data
 
-    return AttachableStringField('phone_number', 'Puhelinnumero *', [length(max=20)] + list(extra_validators), get_phone_number)
+    return AttachableStringField(ATTRIBUTE_NAME_PHONE_NUMBER, 'Puhelinnumero *', [length(max=20)] + list(extra_validators), get_phone_number)
 
 
 def make_field_departure_location(choices: List[Tuple[str, str]], extra_validators: Iterable = []) -> AttachableField:
     # MEMO: Must have same attribute names as DepartureBusstopColumn
     def get_departure_location(self) -> str:
-        return self.departure_location.data
+        return getattr(self, ATTRIBUTE_NAME_DEPARTURE_LOCATION).data
 
-    return AttachableSelectField('departure_location', 'Lähtöpaikka *', [length(max=50)] + list(extra_validators), get_departure_location, choices)
+    return AttachableSelectField(ATTRIBUTE_NAME_DEPARTURE_LOCATION, 'Lähtöpaikka *', [length(max=50)] + list(extra_validators), get_departure_location, choices)
 
 
 def make_field_quota(label: str, choices: List[Tuple[str, str]], extra_validators: Iterable = []) -> AttachableField:
     # MEMO: Must have same attribute names as QuotaColumn
     def get_quota(self) -> str:
-        return self.quota.data
+        return getattr(self, ATTRIBUTE_NAME_QUOTA).data
 
-    return AttachableSelectField('quota', label, [length(max=50)] + list(extra_validators), get_quota, choices)
+    return AttachableSelectField(ATTRIBUTE_NAME_QUOTA, label, [length(max=50)] + list(extra_validators), get_quota, choices)
 
 
 def make_field_name_consent(txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla') -> AttachableField:
