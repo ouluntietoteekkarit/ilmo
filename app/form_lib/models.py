@@ -4,9 +4,6 @@ from abc import ABC
 from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict
 
 from app import db
-
-
-# MEMO: Must have same attribute names as BasicForm
 from .lib import BaseParticipant, BaseAttributes, BaseModel, BaseAttachableAttribute, BaseFormComponent, \
     BaseTypeBuilder, AttributeFactory, TypeFactory, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
     ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, \

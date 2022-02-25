@@ -8,9 +8,9 @@ from wtforms import StringField, BooleanField, SelectField, FormField, Form, Fie
     DateTimeField
 from wtforms.validators import InputRequired, Optional, DataRequired, length, Email
 
-from app.forms.forms_util.form_controller import Quota
-from app.forms.forms_util.guilds import Guild
-from app.forms.forms_util.lib import BaseAttachableAttribute, BaseModel, BaseAttributes, \
+from app.form_lib.form_controller import Quota
+from app.form_lib.guilds import Guild
+from app.form_lib.lib import BaseAttachableAttribute, BaseModel, BaseAttributes, \
     BaseParticipant, BaseTypeBuilder, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, ATTRIBUTE_NAME_EMAIL, \
     ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, ATTRIBUTE_NAME_OTHER_ATTRIBUTES, \
     ATTRIBUTE_NAME_PRIVACY_CONSENT, ATTRIBUTE_NAME_NAME_CONSENT, AttributeFactory, ObjectAttributeParameters, \
@@ -27,7 +27,6 @@ class FormAttributesForm(Form, BaseAttributes):
     asks_name_consent = False
 
 
-# MEMO: Must have same attribute names as BasicModel
 class BasicForm(FlaskForm, BaseModel):
     pass
 
@@ -86,15 +85,15 @@ class RequiredIf(InputRequired):
     """Validator which makes a field required if another field is set and has a truthy value.
     Sources:
         - http://wtforms.simplecodes.com/docs/1.0.1/validators.html
-        - http://stackoverflow.com/questions/8463209/how-to-make-a-field-conditionally-optional-in-wtforms
+        - https://stackoverflow.com/questions/8463209/how-to-make-a-field-conditionally-optional-in-wtforms
         - https://www.reddit.com/r/flask/comments/7y1k6p/af_wtforms_required_if_validator/
     """
 
     field_flags = ('requiredif',)
 
-    def __init__(self, other_field_name, message=None, *args, **kwargs):
+    def __init__(self, other_field_name, message=None):
+        super().__init__(message)
         self.other_field_name = other_field_name
-        self.message = message
 
     def __call__(self, form, field):
         other_field = form[self.other_field_name]
@@ -116,9 +115,9 @@ class RequiredIfValue(InputRequired):
 
     field_flags = ('requiredif',)
 
-    def __init__(self, other_field_name, value, message=None, *args, **kwargs):
+    def __init__(self, other_field_name, value, message=None):
+        super().__init__(message)
         self.other_field_name = other_field_name
-        self.message = message
         self.value = value
 
     def __call__(self, form, field):
@@ -138,12 +137,6 @@ class MergeFormField(FormField):
     Overrides populate_obj to produce flat objects
     instead of maintaining the form's object hierarchy.
     No attribute name mangling takes place.
-
-    :param form_class:
-        A subclass of Form that will be encapsulated.
-    :param separator:
-        A string which will be suffixed to this field's name to create the
-        prefix to enclosed fields. The default is fine for most uses.
     """
 
     def populate_obj(self, obj, name):
@@ -160,12 +153,6 @@ class FlatFormField(FormField):
     instead of maintaining the form's object hierarchy.
     The attribute names of the enclosed form are
     prefixed with this field's name and an underscore.
-
-    :param form_class:
-        A subclass of Form that will be encapsulated.
-    :param separator:
-        A string which will be suffixed to this field's name to create the
-        prefix to enclosed fields. The default is fine for most uses.
     """
 
     def populate_obj(self, obj, name):
@@ -327,56 +314,62 @@ class FormAttributeFactory(AttributeFactory):
         field = params.get_extra()['field']
         min_entries = params.try_get_extra('min_entries', 0)
         max_entries = params.try_get_extra('max_entries', 0)
-        return AttachableFieldListField(*self._params_to_args(), field, min_entries, max_entries)
+        return AttachableFieldListField(*self._params_to_args(params), field, min_entries, max_entries)
 
     def make_object_attribute(self, params: ObjectAttributeParameters) -> BaseAttachableAttribute:
         # MEMO: Ensures crash if form_type is missing
         form_type = params.get_extra()['form_type']
-        return AttachableFormField(*self._params_to_args(), form_type)
+        return AttachableFormField(*self._params_to_args(params), form_type)
 
 
-def make_field_firstname(extra_validators: Iterable = []) -> AttachableField:
-    # MEMO: Must have same attribute names as FirstnameColumn
+def make_field_firstname(extra_validators: Iterable = None) -> AttachableField:
+    extra_validators: Iterable = extra_validators or []
+
     def get_firstname(self) -> str:
         return getattr(self, ATTRIBUTE_NAME_FIRSTNAME).data
 
     return AttachableStringField(ATTRIBUTE_NAME_FIRSTNAME, 'Etunimi *', [length(max=50)] + list(extra_validators), get_firstname)
 
 
-def make_field_lastname(extra_validators: Iterable = []) -> AttachableField:
-    # MEMO: Must have same attribute names as LastnameColumn
+def make_field_lastname(extra_validators: Iterable = None) -> AttachableField:
+    extra_validators: Iterable = extra_validators or []
+
     def get_lastname(self) -> str:
         return getattr(self, ATTRIBUTE_NAME_LASTNAME).data
 
     return AttachableStringField(ATTRIBUTE_NAME_LASTNAME, 'Sukunimi *', [length(max=50)] + list(extra_validators), get_lastname)
 
 
-def make_field_email(extra_validators: Iterable = []) -> AttachableField:
-    # MEMO: Must have same attribute names as EmailColumn
+def make_field_email(extra_validators: Iterable = None) -> AttachableField:
+    extra_validators: Iterable = extra_validators or []
+
     def get_email(self) -> str:
         return getattr(self, ATTRIBUTE_NAME_EMAIL).data
 
     return AttachableStringField(ATTRIBUTE_NAME_EMAIL, 'Sähköposti *', [Email(), length(max=100)] + list(extra_validators), get_email)
 
 
-def make_field_phone_number(extra_validators: Iterable = []) -> AttachableField:
-    # MEMO: Must have same attribute names as PhoneNumberColumn
+def make_field_phone_number(extra_validators: Iterable = None) -> AttachableField:
+    extra_validators: Iterable = extra_validators or []
+
     def get_phone_number(self) -> str:
         return getattr(self, ATTRIBUTE_NAME_PHONE_NUMBER).data
 
     return AttachableStringField(ATTRIBUTE_NAME_PHONE_NUMBER, 'Puhelinnumero *', [length(max=20)] + list(extra_validators), get_phone_number)
 
 
-def make_field_departure_location(choices: List[Tuple[str, str]], extra_validators: Iterable = []) -> AttachableField:
-    # MEMO: Must have same attribute names as DepartureBusstopColumn
+def make_field_departure_location(choices: List[Tuple[str, str]], extra_validators: Iterable = None) -> AttachableField:
+    extra_validators: Iterable = extra_validators or []
+
     def get_departure_location(self) -> str:
         return getattr(self, ATTRIBUTE_NAME_DEPARTURE_LOCATION).data
 
     return AttachableSelectField(ATTRIBUTE_NAME_DEPARTURE_LOCATION, 'Lähtöpaikka *', [length(max=50)] + list(extra_validators), get_departure_location, choices)
 
 
-def make_field_quota(label: str, choices: List[Tuple[str, str]], extra_validators: Iterable = []) -> AttachableField:
-    # MEMO: Must have same attribute names as QuotaColumn
+def make_field_quota(label: str, choices: List[Tuple[str, str]], extra_validators: Iterable = None) -> AttachableField:
+    extra_validators: Iterable = extra_validators or []
+
     def get_quota(self) -> str:
         return getattr(self, ATTRIBUTE_NAME_QUOTA).data
 
@@ -384,7 +377,7 @@ def make_field_quota(label: str, choices: List[Tuple[str, str]], extra_validator
 
 
 def make_field_name_consent(txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla') -> AttachableField:
-    # MEMO: Must have same attribute name as the correspoding one in BasicModel
+
     def get_name_consent(self) -> bool:
         return getattr(self, ATTRIBUTE_NAME_NAME_CONSENT).data
 
@@ -395,12 +388,10 @@ def make_field_name_consent(txt: str = 'Sallin nimeni julkaisemisen osallistujal
 
 
 def make_field_binding_registration_consent(txt: str = 'Ymmärrän, että ilmoittautuminen on sitova *') -> AttachableField:
-    # MEMO: Must have same attribute names as BindingRegistrationConsentColumn
     return AttachableBoolField('binding_registration_consent', txt, [DataRequired()], None)
 
 
 def make_field_privacy_consent(txt: str = 'Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä *'):
-    # MEMO: Must have same attribute names as model type
     return AttachableBoolField(ATTRIBUTE_NAME_PRIVACY_CONSENT, txt, [DataRequired()], None)
 
 

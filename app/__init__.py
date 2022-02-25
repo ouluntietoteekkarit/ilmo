@@ -12,7 +12,7 @@ from config import Config
 from .config import load_auth_config
 
 if TYPE_CHECKING:
-    from app.forms.forms_util.form_module import ModuleInfo
+    from app.form_lib.form_module import ModuleInfo
 
 
 def load_form_modules() -> List:

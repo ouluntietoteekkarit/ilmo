@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator
 
-from app.forms.forms_util.form_controller import Quota
+from app.form_lib.form_controller import Quota
 
 
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
@@ -16,6 +16,7 @@ ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS = 'optional_participants'
 ATTRIBUTE_NAME_OTHER_ATTRIBUTES = 'other_attributes'
 ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
 ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
+ATTRIBUTE_NAME_BIDING_REGISTRATION_CONSENT = 'binding_registration_consent'
 
 
 class TypeFactory(ABC):
