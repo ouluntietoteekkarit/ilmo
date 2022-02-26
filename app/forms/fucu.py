@@ -6,10 +6,12 @@ from app import db
 from app.email import EmailRecipient, make_greet_line
 from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import get_str_choices, get_quota_choices
+from app.form_lib.forms import get_str_choices, get_quota_choices, choices_to_enum
 from app.form_lib.models import BasicModel, basic_model_csv_map, departure_location_csv_map, phone_number_csv_map
-from app.form_lib.util import make_attribute_required_participants, make_attribute_phone_number, \
-    make_attribute_departure_location, make_attribute_quota, make_attribute_name_consent, make_attribute_privacy_consent
+from app.form_lib.util import make_types
+from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
+    make_attribute_phone_number, make_attribute_departure_location, make_attribute_quota, make_attribute_name_consent, \
+    make_attribute_privacy_consent, make_attribute_required_participants
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -40,19 +42,27 @@ def _get_quotas() -> List[Quota]:
     ]
 
 
-partial_attributes = [
-    make_attribute_required_participants(_Participant),
-    make_attribute_phone_number(validators=[InputRequired()]),
-    make_attribute_departure_location(get_str_choices(_get_departure_stops()), validators=[InputRequired()]),
-    make_attribute_quota('Kiintiö *', get_quota_choices(_get_quotas()), validators=[InputRequired()]),
+_DepartureLocationEnum = choices_to_enum(_form_name, 'departure_location', _get_departure_stops())
+_QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
+
+participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+    make_attribute_email(),
+] + [
+    make_attribute_phone_number(),
+    make_attribute_departure_location(_DepartureLocationEnum),
+    make_attribute_quota(_QuotaEnum)
+]
+
+other_attributes = [
     make_attribute_name_consent(),
     make_attribute_privacy_consent()
 ]
 
-
-class _Model(BasicModel): #, PhoneNumberColumn, DepartureBusstopColumn):
-    __tablename__ = _form_name
-    kiintio = db.Column(db.String(32))
+types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+_Model = types.get_model_type()
+_Form = types.get_form_type()
 
 
 class _Controller(FormController):
@@ -64,7 +74,7 @@ class _Controller(FormController):
         email = model.get_email()
         phone_number = model.get_phone_number()
         departure_location = model.get_departure_location()
-        quota = model.kiintio
+        quota = model.get_quota()
         if reserve:
             return ' '.join([
                 make_greet_line(recipient),

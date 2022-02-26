@@ -16,7 +16,7 @@ from app.form_lib.lib import BaseAttachableAttribute, BaseModel, BaseOtherAttrib
     ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, AttributeFactory, \
     ObjectAttribute, IntAttribute, ListAttribute, DatetimeAttribute, BoolAttribute, \
     StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, EnumAttribute, attributes_to_fields
-from app.form_lib.util import make_attribute_required_participants, make_attribute_optional_participants,\
+from app.form_lib.common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
     make_attribute_form_attributes
 
 
@@ -67,7 +67,7 @@ class _ParticipantFormBuilder(BaseFormBuilder):
         return self._do_build(base_type, required)
 
 
-class _FormAttributesBuilder(BaseFormBuilder):
+class _OtherAttributesBuilder(BaseFormBuilder):
 
     def build(self, base_type: Type[FormAttributesForm] = None) -> Type[FormAttributesForm]:
         if not base_type:
@@ -165,10 +165,9 @@ class FlatFormField(FormField):
 
 class _AttachableField(BaseAttachableAttribute, ABC):
     def __init__(self, attribute_name: str, label: str, validators: Iterable, getter: Union[Callable[[Any], Any], None]):
-        self._attribute_name = attribute_name
+        super().__init__(attribute_name, getter)
         self._label = label
         self._validators = validators
-        self._getter = getter
 
 
 class _AttachableIntField(_AttachableField):
@@ -266,23 +265,27 @@ class FormTypeFactory(TypeFactory):
 
     def make_type(self):
         factory = _FormAttributeFactory()
-        required_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(
-            attributes_to_fields(factory, self._required_participant_attributes)
-        ).build()
-        optional_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(
-            attributes_to_fields(factory, self._optional_participant_attributes)
-        ).build()
-        other_attributes: Type[FormAttributesForm] = _FormAttributesBuilder().add_fields(
-            attributes_to_fields(factory, self._other_attributes)
-        ).build()
+        form_attributes = []
 
-        return _FormBuilder().add_fields(
-            attributes_to_fields(factory, [
-                make_attribute_required_participants(required_participant, 1),
-                make_attribute_optional_participants(optional_participant, 1),
-                make_attribute_form_attributes(other_attributes)
-            ])
-        ).build()
+        if len(self._required_participant_attributes) > 0:
+            fields = attributes_to_fields(factory, self._required_participant_attributes)
+            required_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(fields).build()
+            tmp = make_attribute_required_participants(required_participant, self._required_participant_count)
+            form_attributes.append(tmp)
+
+        if len(self._optional_participant_attributes) > 0:
+            fields = attributes_to_fields(factory, self._optional_participant_attributes)
+            optional_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(fields).build()
+            tmp = make_attribute_optional_participants(optional_participant, self._optional_participant_count)
+            form_attributes.append(tmp)
+
+        if len(self._other_attributes) > 0:
+            fields = attributes_to_fields(factory, self._other_attributes)
+            other_attributes: Type[FormAttributesForm] = _OtherAttributesBuilder().add_fields(fields).build()
+            tmp = make_attribute_form_attributes(other_attributes)
+            form_attributes.append(tmp)
+
+        return _FormBuilder().add_fields(attributes_to_fields(factory, form_attributes)).build()
 
 
 class _FormAttributeFactory(AttributeFactory):
@@ -336,6 +339,13 @@ class _FormAttributeFactory(AttributeFactory):
         # MEMO: Ensures crash if form_type is missing
         form_type = params.get_object_type()
         return _AttachableFormField(*self._params_to_args(params), form_type)
+
+
+def choices_to_enum(form_name: str, enum_name: str, values: Iterable[str]) -> Type[Enum]:
+    # TODO: Test with and without name
+    name = '' # '{}_{}'.format(form_name, enum_name)
+    enum_type: Type[Enum] = Enum(name, values)
+    return enum_type
 
 
 def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:

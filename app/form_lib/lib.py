@@ -1,10 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator
+from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator, Collection, TypeVar, Generic
 
 from app.form_lib.form_controller import Quota
-
 
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
@@ -22,12 +21,16 @@ ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT = 'binding_registration_consent'
 
 class TypeFactory(ABC):
     def __init__(self,
-                 required_participant_attributes: Iterable[BaseAttribute],
-                 optional_participant_attributes: Iterable[BaseAttribute],
-                 other_attributes: Iterable[BaseAttribute]):
+                 required_participant_attributes: Collection[BaseAttribute],
+                 optional_participant_attributes: Collection[BaseAttribute],
+                 other_attributes: Collection[BaseAttribute],
+                 required_participant_count: int,
+                 optional_participant_count: int):
         self._required_participant_attributes = required_participant_attributes
         self._optional_participant_attributes = optional_participant_attributes
         self._other_attributes = other_attributes
+        self._required_participant_count = required_participant_count
+        self._optional_participant_count = optional_participant_count
 
     @abstractmethod
     def make_type(self) -> Type[BaseModel]:
@@ -129,7 +132,7 @@ class BaseModel(BaseFormComponent):
 
 
 class BaseAttachableAttribute(ABC):
-    def __init(self, attribute_name: str, getter: Union[Callable[[Any], Any], None]):
+    def __init__(self, attribute_name: str, getter: Union[Callable[[Any], Any], None]):
         self._attribute_name = attribute_name
         self._getter = getter
 
@@ -157,6 +160,9 @@ class NullAttachableAttribute(BaseAttachableAttribute):
         return None
 
 
+T = TypeVar('T', bound=BaseFormComponent)
+
+
 class BaseTypeBuilder(ABC):
     def __init__(self):
         self._fields: List[BaseAttachableAttribute] = []
@@ -176,10 +182,10 @@ class BaseTypeBuilder(ABC):
         return self
 
     @abstractmethod
-    def build(self, base_type: Type[BaseFormComponent] = None) -> Type[BaseFormComponent]:
+    def build(self, base_type: Type[Generic[T]] = None) -> Type[Generic[T]]:
         pass
 
-    def _do_build(self, base_type: Type[BaseFormComponent], required: Dict[str, bool]):
+    def _do_build(self, base_type: Type[Generic[T]], required: Dict[str, bool]) -> Type[Generic[T]]:
         for field in self._fields:
             field.attach_to(base_type)
 
@@ -189,6 +195,8 @@ class BaseTypeBuilder(ABC):
         for attr, value in required.items():
             if not value:
                 raise Exception(attr + "is a mandatory attribute of " + base_type.__name__)
+
+        return base_type
 
 
 class BaseAttribute(ABC):
@@ -302,20 +310,34 @@ class ObjectAttribute(BaseAttribute):
 
 
 def attributes_to_fields(factory: AttributeFactory,
-                         params_collection: Iterable[BaseAttribute]
+                         attributes: Iterable[BaseAttribute]
                          ) -> Iterator[BaseAttachableAttribute]:
-    for params in params_collection:
-        if isinstance(params, IntAttribute):
-            yield factory.make_int_attribute(params)
-        elif isinstance(params, StringAttribute):
-            yield factory.make_string_attribute(params)
-        elif isinstance(params, BoolAttribute):
-            yield factory.make_bool_attribute(params)
-        elif isinstance(params, DatetimeAttribute):
-            yield factory.make_datetime_attribute(params)
-        elif isinstance(params, ListAttribute):
-            yield factory.make_list_attribute(params)
-        elif isinstance(params, ObjectAttribute):
-            yield factory.make_object_attribute(params)
+    for attribute in attributes:
+        if isinstance(attribute, IntAttribute):
+            yield factory.make_int_attribute(attribute)
+        elif isinstance(attribute, StringAttribute):
+            yield factory.make_string_attribute(attribute)
+        elif isinstance(attribute, BoolAttribute):
+            yield factory.make_bool_attribute(attribute)
+        elif isinstance(attribute, DatetimeAttribute):
+            yield factory.make_datetime_attribute(attribute)
+        elif isinstance(attribute, ListAttribute):
+            yield factory.make_list_attribute(attribute)
+        elif isinstance(attribute, ObjectAttribute):
+            yield factory.make_object_attribute(attribute)
+        elif isinstance(attribute, EnumAttribute):
+            yield factory.make_enum_attribute(attribute)
         else:
-            raise Exception("Invalid attribute parameter type.")
+            raise Exception("Invalid attribute parameter type. " + str(type(attribute)))
+
+
+class TypeContainer:
+    def __init__(self, model_type, form_type):
+        self._model_type = model_type
+        self._form_type = form_type
+
+    def get_model_type(self):
+        return self._model_type
+
+    def get_form_type(self):
+        return self._form_type

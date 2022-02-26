@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from enum import Enum
-from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict
+from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict, Collection
 
 from app import db
 from .lib import BaseParticipant, BaseOtherAttributes, BaseModel, BaseAttachableAttribute, BaseFormComponent, \
@@ -10,7 +10,7 @@ from .lib import BaseParticipant, BaseOtherAttributes, BaseModel, BaseAttachable
     ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, BaseAttribute, ObjectAttribute, \
     ListAttribute, DatetimeAttribute, BoolAttribute, StringAttribute, IntAttribute, EnumAttribute, \
     attributes_to_fields
-from .util import make_attribute_required_participants, make_attribute_optional_participants, \
+from .common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
     make_attribute_form_attributes
 
 """
@@ -55,34 +55,47 @@ class ModelAttributesModel(db.Model, BaseOtherAttributes):
 class BasicModel(db.Model, BaseModel):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True)
+    create_time = db.Column(db.DateTime())
 
 
 class DbTypeFactory(TypeFactory):
-    def __init__(self, required_participant_attributes: Iterable[BaseAttribute],
-                 optional_participant_attributes: Iterable[BaseAttribute],
-                 other_attributes: Iterable[BaseAttribute],
+    def __init__(self,
+                 required_participant_attributes: Collection[BaseAttribute],
+                 optional_participant_attributes: Collection[BaseAttribute],
+                 other_attributes: Collection[BaseAttribute],
+                 required_participant_count: int,
+                 optional_participant_count: int,
                  form_name: str):
-        super().__init__(required_participant_attributes, optional_participant_attributes, other_attributes)
+        super().__init__(required_participant_attributes,
+                         optional_participant_attributes,
+                         other_attributes,
+                         required_participant_count,
+                         optional_participant_count)
         self._form_name = form_name
 
     def make_type(self):
         factory = _DbAttributeFactory()
-        required_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name).add_fields(
-            attributes_to_fields(factory, self._required_participant_attributes)
-        ).build()
-        optional_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name).add_fields(
-            attributes_to_fields(factory, self._optional_participant_attributes)
-        ).build()
-        other_attributes: Type[ModelAttributesModel] = _ModelAttributesBuilder(self._form_name).add_fields(
-            attributes_to_fields(factory, self._other_attributes)
-        ).build()
-        return _ModelBuilder(self._form_name).add_fields(
-            attributes_to_fields([
-                make_attribute_required_participants(required_participant),
-                make_attribute_optional_participants(optional_participant),
-                make_attribute_form_attributes(other_attributes)
-            ])
-        ).build()
+        form_attributes = []
+
+        if len(self._required_participant_attributes) > 0:
+            fields = attributes_to_fields(factory, self._required_participant_attributes)
+            required_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name).add_fields(fields).build()
+            tmp = make_attribute_required_participants(required_participant)
+            form_attributes.append(tmp)
+
+        if len(self._optional_participant_attributes) > 0:
+            fields = attributes_to_fields(factory, self._optional_participant_attributes)
+            optional_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name).add_fields(fields).build()
+            tmp = make_attribute_optional_participants(optional_participant)
+            form_attributes.append(tmp)
+
+        if len(self._other_attributes) > 0:
+            fields = attributes_to_fields(factory, self._other_attributes)
+            other_attributes: Type[ModelAttributesModel] = _OtherAttributesBuilder(self._form_name).add_fields(fields).build()
+            tmp = make_attribute_form_attributes(other_attributes)
+            form_attributes.append(tmp)
+
+        return _ModelBuilder(self._form_name).add_fields(attributes_to_fields(factory, form_attributes)).build()
 
 
 class _DbAttributeFactory(AttributeFactory):
@@ -132,6 +145,7 @@ class _DbAttributeFactory(AttributeFactory):
 
 class _BaseDbBuilder(BaseTypeBuilder, ABC):
     def __init__(self, form_name: str):
+        super().__init__()
         self._form_name = form_name
 
 
@@ -166,7 +180,7 @@ class _ParticipantModelBuilder(_BaseDbBuilder):
         return self._do_build(base_type, required)
 
 
-class _ModelAttributesBuilder(_BaseDbBuilder):
+class _OtherAttributesBuilder(_BaseDbBuilder):
 
     def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
         if not base_type:
@@ -182,8 +196,8 @@ class _ModelAttributesBuilder(_BaseDbBuilder):
 
 
 class _AttachableColumn(BaseAttachableAttribute, ABC):
-    def __init__(self, *args, **kwargs):
-        super(_AttachableColumn, self).__init__(*args, **kwargs)
+    def __init__(self, attribute_name: str, getter: Union[Callable[[Any], Any], None]):
+        super().__init__(attribute_name, getter)
 
 
 class _AttachableStringColumn(_AttachableColumn):
@@ -236,7 +250,7 @@ class _AttachableRelationshipColumn(_AttachableColumn):
         self._model_class = model_class
 
     def _make_field_value(self) -> Any:
-        return db.Column(db.relationship(self._model_class.__name__))
+        return db.relationship(self._model_class.__name__)
 
 
 def basic_model_csv_map() -> List[Tuple[str, str]]:
