@@ -153,7 +153,18 @@ class FormController(ABC):
 
         model = self._form_to_model(form, nowtime)
         if self._insert_model(model):
-            reserve = registrations.get_participant_count() + model.get_participant_count() >= event.get_participant_limit()
+
+
+            # MEMO: Temporary hack to does not work with group registrations.
+            registration_quotas = self._count_registration_quotas(event.get_quotas(), registrations.get_entries())
+            quotas = event.get_quotas()
+            for quota_count in form.get_quota_counts():
+                participant_limit = quotas[quota_count.get_name()].get_quota()
+                reserve = registration_quotas[quota_count.get_name()] + quota_count.get_quota() >= participant_limit
+                break
+
+
+            # reserve = registrations.get_participant_count() + model.get_participant_count() >= event.get_participant_limit()
             flash(_make_success_msg(reserve))
             self._send_emails(model, reserve)
 
