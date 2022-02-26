@@ -45,29 +45,40 @@ class DbTypeFactory(TypeFactory):
                          optional_participant_count)
         self._form_name = form_name
 
-    def make_type(self):
+    def _establish_relationships(self, parent: db.Model, child_tables: Iterable[db.Model]) -> None:
+        parent_id_column = "{}.id".format(parent.__tablename__)
+        for table in child_tables:
+            table.parent_id = db.Column(db.Integer, db.ForeignKey(parent_id_column))
+
+    def make_type(self) -> Type[BasicModel]:
         factory = _DbAttributeFactory()
         form_attributes = []
+        model_types = []
 
         if len(self._required_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._required_participant_attributes)
             required_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name, 'required').add_fields(fields).build()
+            model_types.append(required_participant)
             tmp = make_attribute_required_participants(required_participant)
             form_attributes.append(tmp)
 
         if self._optional_participant_count > 0 and len(self._optional_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._optional_participant_attributes)
             optional_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name, 'optional').add_fields(fields).build()
+            model_types.append(optional_participant)
             tmp = make_attribute_optional_participants(optional_participant)
             form_attributes.append(tmp)
 
         if len(self._other_attributes) > 0:
             fields = attributes_to_fields(factory, self._other_attributes)
             other_attributes: Type[ModelAttributesModel] = _OtherAttributesBuilder(self._form_name).add_fields(fields).build()
+            model_types.append(other_attributes)
             tmp = make_attribute_form_attributes(other_attributes)
             form_attributes.append(tmp)
 
-        return _ModelBuilder(self._form_name).add_fields(attributes_to_fields(factory, form_attributes)).build()
+        model = _ModelBuilder(self._form_name).add_fields(attributes_to_fields(factory, form_attributes)).build()
+        self._establish_relationships(model, model_types)
+        return model
 
 
 class _DbAttributeFactory(AttributeFactory):
@@ -125,10 +136,8 @@ class _ModelBuilder(_BaseDbBuilder):
 
     def build(self, base_type: Type[Union[db.Model, BasicModel]] = None) -> Type[Union[db.Model, BasicModel]]:
         if not base_type:
-            class TmpModel(BasicModel):
-                __tablename__ = self._form_name
-
-            base_type = TmpModel
+            name = self._form_name
+            base_type = type(name, (BasicModel,), {'__tablename__': name})
 
         required = {
             ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
@@ -144,10 +153,8 @@ class _ParticipantModelBuilder(_BaseDbBuilder):
 
     def build(self, base_type: Type[Union[db.Model, BasicParticipantModel]] = None) -> Type[Union[db.Model, BasicParticipantModel]]:
         if not base_type:
-            class TmpModel(BasicParticipantModel):
-                __tablename__ = "{}_{}_participant".format(self._form_name, self._participant_type)
-
-            base_type = TmpModel
+            name = "{}_{}_participant".format(self._form_name, self._participant_type)
+            base_type = type(name, (BasicParticipantModel,), {'__tablename__': name})
 
         required = {
             ATTRIBUTE_NAME_FIRSTNAME: hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME),
@@ -160,10 +167,8 @@ class _OtherAttributesBuilder(_BaseDbBuilder):
 
     def build(self, base_type: Type[Union[db.Model, ModelAttributesModel]] = None) -> Type[Union[db.Model, ModelAttributesModel]]:
         if not base_type:
-            class TmpModel(ModelAttributesModel):
-                __tablename__ = self._form_name + "_attributes"
-
-            base_type = TmpModel
+            name = self._form_name + "_attributes"
+            base_type = type(name, (ModelAttributesModel,), {'__tablename__': name})
 
         required = {
             ATTRIBUTE_NAME_PRIVACY_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
@@ -226,7 +231,7 @@ class _AttachableRelationshipColumn(_AttachableColumn):
         self._model_class = model_class
 
     def _make_field_value(self) -> Any:
-        return db.relationship(self._model_class.__name__)
+        return db.relationship(self._model_class)
 
 
 def basic_model_csv_map() -> List[Tuple[str, str]]:

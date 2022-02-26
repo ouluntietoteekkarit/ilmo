@@ -358,7 +358,7 @@ class _FormAttributeFactory(AttributeFactory):
 
 def choices_to_enum(form_name: str, enum_name: str, values: Iterable[str]) -> Type[Enum]:
     # TODO: Test with and without name
-    name = '' # '{}_{}'.format(form_name, enum_name)
+    name = '{}_{}'.format(form_name, enum_name)
     enum_type: Type[Enum] = Enum(name, values)
     return enum_type
 

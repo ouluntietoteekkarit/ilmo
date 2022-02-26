@@ -1,20 +1,19 @@
 from datetime import datetime
-from typing import List, Dict, Collection
+from enum import Enum
+from typing import List, Dict, Collection, Iterable, Type
 
-from wtforms import SelectField, StringField
-from wtforms.validators import InputRequired, length, DataRequired
-
-from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from .forms_util.form_controller import FormController, FormContext, DataTableInfo, Event, EventRegistrations, Quota
-from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import BasicForm, get_str_choices, GuildField, get_quota_choices, RequiredIfValue, \
-    DepartureBusstopField, ShowNameConsentField
-from .forms_util.guilds import GUILD_SIK, GUILD_OTIT
-from .forms_util.models import BasicModel, basic_model_csv_map, DepartureBusstopColumn, departure_busstop_csv_map
+from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
+from app.form_lib.forms import get_quota_choices, choices_to_enum
+from app.form_lib.guilds import GUILD_SIK, GUILD_OTIT
+from app.form_lib.models import basic_model_csv_map, departure_location_csv_map
+from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
+    make_attribute_quota, make_attribute_departure_location, make_attribute_name_consent, make_attribute_privacy_consent
+from app.form_lib.lib import StringAttribute, EnumAttribute
+from app.form_lib.util import make_types
 
 _form_name = file_path_to_form_name(__file__)
-
 
 _QUOTA_WITH_ACCOMODATION = GUILD_OTIT + ' (majoituksella)'
 _QUOTA_WITHOUT_ACCOMICATION = GUILD_SIK + ' (ei majoitusta)'
@@ -31,7 +30,6 @@ _ROOM_COMPOSITION_NO_PREFERENCE = 'Ei väliä'
 
 def _get_sexes() -> List[str]:
     return [
-        '',
         'Mies',
         'Nainen',
         'Muu'
@@ -55,46 +53,56 @@ def _get_departure_stops() -> List[str]:
 
 def _get_room_sex_options() -> List[str]:
     return [
-        '',
         _ROOM_COMPOSITION_SAME_SEX,
         _ROOM_COMPOSITION_NO_PREFERENCE
     ]
 
-@ShowNameConsentField()
-@DepartureBusstopField(get_str_choices(_get_departure_stops()))
-class _Form(BasicForm):
-    quota = SelectField('Kiintiö *', choices=get_quota_choices(_get_quotas()), validators=[InputRequired()])
-    roommate_preference = StringField('Huonekaveri toiveet (max 2)', validators=[
-        length(max=100),
-        RequiredIfValue(other_field_name='quota', value=_QUOTA_WITH_ACCOMODATION)])
-    room_sex_composition = SelectField(
-        'Haluatko majoittua samaa sukupuolta olevien kanssa?',
-        choices=get_str_choices(_get_room_sex_options()), validators=[])
-    sex = SelectField('Sukupuoli', choices=get_str_choices(_get_sexes()), validators=[
-        RequiredIfValue(other_field_name='room_sex_composition', value=_ROOM_COMPOSITION_SAME_SEX)])
-    allergies = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
 
-    def get_quota_counts(self) -> List[Quota]:
-        return [Quota(self.quota.data, 1)]
+def _make_attribute_roommate_preference(validators: Iterable = None):
+    return StringAttribute('roommate_preference', 'Huonekaveri toiveet (max 2)', 'Huonekaveri toiveet', 100, validators=validators)
 
 
-class _Model(BasicModel, DepartureBusstopColumn):
-    __tablename__ = _form_name
-    quota = db.Column(db.String(64))
-    roommate_preference = db.Column(db.String(100))
-    room_sex_composition = db.Column(db.String(24))
-    sex = db.Column(db.String(16))
-    allergies = db.Column(db.String(200))
+def _make_attribute_room_sex_composition(sex_composition_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('room_sex_composition', 'Haluatko majoittua samaa sukupuolta olevien kanssa?', 'huonekaverien sukupuoli', sex_composition_enum, validators=validators)
+
+
+def _make_attribute_sex(sex_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('sex', 'Sukupuoli', 'Sukupuoli', sex_enum, validators=validators)
+
+
+def _make_attribute_allergies(validators: Iterable = None):
+    return StringAttribute('allergies', 'Erityisruokavaliot/allergiat', 'Erityisruokavaliot', 200, validators=validators)
+
+
+_DepartureEnum = choices_to_enum(_form_name, 'departure', _get_departure_stops())
+_QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
+_SexCompositionEnum = choices_to_enum(_form_name, 'sex_compositin', _get_room_sex_options())
+_SexEnum = choices_to_enum(_form_name, 'sex', _get_sexes())
+
+participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+    make_attribute_email(),
+] + [
+    make_attribute_departure_location(_DepartureEnum),
+    make_attribute_quota(_QuotaEnum),
+    _make_attribute_roommate_preference(),
+    _make_attribute_room_sex_composition(_SexCompositionEnum),
+    _make_attribute_sex(_SexEnum),
+    _make_attribute_allergies()
+]
+
+other_attributes = [
+    make_attribute_name_consent(),
+    make_attribute_privacy_consent()
+]
+
+types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+_Form = types.get_form_type()
+_Model = types.get_model_type()
 
 
 class _Controller(FormController):
-
-    def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[_Model]) -> Dict[str, int]:
-        registration_quotas = dict.fromkeys(event_quotas.keys(), 0)
-        for entry in entries:
-            registration_quotas[entry.quota] += 1
-
-        return registration_quotas
 
     # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
@@ -119,7 +127,7 @@ Jos tulee kysyttävää voit olla sähköpostitse yhteydessä kulttuuriministeri
 
 _data_table_info = DataTableInfo(
     basic_model_csv_map() +
-    departure_busstop_csv_map() +
+    departure_location_csv_map() +
     [('quota', 'kiintiö'),
      ('roommate_preference', 'huonekaveri toiveet'),
      ('room_sex_composition', 'huonekaverien sukupuoli'),

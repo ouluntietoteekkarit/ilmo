@@ -1,82 +1,49 @@
 from wtforms import StringField
 from wtforms.validators import DataRequired, length, InputRequired
 from datetime import datetime
-from typing import List
+from typing import List, Iterable
 
 from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line, make_fullname_line
+from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
+    make_attribute_phone_number, make_attribute_quota, make_attribute_name_consent, \
+    make_attribute_binding_registration_consent, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import get_guild_choices, FormBuilder, ParticipantFormBuilder, \
-    make_field_binding_registration_consent, make_field_name_consent, make_field_quota, make_field_phone_number, \
-    make_field_email, make_field_lastname, make_field_firstname, make_field_required_participants, \
-    make_field_optional_participants, make_field_privacy_consent
+from app.form_lib.forms import get_guild_choices, choices_to_enum
 from app.form_lib.guilds import *
 from app.form_lib.form_controller import FormController, DataTableInfo, Event
-from app.form_lib.lib import Quota
+from app.form_lib.lib import Quota, StringAttribute
 from app.form_lib.models import BasicModel, basic_model_csv_map, binding_registration_csv_map,\
     phone_number_csv_map, guild_name_csv_map
+from app.form_lib.util import make_types
 
 _form_name = file_path_to_form_name(__file__)
 
 
-_Participant = ParticipantFormBuilder().add_fields([
-    make_field_firstname([InputRequired()]),
-    make_field_lastname([InputRequired()]),
-    make_field_email([InputRequired()]),
-    make_field_phone_number([InputRequired()]),
-    make_field_quota('Kilta *', get_guild_choices(get_all_guilds()), [InputRequired()]),
-]).build()
-
-_Form = FormBuilder().add_fields([
-    make_field_required_participants(_Participant, 3),
-    make_field_optional_participants(_Participant, 1),
-    make_field_name_consent('Sallin joukkueen nimen julkaisemisen osallistujalistassa'),
-    make_field_binding_registration_consent(),
-    make_field_privacy_consent()
-]).build()
-
-_Form.teamname = StringField('Joukkueen nimi *', validators=[DataRequired(), length(max=100)])
+def _make_attribute_teamname(validators: Iterable = None):
+    return StringAttribute('teamname', 'Joukkueen nimi *', 'Joukkueen nimi', 100, validators=validators)
 
 
-class _Model(BasicModel): #, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
-    __tablename__ = _form_name
-    teamname = db.Column(db.String(128))
+_GuildEnum = choices_to_enum(_form_name, 'guild', get_guild_choices(get_all_guilds()))
 
-    kilta0 = db.Column(db.String(16))
+required_participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+    make_attribute_email(),
+    make_attribute_phone_number(),
+    make_attribute_quota(_GuildEnum, 'Kilta *', 'Kilta'),
+]
+optional_participant_attributes = required_participant_attributes
+other_attributes = [
+    _make_attribute_teamname(),
+    make_attribute_name_consent('Sallin joukkueen nimen julkaisemisen osallistujalistassa'),
+    make_attribute_binding_registration_consent(),
+    make_attribute_privacy_consent()
+]
 
-    etunimi1 = db.Column(db.String(64))
-    sukunimi1 = db.Column(db.String(64))
-    phone1 = db.Column(db.String(32))
-    email1 = db.Column(db.String(128))
-    kilta1 = db.Column(db.String(16))
-
-    etunimi2 = db.Column(db.String(64))
-    sukunimi2 = db.Column(db.String(64))
-    phone2 = db.Column(db.String(32))
-    email2 = db.Column(db.String(128))
-    kilta2 = db.Column(db.String(16))
-
-    etunimi3 = db.Column(db.String(64))
-    sukunimi3 = db.Column(db.String(64))
-    phone3 = db.Column(db.String(32))
-    email3 = db.Column(db.String(128))
-    kilta3 = db.Column(db.String(16))
-
-    personcount = db.Column(db.Integer())
-
-    def get_participant_count(self) -> int:
-        return int(bool(self.firstname and self.lastname)) \
-             + int(bool(self.etunimi1 and self.sukunimi1)) \
-             + int(bool(self.etunimi2 and self.sukunimi2)) \
-             + int(bool(self.etunimi3 and self.sukunimi3))
-
-    def get_quota_counts(self) -> List[Quota]:
-        return [
-            Quota(self.kilta0, int(bool(self.firstname and self.lastname))),
-            Quota(self.kilta1, int(bool(self.etunimi1 and self.sukunimi1))),
-            Quota(self.kilta2, int(bool(self.etunimi2 and self.sukunimi2))),
-            Quota(self.kilta3, int(bool(self.etunimi3 and self.sukunimi3))),
-        ]
+types = make_types(required_participant_attributes, optional_participant_attributes, other_attributes, 3, 1, _form_name)
+_Form = types.get_form_type()
+_Model = types.get_model_type()
 
 
 class _Controller(FormController):
@@ -103,11 +70,6 @@ class _Controller(FormController):
             make_fullname_line(model.etunimi3, model.sukunimi3), "\n",
             "\n\n", make_signature_line()
         ])
-
-    def _form_to_model(self, form: _Form, nowtime) -> _Model:
-        model = super()._form_to_model(form, nowtime)
-        model.personcount = form.get_participant_count()
-        return model
 
 
 # MEMO: (attribute, header_text)

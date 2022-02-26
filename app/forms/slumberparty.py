@@ -4,43 +4,37 @@ from wtforms import Form
 from wtforms.validators import InputRequired
 
 from app.email import EmailRecipient, make_greet_line, make_signature_line
+from app.form_lib.common_attributes import make_attribute_quota, make_attribute_phone_number, make_attribute_email, \
+    make_attribute_lastname, make_attribute_firstname, make_attribute_name_consent, \
+    make_attribute_binding_registration_consent, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import get_guild_choices, ParticipantFormBuilder, FormBuilder, make_default_participant_form, \
-    make_field_phone_number, make_field_quota, make_field_binding_registration_consent, make_field_name_consent, \
-    make_field_required_participants, make_field_privacy_consent
+from app.form_lib.forms import get_guild_choices, choices_to_enum
 from app.form_lib.guilds import *
 from app.form_lib.form_controller import FormController, DataTableInfo, Event
 from app.form_lib.lib import Quota
 from app.form_lib.models import BasicModel, basic_model_csv_map, phone_number_csv_map, guild_name_csv_map, \
     binding_registration_csv_map
+from app.form_lib.util import make_types
 
 _form_name = file_path_to_form_name(__file__)
 
-_Participant = ParticipantFormBuilder().add_fields([
-    make_field_phone_number([InputRequired()]),
-    make_field_quota('Kilta *', get_guild_choices(get_all_guilds())),
-]).build(make_default_participant_form())
+_GuildEnum = choices_to_enum(_form_name, 'guild', get_guild_choices(get_all_guilds()))
 
-_Form = FormBuilder().add_fields([
-    make_field_required_participants(_Participant),
-    make_field_name_consent(),
-    make_field_binding_registration_consent(),
-    make_field_privacy_consent()
-]).build()
-
-
-class foo:
-
-    def foo(self):
-        raise Exception("asd")
-
-
-class bar(Form, foo):
-    pass
-
-
-class _Model(BasicModel): #, PhoneNumberColumn, GuildColumn, BindingRegistrationConsentColumn):
-    __tablename__ = _form_name
+participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+    make_attribute_email(),
+    make_attribute_phone_number(),
+    make_attribute_quota(_GuildEnum, 'Kilta *', 'Kilta')
+]
+other_attributes = [
+    make_attribute_name_consent(),
+    make_attribute_binding_registration_consent(),
+    make_attribute_privacy_consent()
+]
+types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+_Form = types.get_form_type()
+_Model = types.get_model_type()
 
 
 class _Controller(FormController):

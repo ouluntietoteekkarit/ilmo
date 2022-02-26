@@ -1,16 +1,17 @@
-from wtforms import StringField, RadioField, SelectField
-from wtforms.validators import DataRequired, length
-from datetime import datetime
-from typing import List
+from enum import Enum
 
-from app import db
+from datetime import datetime
+from typing import List, Type, Iterable
+
 from app.email import EmailRecipient, make_greet_line
+from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
+    make_attribute_allergies, make_attribute_privacy_consent, make_attribute_name_consent
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import RequiredIf, get_str_choices, FormBuilder, make_default_participant_form,\
-    make_field_required_participants, make_field_name_consent, make_field_privacy_consent
+from app.form_lib.forms import choices_to_enum
 from app.form_lib.form_controller import FormController, DataTableInfo, Event
-from app.form_lib.lib import Quota
-from app.form_lib.models import BasicModel, basic_model_csv_map
+from app.form_lib.lib import Quota, EnumAttribute
+from app.form_lib.models import basic_model_csv_map
+from app.form_lib.util import make_types
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -47,24 +48,42 @@ def _get_pizzas() -> List[str]:
     ]
 
 
-_Participant = make_default_participant_form()
-_Form = FormBuilder().add_fields([
-    make_field_required_participants(_Participant, 1),
-    make_field_name_consent(),
-    make_field_privacy_consent()
-]).build()
-_Form.alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
-_Form.mieto = SelectField('Mieto juoma *', choices=get_str_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value=_DRINK_ALCOHOLIC)])
-_Form.pitsa = SelectField('Pitsa *', choices=get_str_choices(_get_pizzas()), validators=[DataRequired()])
-_Form.allergiat = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
+def _make_attribute_alcohol(alcohol_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('alcohol', 'Alkoholillinen/Alkoholiton *', 'Alkoholillinen/Alkoholiton', alcohol_enum, validators=validators)
 
 
-class _Model(BasicModel):
-    __tablename__ = _form_name
-    alkoholi = db.Column(db.String(32))
-    mieto = db.Column(db.String(32))
-    pitsa = db.Column(db.String(32))
-    allergiat = db.Column(db.String(256))
+def _make_attribute_drink_strength(drink_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('drink_strength', 'Mieto juoma *', 'Mieto juoma', drink_enum, validators=validators)
+
+
+def _make_attribute_pizza(pizza_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('pizza', 'Pitsa *', 'Pitsa', pizza_enum, validators=validators)
+
+
+_AlcoholEnum = choices_to_enum(_form_name, 'alcohol', _get_drinks())
+_DrinkStrengthEnum = choices_to_enum(_form_name, 'drink_strength', _get_alcoholic_drinks())
+_PizzaEnum = choices_to_enum(_form_name, 'pizza', _get_pizzas())
+
+
+participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+    make_attribute_email(),
+] + [
+    _make_attribute_alcohol(_AlcoholEnum),
+    _make_attribute_drink_strength(_DrinkStrengthEnum),
+    _make_attribute_pizza(_PizzaEnum),
+    make_attribute_allergies()
+]
+
+other_attributes = [
+    make_attribute_name_consent(),
+    make_attribute_privacy_consent()
+]
+
+types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+_Form = types.get_form_type()
+_Model = types.get_model_type()
 
 
 class _Controller(FormController):

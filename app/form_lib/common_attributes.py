@@ -9,7 +9,8 @@ from app.form_lib.lib import BaseAttribute, StringAttribute, ATTRIBUTE_NAME_FIRS
     ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_PHONE_NUMBER, EnumAttribute, ATTRIBUTE_NAME_DEPARTURE_LOCATION, \
     ATTRIBUTE_NAME_QUOTA, BoolAttribute, ATTRIBUTE_NAME_NAME_CONSENT, ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT, \
     ATTRIBUTE_NAME_PRIVACY_CONSENT, BaseParticipant, ListAttribute, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, \
-    ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, BaseOtherAttributes, ObjectAttribute, ATTRIBUTE_NAME_OTHER_ATTRIBUTES
+    ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, BaseOtherAttributes, ObjectAttribute, ATTRIBUTE_NAME_OTHER_ATTRIBUTES, \
+    ATTRIBUTE_NAME_ALLERGIES
 
 
 def make_attribute_firstname(**extra_args: Dict[str, Any]) -> BaseAttribute:
@@ -35,8 +36,12 @@ def make_attribute_departure_location(enum_type: Type[Enum], **extra_args: Dict[
     return EnumAttribute(ATTRIBUTE_NAME_DEPARTURE_LOCATION, 'Lähtöpaikka *', 'Lähtöpaikka', enum_type, **extra_args)
 
 
-def make_attribute_quota(enum_type: Type[Enum], **extra_args: Dict[str, Any]) -> BaseAttribute:
-    return EnumAttribute(ATTRIBUTE_NAME_QUOTA, 'Kiintiö *', 'Kiintiö', enum_type, **extra_args)
+def make_attribute_quota(enum_type: Type[Enum], label: str = 'Kiintiö', short_label: str = 'Kiintiö', **extra_args: Dict[str, Any]) -> BaseAttribute:
+    return EnumAttribute(ATTRIBUTE_NAME_QUOTA, label, short_label, enum_type, **extra_args)
+
+
+def make_attribute_allergies(**extra_args: Dict[str, Any]) -> BaseAttribute:
+    return StringAttribute(ATTRIBUTE_NAME_ALLERGIES, 'Erityisruokavaliot/allergiat', 'Erityisruokavaliot', 200, **extra_args)
 
 
 def make_attribute_name_consent(txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla', **extra_args: Dict[str, Any]) -> BaseAttribute:

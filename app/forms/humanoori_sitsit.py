@@ -57,14 +57,6 @@ def _get_quotas() -> List[Quota]:
     ]
 
 
-class _BaseParticipant(BasicParticipantForm):
-    allergies = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
-    seating_preference = StringField('Pöytäseuratoive', validators=[length(max=50)])
-
-    def get_quota_name(self) -> str:
-        return self.guild_name.data
-
-
 def _make_attribute_drink(drink_enum: Type[Enum], validators: Iterable = None):
     return EnumAttribute('drink', 'Juoma *', 'Juoma', drink_enum, validators=validators)
 

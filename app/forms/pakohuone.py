@@ -1,18 +1,18 @@
-from wtforms import RadioField
-from wtforms.validators import DataRequired, InputRequired
+from enum import Enum
+
 from datetime import datetime
 import json
-from typing import Any, List
+from typing import Any, List, Type, Iterable
 
-from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line
+from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
+    make_attribute_phone_number, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import RequiredIfValue, get_str_choices, BasicForm, ParticipantFormBuilder, \
-    make_field_firstname, make_field_lastname, make_field_phone_number, FormBuilder, make_field_required_participants,\
-    make_field_privacy_consent, make_field_optional_participants, RequiredIf
-from app.form_lib.lib import ATTRIBUTE_NAME_FIRSTNAME, Quota
+from app.form_lib.forms import BasicForm, choices_to_enum
+from app.form_lib.lib import Quota, EnumAttribute
 from app.form_lib.form_controller import FormController, DataTableInfo, Event, EventRegistrations
-from app.form_lib.models import BasicModel, basic_model_csv_map, phone_number_csv_map
+from app.form_lib.models import basic_model_csv_map, phone_number_csv_map
+from app.form_lib.util import make_types
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -42,69 +42,47 @@ def _get_game_times():
     ]
 
 
-_Participant = ParticipantFormBuilder().add_fields([
-    make_field_firstname([InputRequired()]),
-    make_field_lastname([InputRequired()])
-]).build()
-
-_OptionalParticipant = ParticipantFormBuilder().add_fields([
-    make_field_firstname(),
-    make_field_lastname([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)])
-]).build()
-
-_Form = FormBuilder().add_fields([
-    make_field_phone_number([InputRequired()]),
-    make_field_required_participants(_Participant, 5),
-    make_field_optional_participants(_OptionalParticipant, 1),
-    make_field_privacy_consent()
-]).build()
-
-_Form.aika = RadioField('Aika *', choices=get_str_choices(_get_game_times()), validators=[DataRequired()])
-_Form.huone1800 = RadioField('Huone (18:00) *', choices=get_str_choices(_get_escape_games()),
-                             validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
-_Form.huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_escape_games()),
-                             validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
+def _make_time_attribute(time_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('time', 'Aika *', 'Aika', time_enum, validators=validators)
 
 
-class _Model(BasicModel): #, PhoneNumberColumn):
-    __tablename__ = _form_name
-    aika = db.Column(db.String(16))
-    huone1800 = db.Column(db.String(64))
-    huone1930 = db.Column(db.String(64))
+def _make_room1800_attribute(games_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('huone1800', 'Huone (18:00) *', 'Huone (18:00)', games_enum, validators=validators)
 
-    etunimi1 = db.Column(db.String(64))
-    sukunimi1 = db.Column(db.String(64))
 
-    etunimi2 = db.Column(db.String(64))
-    sukunimi2 = db.Column(db.String(64))
+def _make_room1930_attribute(games_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('huone1930', 'Huone (19:30) *', 'Huone (19:30)', games_enum, validators=validators)
 
-    etunimi3 = db.Column(db.String(64))
-    sukunimi3 = db.Column(db.String(64))
 
-    etunimi4 = db.Column(db.String(64))
-    sukunimi4 = db.Column(db.String(64))
+_TimeEnum = choices_to_enum(_form_name, 'time', _get_game_times())
+_GameEnum = choices_to_enum(_form_name, 'game', _get_escape_games())
 
-    etunimi5 = db.Column(db.String(64))
-    sukunimi5 = db.Column(db.String(64))
+participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+]
 
-    def get_participant_count(self) -> int:
-        return int(bool(self.firstname and self.lastname)) \
-             + int(bool(self.etunimi1 and self.sukunimi1)) \
-             + int(bool(self.etunimi2 and self.sukunimi2)) \
-             + int(bool(self.etunimi3 and self.sukunimi3)) \
-             + int(bool(self.etunimi4 and self.sukunimi4)) \
-             + int(bool(self.etunimi5 and self.sukunimi5))
+other_attributes = [
+    make_attribute_email(),
+    make_attribute_phone_number(),
+    _make_time_attribute(_TimeEnum),
+    _make_room1800_attribute(_GameEnum),
+    _make_room1930_attribute(_GameEnum),
+    make_attribute_privacy_consent()
+]
 
-    def get_quota_counts(self) -> List[Quota]:
-        return [
-            Quota.default_quota(int(bool(self.firstname and self.lastname)), 0),
-            Quota.default_quota(int(bool(self.etunimi1 and self.sukunimi1)), 0),
-            Quota.default_quota(int(bool(self.etunimi2 and self.sukunimi2)), 0),
-            Quota.default_quota(int(bool(self.etunimi3 and self.sukunimi3)), 0),
-            Quota.default_quota(int(bool(self.etunimi4 and self.sukunimi4)), 0),
-            Quota.default_quota(int(bool(self.etunimi5 and self.sukunimi5)), 0)
-        ]
+types = make_types(participant_attributes, participant_attributes, other_attributes, 5, 1, _form_name)
+_Form = types.get_form_type()
+_Model = types.get_model_type()
 
+
+# MEMO: Kept here until validation logic has been designed.
+#
+# _Form.aika = RadioField('Aika *', choices=get_str_choices(_get_game_times()), validators=[DataRequired()])
+# _Form.huone1800 = RadioField('Huone (18:00) *', choices=get_str_choices(_get_escape_games()),
+#                              validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
+# _Form.huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_escape_games()),
+#                              validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
 
 class _Controller(FormController):
 
