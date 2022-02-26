@@ -1,19 +1,22 @@
 from datetime import datetime
-from typing import List, Iterable
+from enum import Enum
+from typing import List, Iterable, Type
 
 from wtforms import StringField
 from wtforms.validators import DataRequired, length
 
 from app import db
 from app.email import EmailRecipient, make_greet_line
+from app.form_lib.common_attributes import make_attribute_lastname, make_attribute_firstname, make_attribute_email, \
+    make_attribute_quota
 from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
 from app.form_lib.forms import get_str_choices, RequiredIf, get_quota_choices, BasicParticipantForm, \
-    ParticipantFormBuilder, make_field_firstname, make_field_lastname, make_field_email, AttachableRadioField, \
+    make_field_firstname, make_field_lastname, make_field_email, AttachableRadioField, \
     make_field_quota, FormBuilder, make_field_required_participants, \
     make_field_optional_participants, make_field_privacy_consent, make_field_name_consent, FormAttributesBuilder, \
-    make_field_form_attributes
-from app.form_lib.lib import ATTRIBUTE_NAME_FIRSTNAME
+    make_field_form_attributes, choices_to_enum
+from app.form_lib.lib import ATTRIBUTE_NAME_FIRSTNAME, StringAttribute, EnumAttribute
 from app.form_lib.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA
 from app.form_lib.models import BasicModel, basic_model_csv_map
 
@@ -66,17 +69,39 @@ class _BaseParticipant(BasicParticipantForm):
         return self.guild_name.data
 
 
-def _make_field_drink(validators: Iterable):
-    return AttachableRadioField('drink', 'Juoma *', validators, None, get_str_choices(_get_drinks()))
+def _make_attribute_allergies(validators: Iterable):
+    return StringAttribute('allergies', 'Erityisruokavaliot/allergiat', 'Erityisruokavaliot', 200, validators=validators)
 
 
-def _make_field_liquor(validators: Iterable):
-    return AttachableRadioField('liquor', 'Viinakaato *', validators, None, get_str_choices(_get_liquors()))
+def _make_attribute_searing_preference(validators: Iterable):
+    return StringAttribute('seating_preference', 'Pyötäseuratoive', 'Pyötäseuratoive', 100, validators=validators)
 
 
-def _make_field_wine(validators: Iterable):
-    return AttachableRadioField('wine', 'Viini *', validators, None, get_str_choices(_get_wines()))
+def _make_field_drink(drink_enum: Type[Enum], validators: Iterable):
+    return EnumAttribute('drink', 'Juoma *', 'Juoma', drink_enum, validators=validators)
 
+
+def _make_field_liquor(liquor_enum: Type[Enum], validators: Iterable):
+    return EnumAttribute('liqour', 'Viinakaato *', 'Viinakaato', liquor_enum, validators=validators)
+
+
+def _make_field_wine(wine_enum: Type[Enum], validators: Iterable):
+    return EnumAttribute('wine', 'Viini *', 'Viini', wine_enum, validators=validators)
+
+
+_QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
+_DrinkEnum = choices_to_enum(_form_name, 'drink', _get_drinks())
+_LiquorEnum = choices_to_enum(_form_name, 'liquor', _get_liquors())
+_WineEnum = choices_to_enum(_form_name, 'wine', _get_wines())
+
+participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+    make_attribute_email(),
+] + [
+    make_attribute_quota(_QuotaEnum),
+
+]
 
 _Participant = ParticipantFormBuilder().add_fields([
     make_field_firstname([DataRequired()]),

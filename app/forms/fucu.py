@@ -2,17 +2,16 @@ from wtforms.validators import InputRequired
 from datetime import datetime
 from typing import List
 
-from app import db
 from app.email import EmailRecipient, make_greet_line
 from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import get_str_choices, get_quota_choices, choices_to_enum
-from app.form_lib.models import BasicModel, basic_model_csv_map, departure_location_csv_map, phone_number_csv_map, \
+from app.form_lib.forms import get_quota_choices, choices_to_enum
+from app.form_lib.models import basic_model_csv_map, departure_location_csv_map, phone_number_csv_map, \
     BasicParticipantModel
 from app.form_lib.util import make_types
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_phone_number, make_attribute_departure_location, make_attribute_quota, make_attribute_name_consent, \
-    make_attribute_privacy_consent, make_attribute_required_participants
+    make_attribute_privacy_consent
 
 _form_name = file_path_to_form_name(__file__)
 

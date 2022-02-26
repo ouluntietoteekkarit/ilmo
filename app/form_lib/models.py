@@ -13,34 +13,6 @@ from .lib import BaseParticipant, BaseOtherAttributes, BaseModel, BaseAttachable
 from .common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
     make_attribute_form_attributes
 
-"""
-class BasicModel(db.Model):
-    __abstract__ = True
-
-    id = db.Column(db.Integer, primary_key=True)
-    firstname = db.Column(db.String(64))
-    lastname = db.Column(db.String(64))
-    email = db.Column(db.String(128))
-    privacy_consent = db.Column(db.Boolean())
-    show_name_consent = db.Column(db.Boolean(), default=False)
-    datetime = db.Column(db.DateTime())
-
-    def get_firstname(self) -> str:
-        return self.firstname
-
-    def get_lastname(self) -> str:
-        return self.lastname
-
-    def get_email(self) -> str:
-        return self.email
-
-    def get_show_name_consent(self) -> bool:
-        return self.show_name_consent
-
-    def get_quota_counts(self) -> List[Quota]:
-        return [Quota.default_quota(1, 0)]
-"""
-
 
 class BasicParticipantModel(db.Model, BaseParticipant):
     __abstract__ = True
