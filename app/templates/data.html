@@ -29,16 +29,23 @@
 
 
 {% macro participant_table_body(entries, event, table_info) %}
-    {%- set limit = event.get_participant_limit() -%}
-    {%- set maxlimit = event.get_max_limit() -%}
-
+    {% set quota_counts = dict.fromkeys(event.get_quotas().keys(), 0) %}
+    {% set quotas = event.get_quotas() %}
     <tbody>
-        {%- call(entry, index) participant_table_rows(entries, event, 0, limit) -%}
-            <td>{{ index }}.</td>
-            {{ participant_table_row(entry, table_info) }}
-        {%- endcall -%}
-        {%- call(entry, index) participant_table_rows(entries, event, limit, maxlimit) -%}
-            <td>{{ index }}. (Varasijalla) </td>
+        {%- call(entry, index) participant_table_rows(entries, event, 0, event.get_max_limit()) -%}
+            {% set quota_name = '_' %}
+            {% if entry.quota%}
+                {% set quota_name = entry.quota %}
+            {% endif %}
+            {% if entry.guild_name %}
+                {% set quota_name = entry.guild_name %}
+            {% endif %}
+            {% set dummy = quota_counts.update({quota_name: quota_counts[quota_name] + 1}) %}
+            <td>{{ index }}.
+            {% if quota_counts[quota_name] >= quotas[quota_name].get_quota() %}
+                (Varasijalla)
+            {% endif %}
+            </td>
             {{ participant_table_row(entry, table_info) }}
         {%- endcall -%}
     </tbody>
