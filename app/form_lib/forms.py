@@ -15,7 +15,8 @@ from app.form_lib.lib import BaseAttachableAttribute, BaseModel, BaseOtherAttrib
     BaseParticipant, BaseTypeBuilder, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
     ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, AttributeFactory, \
     ObjectAttribute, IntAttribute, ListAttribute, DatetimeAttribute, BoolAttribute, \
-    StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, EnumAttribute, attributes_to_fields
+    StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, EnumAttribute, attributes_to_fields, \
+    ATTRIBUTE_NAME_OTHER_ATTRIBUTES, ATTRIBUTE_NAME_NAME_CONSENT
 from app.form_lib.common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
     make_attribute_form_attributes
 
@@ -38,6 +39,10 @@ class BaseFormBuilder(BaseTypeBuilder, ABC):
 
 class _FormBuilder(BaseFormBuilder):
 
+    def __init__(self, asks_name_consent: bool):
+        super().__init__()
+        self._asks_name_consent = asks_name_consent
+
     def build(self, base_type: Type[BasicForm] = None) -> Type[BasicForm]:
         if not base_type:
             class TmpForm(BasicForm):
@@ -46,9 +51,12 @@ class _FormBuilder(BaseFormBuilder):
             base_type = TmpForm
 
         required = {
-            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
+            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
+            ATTRIBUTE_NAME_OTHER_ATTRIBUTES: hasattr(base_type, ATTRIBUTE_NAME_OTHER_ATTRIBUTES)
         }
-        return self._do_build(base_type, required)
+        form_type = self._do_build(base_type, required)
+        form_type.asks_name_consent = self._asks_name_consent
+        return form_type
 
 
 class _ParticipantFormBuilder(BaseFormBuilder):
@@ -263,6 +271,13 @@ class _AttachableFormField(_AttachableField):
 
 class FormTypeFactory(TypeFactory):
 
+    def _determine_asks_name_consent(self) -> bool:
+        for attribute in self._other_attributes:
+            if attribute.get_attribute() == ATTRIBUTE_NAME_NAME_CONSENT:
+                return True
+
+        return False
+
     def make_type(self):
         factory = _FormAttributeFactory()
         form_attributes = []
@@ -285,7 +300,8 @@ class FormTypeFactory(TypeFactory):
             tmp = make_attribute_form_attributes(other_attributes)
             form_attributes.append(tmp)
 
-        return _FormBuilder().add_fields(attributes_to_fields(factory, form_attributes)).build()
+        asks_name_consent = self._determine_asks_name_consent()
+        return _FormBuilder(asks_name_consent).add_fields(attributes_to_fields(factory, form_attributes)).build()
 
 
 class _FormAttributeFactory(AttributeFactory):

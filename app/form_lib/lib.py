@@ -8,7 +8,7 @@ from app.form_lib.form_controller import Quota
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
 ATTRIBUTE_NAME_EMAIL = 'email'
-ATTRIBUTE_NAME_QUOTA = 'quota'
+ATTRIBUTE_NAME_QUOTA = 'quota_name'
 ATTRIBUTE_NAME_PHONE_NUMBER = 'phone_number'
 ATTRIBUTE_NAME_DEPARTURE_LOCATION = 'departure_location'
 ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS = 'required_participants'
@@ -74,7 +74,14 @@ class BaseFormComponent:
 
 
 class BaseParticipant(BaseFormComponent):
-    """Interface-like class for form's participant models."""
+    """
+    Interface-like class for form's participant models.
+    Constains getters for all well known attributes to
+    help typing.
+
+    MEMO: The getter naming must match that of the overriding
+          getters that are created dynamically.
+    """
     def get_firstname(self) -> str:
         raise Exception("Not implemented")
 
@@ -86,6 +93,12 @@ class BaseParticipant(BaseFormComponent):
 
     def get_quota_name(self) -> str:
         return Quota.default_quota_name()
+
+    def get_phone_number(self) -> str:
+        raise Exception("Not implemented. Form likely does not ask for this attribute.")
+
+    def get_departure_location(self) -> str:
+        raise Exception("Not implemented. Form likely does not ask for this attribute.")
 
     def is_filled(self) -> bool:
         return bool(self.get_firstname() and self.get_lastname())

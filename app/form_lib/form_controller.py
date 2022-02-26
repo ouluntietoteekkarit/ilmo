@@ -366,11 +366,11 @@ class Event(object):
 
     def __init__(self, title: str, start_time: datetime,
                  end_time: datetime, quotas: Iterable[Quota],
-                 list_participant_name: bool):
-        self.title = title
+                 list_participant_names: bool):
+        self._title = title
         self._start_time = start_time
         self._end_time = end_time
-        self._list_participant_names = list_participant_name
+        self._list_participant_names = list_participant_names
         self._participant_limit = 0
         self._max_participant_limit = 0
         self._quotas = {}
@@ -380,7 +380,7 @@ class Event(object):
             self._max_participant_limit += quota.get_max_quota()
 
     def get_title(self) -> str:
-        return self.title
+        return self._title
 
     def get_start_time(self) -> datetime:
         return self._start_time

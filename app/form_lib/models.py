@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from abc import ABC
 from enum import Enum
-from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict, Collection
+from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict, Collection, TypeVar
 
 from app import db
 from .lib import BaseParticipant, BaseOtherAttributes, BaseModel, BaseAttachableAttribute, BaseFormComponent, \
     BaseTypeBuilder, AttributeFactory, TypeFactory, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
     ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, BaseAttribute, ObjectAttribute, \
     ListAttribute, DatetimeAttribute, BoolAttribute, StringAttribute, IntAttribute, EnumAttribute, \
-    attributes_to_fields
+    attributes_to_fields, ATTRIBUTE_NAME_OTHER_ATTRIBUTES
 from .common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
     make_attribute_form_attributes
 
@@ -151,7 +151,7 @@ class _BaseDbBuilder(BaseTypeBuilder, ABC):
 
 class _ModelBuilder(_BaseDbBuilder):
 
-    def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
+    def build(self, base_type: Type[Union[db.Model, BasicModel]] = None) -> Type[Union[db.Model, BasicModel]]:
         if not base_type:
             class TmpModel(BasicModel):
                 __tablename__ = self._form_name
@@ -159,14 +159,15 @@ class _ModelBuilder(_BaseDbBuilder):
             base_type = TmpModel
 
         required = {
-            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS)
+            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
+            ATTRIBUTE_NAME_OTHER_ATTRIBUTES: hasattr(base_type, ATTRIBUTE_NAME_OTHER_ATTRIBUTES)
         }
         return self._do_build(base_type, required)
 
 
 class _ParticipantModelBuilder(_BaseDbBuilder):
 
-    def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
+    def build(self, base_type: Type[Union[db.Model, BasicParticipantModel]] = None) -> Type[Union[db.Model, BasicParticipantModel]]:
         if not base_type:
             class TmpModel(BasicParticipantModel):
                 __tablename__ = self._form_name + "_participant"
@@ -182,7 +183,7 @@ class _ParticipantModelBuilder(_BaseDbBuilder):
 
 class _OtherAttributesBuilder(_BaseDbBuilder):
 
-    def build(self, base_type: Type[db.Model] = None) -> Type[db.Model]:
+    def build(self, base_type: Type[Union[db.Model, ModelAttributesModel]] = None) -> Type[Union[db.Model, ModelAttributesModel]]:
         if not base_type:
             class TmpModel(ModelAttributesModel):
                 __tablename__ = self._form_name + "_attributes"
