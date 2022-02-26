@@ -72,3 +72,22 @@
         {{ macros.form_field(form.privacy_consent) }}
     {%- endcall -%}
 {% endblock %}
+
+
+{%- block participant_list -%}
+
+    {% set quota_counts = dict.fromkeys(event.get_quotas().keys(), 0) %}
+    {% set quotas = event.get_quotas() %}
+
+    {% for entry in registrations.get_entries() %}
+        {% set dummy = quota_counts.update({entry.quota: quota_counts[entry.quota] + 1}) %}
+        {% if entry.get_show_name_consent() %}
+            <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }}
+            {% if quota_counts[entry.quota] >= quotas[entry.quota].get_quota() %}
+                (Varasijalla)
+            {% endif %}
+            </p>
+        {% endif %}
+    {% endfor %}
+
+{%- endblock -%}
