@@ -3,22 +3,18 @@ from enum import Enum
 from typing import List, Iterable, Type
 
 from wtforms import StringField
-from wtforms.validators import DataRequired, length
+from wtforms.validators import length
 
-from app import db
 from app.email import EmailRecipient, make_greet_line
 from app.form_lib.common_attributes import make_attribute_lastname, make_attribute_firstname, make_attribute_email, \
-    make_attribute_quota
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+    make_attribute_quota, make_attribute_privacy_consent, make_attribute_name_consent
+from app.form_lib.form_controller import FormController, DataTableInfo, Event
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import get_str_choices, RequiredIf, get_quota_choices, BasicParticipantForm, \
-    make_field_firstname, make_field_lastname, make_field_email, AttachableRadioField, \
-    make_field_quota, FormBuilder, make_field_required_participants, \
-    make_field_optional_participants, make_field_privacy_consent, make_field_name_consent, FormAttributesBuilder, \
-    make_field_form_attributes, choices_to_enum
-from app.form_lib.lib import ATTRIBUTE_NAME_FIRSTNAME, StringAttribute, EnumAttribute
+from app.form_lib.forms import get_quota_choices, BasicParticipantForm, choices_to_enum
+from app.form_lib.lib import StringAttribute, EnumAttribute, Quota
 from app.form_lib.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA
-from app.form_lib.models import BasicModel, basic_model_csv_map
+from app.form_lib.models import basic_model_csv_map
+from app.form_lib.util import make_types
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -69,24 +65,24 @@ class _BaseParticipant(BasicParticipantForm):
         return self.guild_name.data
 
 
-def _make_attribute_allergies(validators: Iterable):
-    return StringAttribute('allergies', 'Erityisruokavaliot/allergiat', 'Erityisruokavaliot', 200, validators=validators)
-
-
-def _make_attribute_searing_preference(validators: Iterable):
-    return StringAttribute('seating_preference', 'Pyötäseuratoive', 'Pyötäseuratoive', 100, validators=validators)
-
-
-def _make_field_drink(drink_enum: Type[Enum], validators: Iterable):
+def _make_attribute_drink(drink_enum: Type[Enum], validators: Iterable = None):
     return EnumAttribute('drink', 'Juoma *', 'Juoma', drink_enum, validators=validators)
 
 
-def _make_field_liquor(liquor_enum: Type[Enum], validators: Iterable):
+def _make_attribute_liquor(liquor_enum: Type[Enum], validators: Iterable = None):
     return EnumAttribute('liqour', 'Viinakaato *', 'Viinakaato', liquor_enum, validators=validators)
 
 
-def _make_field_wine(wine_enum: Type[Enum], validators: Iterable):
+def _make_attribute_wine(wine_enum: Type[Enum], validators: Iterable = None):
     return EnumAttribute('wine', 'Viini *', 'Viini', wine_enum, validators=validators)
+
+
+def _make_attribute_allergies(validators: Iterable = None):
+    return StringAttribute('allergies', 'Erityisruokavaliot/allergiat', 'Erityisruokavaliot', 200, validators=validators)
+
+
+def _make_attribute_searing_preference(validators: Iterable = None):
+    return StringAttribute('seating_preference', 'Pyötäseuratoive', 'Pyötäseuratoive', 100, validators=validators)
 
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
@@ -100,68 +96,22 @@ participant_attributes = [
     make_attribute_email(),
 ] + [
     make_attribute_quota(_QuotaEnum),
-
+    _make_attribute_drink(_DrinkEnum),
+    _make_attribute_liquor(_LiquorEnum),
+    _make_attribute_wine(_WineEnum),
+    _make_attribute_allergies(),
+    _make_attribute_searing_preference()
 ]
 
-_Participant = ParticipantFormBuilder().add_fields([
-    make_field_firstname([DataRequired()]),
-    make_field_lastname([DataRequired()]),
-    make_field_email([DataRequired()]),
-    make_field_quota('Kilta *', get_quota_choices(_get_quotas()), [DataRequired()]),
-    _make_field_drink([DataRequired()]),
-    _make_field_liquor([DataRequired()]),
-    _make_field_wine([DataRequired()])
-]).build(_BaseParticipant)
+optional_participant_attributes = participant_attributes
 
-_AvecParticipant = ParticipantFormBuilder().add_fields([
-    make_field_firstname(),
-    make_field_lastname([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-    make_field_email([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-    make_field_quota('Kilta *', get_quota_choices(_get_quotas()), [RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-    _make_field_drink([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-    _make_field_liquor([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)]),
-    _make_field_wine([RequiredIf(other_field_name=ATTRIBUTE_NAME_FIRSTNAME)])
-]).build(_BaseParticipant)
-
-_FormAttrs = FormAttributesBuilder().add_fields([
-    make_field_name_consent(),
-    make_field_privacy_consent()
-]).build()
-
-_Form = FormBuilder().add_fields([
-    make_field_required_participants(_Participant, 1),
-    make_field_optional_participants(_AvecParticipant, 1),
-    make_field_form_attributes(_FormAttrs)
-]).build()
-
-
-class _Model(BasicModel): #, GuildColumn):
-    __tablename__ = _form_name
-    drink = db.Column(db.String(32))
-    liquor = db.Column(db.String(32))
-    wine = db.Column(db.String(32))
-    allergies = db.Column(db.String(256))
-    seating_preference = db.Column(db.String(50))
-
-    avec_firstname = db.Column(db.String(64))
-    avec_lastname = db.Column(db.String(64))
-    avec_email = db.Column(db.String(128))
-    avec_guild_name = db.Column(db.String(16))
-    avec_drink = db.Column(db.String(32))
-    avec_liquor = db.Column(db.String(32))
-    avec_wine = db.Column(db.String(32))
-    avec_allergies = db.Column(db.String(256))
-    avec_seating_preference = db.Column(db.String(50))
-
-    def get_participant_count(self) -> int:
-        return int(bool(self.firstname and self.lastname)) \
-             + int(bool(self.avec_firstname and self.avec_lastname))
-
-    def get_quota_counts(self) -> List[Quota]:
-        return [
-            Quota(self.guild_name, int(bool(self.firstname))),
-            Quota(self.avec_guild_name, int(bool(self.avec_firstname)))
-        ]
+other_attributes = [
+    make_attribute_name_consent(),
+    make_attribute_privacy_consent()
+]
+types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
+_Form = types.get_form_type()
+_Model = types.get_model_type()
 
 
 class _Controller(FormController):

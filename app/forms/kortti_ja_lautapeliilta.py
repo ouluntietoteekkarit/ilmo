@@ -8,7 +8,8 @@ from app.form_lib.forms import get_guild_choices, FormBuilder, make_default_form
     make_default_participant_form, make_field_phone_number
 from app.form_lib.guilds import *
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+from app.form_lib.form_controller import FormController, DataTableInfo, Event
+from app.form_lib.lib import Quota
 from app.form_lib.models import BasicModel, basic_model_csv_map, binding_registration_csv_map, \
     guild_name_csv_map, phone_number_csv_map
 

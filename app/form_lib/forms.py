@@ -9,14 +9,13 @@ from wtforms import StringField, BooleanField, SelectField, FormField, Form, Fie
     DateTimeField
 from wtforms.validators import InputRequired, Optional
 
-from app.form_lib.form_controller import Quota
 from app.form_lib.guilds import Guild
 from app.form_lib.lib import BaseAttachableAttribute, BaseModel, BaseOtherAttributes, \
     BaseParticipant, BaseTypeBuilder, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
     ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, AttributeFactory, \
     ObjectAttribute, IntAttribute, ListAttribute, DatetimeAttribute, BoolAttribute, \
     StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, EnumAttribute, attributes_to_fields, \
-    ATTRIBUTE_NAME_OTHER_ATTRIBUTES, ATTRIBUTE_NAME_NAME_CONSENT
+    ATTRIBUTE_NAME_OTHER_ATTRIBUTES, ATTRIBUTE_NAME_NAME_CONSENT, Quota
 from app.form_lib.common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
     make_attribute_form_attributes
 
@@ -288,7 +287,7 @@ class FormTypeFactory(TypeFactory):
             tmp = make_attribute_required_participants(required_participant, self._required_participant_count)
             form_attributes.append(tmp)
 
-        if len(self._optional_participant_attributes) > 0:
+        if self._optional_participant_count > 0 and len(self._optional_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._optional_participant_attributes)
             optional_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(fields).build()
             tmp = make_attribute_optional_participants(optional_participant, self._optional_participant_count)

@@ -8,7 +8,8 @@ from app.email import EmailRecipient, make_greet_line
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
 from app.form_lib.forms import RequiredIf, get_str_choices, FormBuilder, make_default_participant_form,\
     make_field_required_participants, make_field_name_consent, make_field_privacy_consent
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+from app.form_lib.form_controller import FormController, DataTableInfo, Event
+from app.form_lib.lib import Quota
 from app.form_lib.models import BasicModel, basic_model_csv_map
 
 _form_name = file_path_to_form_name(__file__)

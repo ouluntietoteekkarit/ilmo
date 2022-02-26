@@ -1,16 +1,17 @@
 from datetime import datetime
 from typing import List
 
-from wtforms.validators import InputRequired
-
 from app.email import EmailRecipient, make_greet_line
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+from app.form_lib.common_attributes import make_attribute_departure_location, make_attribute_phone_number, \
+    make_attribute_email, make_attribute_lastname, make_attribute_firstname, \
+    make_attribute_binding_registration_consent, make_attribute_name_consent, make_attribute_privacy_consent
+from app.form_lib.form_controller import FormController, DataTableInfo, Event
+from app.form_lib.lib import Quota
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import get_str_choices, FormBuilder, make_default_participant_form,\
-    make_field_required_participants, make_field_departure_location, make_field_phone_number, make_field_name_consent,\
-    make_field_binding_registration_consent, make_field_privacy_consent, ParticipantFormBuilder
-from app.form_lib.models import BasicModel, basic_model_csv_map, \
+from app.form_lib.forms import choices_to_enum
+from app.form_lib.models import basic_model_csv_map, \
     phone_number_csv_map, departure_location_csv_map, binding_registration_csv_map
+from app.form_lib.util import make_types
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -27,21 +28,28 @@ def _get_departure_stops() -> List[str]:
     ]
 
 
-_Participant = ParticipantFormBuilder().add_fields([
-    make_field_phone_number([InputRequired()]),
-    make_field_departure_location(get_str_choices(_get_departure_stops()), [InputRequired()])
-]).build(make_default_participant_form())
+_DepartureLocationEnum = choices_to_enum(_form_name, 'departure_location', _get_departure_stops())
 
-_Form = FormBuilder().add_fields([
-    make_field_required_participants(_Participant, 1),
-    make_field_name_consent(),
-    make_field_binding_registration_consent('Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *'),
-    make_field_privacy_consent()
-]).build()
+participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+    make_attribute_email(),
+] + [
+    make_attribute_phone_number(),
+    make_attribute_departure_location(_DepartureLocationEnum)
+]
 
+binding_consent_label = 'Ymmärrän, että ilmoittautuminen on sitova ja sitoudun maksamaan 40 euron (ei sisällä sitsien hintaa) maksun killalle *'
 
-class _Model(BasicModel): #, DepartureBusstopColumn, PhoneNumberColumn, BindingRegistrationConsentColumn):
-    __tablename__ = _form_name
+other_attributes = [
+    make_attribute_name_consent(),
+    make_attribute_binding_registration_consent(binding_consent_label),
+    make_attribute_privacy_consent()
+]
+
+types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+_Form = types.get_form_type()
+_Model = types.get_model_type()
 
 
 class _Controller(FormController):

@@ -9,7 +9,8 @@ from app.form_lib.forms import get_guild_choices, ParticipantFormBuilder, FormBu
     make_field_phone_number, make_field_quota, make_field_binding_registration_consent, make_field_name_consent, \
     make_field_required_participants, make_field_privacy_consent
 from app.form_lib.guilds import *
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+from app.form_lib.form_controller import FormController, DataTableInfo, Event
+from app.form_lib.lib import Quota
 from app.form_lib.models import BasicModel, basic_model_csv_map, phone_number_csv_map, guild_name_csv_map, \
     binding_registration_csv_map
 

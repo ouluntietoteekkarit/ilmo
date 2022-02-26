@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Any
 
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, EventRegistrations, Quota
+from app.form_lib.form_controller import FormController, DataTableInfo, Event, EventRegistrations
+from app.form_lib.lib import Quota
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
 from app.form_lib.forms import make_default_form
 from app.form_lib.models import BasicModel, basic_model_csv_map

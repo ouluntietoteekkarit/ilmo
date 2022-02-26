@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator, Collection, TypeVar, Generic
 
-from app.form_lib.form_controller import Quota
-
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
 ATTRIBUTE_NAME_EMAIL = 'email'
@@ -322,6 +320,45 @@ class ObjectAttribute(BaseAttribute):
         return self._object_type
 
 
+class Quota:
+    def __init__(self, name: str, quota: int, reserve_quota: int = 0):
+        self._name = name
+        self._quota = quota
+        self._reserve_quota = reserve_quota
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_quota(self) -> int:
+        return self._quota
+
+    def get_reserve_quota(self) -> int:
+        return self._reserve_quota
+
+    def get_max_quota(self) -> int:
+        return self._quota + self._reserve_quota
+
+    @staticmethod
+    def default_quota_name() -> str:
+        return '_'
+
+    @staticmethod
+    def default_quota(quota: int, reserve_quota: int) -> Quota:
+        return Quota(Quota.default_quota_name(), quota, reserve_quota)
+
+
+class TypeContainer:
+    def __init__(self, model_type, form_type):
+        self._model_type = model_type
+        self._form_type = form_type
+
+    def get_model_type(self):
+        return self._model_type
+
+    def get_form_type(self):
+        return self._form_type
+
+
 def attributes_to_fields(factory: AttributeFactory,
                          attributes: Iterable[BaseAttribute]
                          ) -> Iterator[BaseAttachableAttribute]:
@@ -343,14 +380,3 @@ def attributes_to_fields(factory: AttributeFactory,
         else:
             raise Exception("Invalid attribute parameter type. " + str(type(attribute)))
 
-
-class TypeContainer:
-    def __init__(self, model_type, form_type):
-        self._model_type = model_type
-        self._form_type = form_type
-
-    def get_model_type(self):
-        return self._model_type
-
-    def get_form_type(self):
-        return self._form_type

@@ -51,13 +51,13 @@ class DbTypeFactory(TypeFactory):
 
         if len(self._required_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._required_participant_attributes)
-            required_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name).add_fields(fields).build()
+            required_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name, 'required').add_fields(fields).build()
             tmp = make_attribute_required_participants(required_participant)
             form_attributes.append(tmp)
 
-        if len(self._optional_participant_attributes) > 0:
+        if self._optional_participant_count > 0 and len(self._optional_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._optional_participant_attributes)
-            optional_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name).add_fields(fields).build()
+            optional_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name, 'optional').add_fields(fields).build()
             tmp = make_attribute_optional_participants(optional_participant)
             form_attributes.append(tmp)
 
@@ -138,11 +138,14 @@ class _ModelBuilder(_BaseDbBuilder):
 
 
 class _ParticipantModelBuilder(_BaseDbBuilder):
+    def __init__(self, form_name: str, participant_type: str):
+        super().__init__(form_name)
+        self._participant_type = participant_type
 
     def build(self, base_type: Type[Union[db.Model, BasicParticipantModel]] = None) -> Type[Union[db.Model, BasicParticipantModel]]:
         if not base_type:
             class TmpModel(BasicParticipantModel):
-                __tablename__ = self._form_name + "_participant"
+                __tablename__ = "{}_{}_participant".format(self._form_name, self._participant_type)
 
             base_type = TmpModel
 

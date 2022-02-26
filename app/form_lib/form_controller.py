@@ -7,6 +7,7 @@ from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collec
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
+from .lib import Quota
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
@@ -45,11 +46,11 @@ class EventRegistrations:
     A class to hold dynamic registration data
     """
 
-    def __init__(self, entries: Iterable, participant_count: int):
+    def __init__(self, entries: Collection, participant_count: int):
         self._entries = entries
         self._participant_count = participant_count
 
-    def get_entries(self) -> Iterable:
+    def get_entries(self) -> Collection:
         return self._entries
 
     def get_participant_count(self) -> int:
@@ -330,33 +331,6 @@ class DataTableInfo:
 
     def get_attribute_names(self) -> List:
         return self._attribute_names
-
-
-class Quota:
-    def __init__(self, name: str, quota: int, reserve_quota: int = 0):
-        self._name = name
-        self._quota = quota
-        self._reserve_quota = reserve_quota
-
-    def get_name(self) -> str:
-        return self._name
-
-    def get_quota(self) -> int:
-        return self._quota
-
-    def get_reserve_quota(self) -> int:
-        return self._reserve_quota
-
-    def get_max_quota(self) -> int:
-        return self._quota + self._reserve_quota
-
-    @staticmethod
-    def default_quota_name() -> str:
-        return '_'
-
-    @staticmethod
-    def default_quota(quota: int, reserve_quota: int) -> Quota:
-        return Quota(Quota.default_quota_name(), quota, reserve_quota)
 
 
 class Event(object):

@@ -10,8 +10,8 @@ from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
 from app.form_lib.forms import RequiredIfValue, get_str_choices, BasicForm, ParticipantFormBuilder, \
     make_field_firstname, make_field_lastname, make_field_phone_number, FormBuilder, make_field_required_participants,\
     make_field_privacy_consent, make_field_optional_participants, RequiredIf
-from app.form_lib.lib import ATTRIBUTE_NAME_FIRSTNAME
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, EventRegistrations, Quota
+from app.form_lib.lib import ATTRIBUTE_NAME_FIRSTNAME, Quota
+from app.form_lib.form_controller import FormController, DataTableInfo, Event, EventRegistrations
 from app.form_lib.models import BasicModel, basic_model_csv_map, phone_number_csv_map
 
 _form_name = file_path_to_form_name(__file__)

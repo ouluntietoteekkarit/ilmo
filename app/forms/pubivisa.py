@@ -11,7 +11,8 @@ from app.form_lib.forms import get_guild_choices, FormBuilder, ParticipantFormBu
     make_field_email, make_field_lastname, make_field_firstname, make_field_required_participants, \
     make_field_optional_participants, make_field_privacy_consent
 from app.form_lib.guilds import *
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+from app.form_lib.form_controller import FormController, DataTableInfo, Event
+from app.form_lib.lib import Quota
 from app.form_lib.models import BasicModel, basic_model_csv_map, binding_registration_csv_map,\
     phone_number_csv_map, guild_name_csv_map
 
