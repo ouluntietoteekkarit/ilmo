@@ -7,7 +7,7 @@ from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collec
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
-from .lib import Quota
+from .lib import Quota, BaseParticipant
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
@@ -46,9 +46,19 @@ class EventRegistrations:
     A class to hold dynamic registration data
     """
 
-    def __init__(self, entries: Collection, participant_count: int):
+    def __init__(self, entries: Collection[BasicModel]):
         self._entries = entries
-        self._participant_count = participant_count
+        self._participant_count = self._count_total_participants(self._entries)
+
+    def _count_total_participants(self, entries: Collection[BasicModel]) -> int:
+        """
+        A method to count the number of event participants.
+        """
+        total_count = 0
+        for m in entries:
+            total_count += m.get_participant_count()
+
+        return total_count
 
     def get_entries(self) -> Collection:
         return self._entries
@@ -70,7 +80,7 @@ class FormController(ABC):
         """
         form = self._context.get_form_type()()
         entries = self._context.get_model_type().query.all()
-        registrations = EventRegistrations(entries, self._count_participants(entries))
+        registrations = EventRegistrations(entries)
         return self._render_index_view(registrations, form, datetime.now())
 
     def post_request_handler(self, request) -> Any:
@@ -90,8 +100,8 @@ class FormController(ABC):
         return _export_to_csv(self._context.get_model_type().__tablename__)
 
     def _matching_identity(self, firstname0, firstname1, lastname0, lastname1, email0, email1):
-        return firstname0 != '' and lastname0 != '' and email0 != '' and\
-            firstname0 == firstname1 and lastname0 == lastname1 and email0 == email1
+        return (firstname0 != '' and lastname0 != '' and email0 != '' and
+                firstname0 == firstname1 and lastname0 == lastname1 and email0 == email1)
 
     def _find_from_entries(self, entries: Iterable[BasicModel], form: BasicForm) -> Tuple[bool, str]:
         """
@@ -105,11 +115,12 @@ class FormController(ABC):
             lastname = participant.get_lastname()
             email = participant.get_email()
             for m in entries:
-                if self._matching_identity(
-                        m.get_firstname(), firstname,
-                        m.get_lastname(), lastname,
-                        m.get_email(), email):
-                    return True, '{} {} on jo ilmoittautunut.'.format(firstname, lastname)
+                registered_participants = list(m.get_required_participants()) + list(m.get_optional_participants())
+                for p in registered_participants:
+                    if self._matching_identity(p.get_firstname(), firstname,
+                                               p.get_lastname(), lastname,
+                                               p.get_email(), email):
+                        return True, '{} {} on jo ilmoittautunut.'.format(firstname, lastname)
 
         return False, ''
 
@@ -126,19 +137,10 @@ class FormController(ABC):
                         participants[i].get_firstname(), participants[j].get_firstname(),
                         participants[i].get_lastname(), participants[j].get_lastname(),
                         participants[i].get_email(), participants[j].get_email()):
+
                     return True, 'Et voi ilmoittaa samaa henkilöä kahdesti: {} {}'.format(participants[i].get_firstname(), participants[i].get_lastname())
 
         return False, ''
-
-    def _count_participants(self, entries: Iterable[BasicModel]) -> int:
-        """
-        A method to count the number of event participants.
-        """
-        total_count = 0
-        for m in entries:
-            total_count += m.get_participant_count()
-
-        return total_count
 
     def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[BasicModel]) -> Dict[str, int]:
         """
@@ -155,11 +157,19 @@ class FormController(ABC):
         """
         A method to get all email recipients to whom an email
         concerning current registration should be sent to.
-         Can be overridden in inheriting classes to alter behaviour.
+        Can be overridden in inheriting classes to alter behaviour.
         """
-        return [
-            EmailRecipient(model.get_firstname(), model.get_lastname(), model.get_email())
-        ]
+
+        participants = list(model.get_required_participants()) + list(model.get_optional_participants())
+        recipients = []
+        emails = set()
+        for p in participants:
+            email = p.get_email()
+            if len(email) != 0 and email not in emails:
+                recipients.append(EmailRecipient(p.get_firstname(), p.get_lastname(), email))
+                emails.add(email)
+
+        return recipients
 
     @abstractmethod
     def _get_email_msg(self, recipient: EmailRecipient, model: BasicModel, reserve: bool) -> str:
@@ -179,29 +189,30 @@ class FormController(ABC):
         event = self._context.get_event()
         nowtime = datetime.now()
         entries = model.query.all()
-        registrations = EventRegistrations(entries, self._count_participants(entries))
+        registrations = EventRegistrations(entries)
+        event_quotas = event.get_quotas()
+        registration_quotas = self._count_registration_quotas(event_quotas, registrations.get_entries())
 
-        error_msg = self._check_form_submit(registrations, form, nowtime)
+        error_msg = self._check_form_submit(registrations, registration_quotas, form, nowtime)
         if len(error_msg) != 0:
             flash(error_msg)
             return self._render_index_view(registrations, form, nowtime)
 
         model = self._form_to_model(form, nowtime)
-        if self._insert_model(model):
+        error_msg = self._insert_model(model)
+        if len(error_msg) != 0:
+            flash(error_msg)
+            return self._render_index_view(registrations, form, nowtime)
 
+        # MEMO: This may need to change as well as the email message depending on how group registration
+        #       reserve will be handled for cases where one of multiple quotas is exceeded
+        reserve = False
+        for quota_count in model.get_quota_counts():
+            quota_name = quota_count.get_name()
+            reserve = reserve or registration_quotas[quota_name] >= event_quotas[quota_name].get_quota()
 
-            # MEMO: Temporary hack to does not work with group registrations.
-            registration_quotas = self._count_registration_quotas(event.get_quotas(), registrations.get_entries())
-            quotas = event.get_quotas()
-            for quota_count in form.get_quota_counts():
-                participant_limit = quotas[quota_count.get_name()].get_quota()
-                reserve = registration_quotas[quota_count.get_name()] + quota_count.get_quota() >= participant_limit
-                break
-
-
-            # reserve = registrations.get_participant_count() + model.get_participant_count() >= event.get_participant_limit()
-            flash(_make_success_msg(reserve))
-            self._send_emails(model, reserve)
+        self._send_emails(model, reserve)
+        flash(_make_success_msg(reserve))
 
         return self._post_routine_output(registrations, form, nowtime)
 
@@ -212,7 +223,8 @@ class FormController(ABC):
         """
         return self._render_index_view(registrations, form, nowtime)
 
-    def _check_form_submit(self, registrations: EventRegistrations, form: BasicForm, nowtime) -> str:
+    def _check_form_submit(self, registrations: EventRegistrations, registration_quotas: Dict[str, int],
+                           form: BasicForm, nowtime) -> str:
         """
         Checks that the submitted form is correctly filled
         and that all registration conditions are met.
@@ -232,7 +244,7 @@ class FormController(ABC):
         if nowtime > event.get_end_time():
             return 'Ilmoittautuminen on päättynyt'
 
-        msg = self._check_quotas(event.get_quotas(), registrations, form.get_quota_counts())
+        msg = self._check_quotas(event.get_quotas(), registration_quotas, form.get_quota_counts())
         if len(msg) != 0:
             return msg
 
@@ -248,21 +260,23 @@ class FormController(ABC):
 
     def _validate_form(self, form: BasicForm) -> bool:
         valid = form.get_required_participants().validate(form)
-        valid = form.get_other_attributes().validate() and valid
+        other_attributes = form.get_other_attributes()
+        valid = other_attributes.validate(other_attributes.form) and valid
         for participant in form.get_optional_participants():
             for field in participant:
-                if field.raw_data:
-                    valid = participant.validate() and valid
+                if field.data:
+                    valid = participant.validate(participant.form) and valid
                     break
 
         return valid
 
     def _check_quotas(self, event_quotas: Dict[str, Quota],
-                      registrations: EventRegistrations, form_quotas: Iterable[Quota]) -> str:
+                      registration_quotas: Dict[str, int],
+                      form_quotas: Iterable[Quota]) -> str:
         """
-        Ensure that no quota has been exceeded
+        Ensure that no quota has been exceeded.
+        MEMO: Modifies contents of registration_quotas
         """
-        registration_quotas = self._count_registration_quotas(event_quotas, registrations.get_entries())
         for form_quota in form_quotas:
             name = form_quota.get_name()
             registration_quotas[name] += form_quota.get_quota()
@@ -273,18 +287,17 @@ class FormController(ABC):
 
         return ''
 
-    def _insert_model(self, model: BasicModel) -> bool:
+    def _insert_model(self, model: BasicModel) -> str:
         try:
             db.session.add(model)
             db.session.commit()
-            return True
+            return ''
 
         except Exception as e:
             db.session.rollback()
-            flash('Tietokanta virhe. Yritä uudestaan.')
             print(e)
 
-        return False
+        return 'Tietokanta virhe. Yritä uudestaan.'
 
     def _send_emails(self, model: BasicModel, reserve: bool) -> None:
         subject = self._context.get_event().get_title()
@@ -313,7 +326,7 @@ class FormController(ABC):
         """
         model = self._context.get_model_type()
         entries = model.query.all()
-        registrations = EventRegistrations(entries, self._count_participants(entries))
+        registrations = EventRegistrations(entries)
         return render_template('data.html',
                                event=self._context.get_event(),
                                registrations=registrations,

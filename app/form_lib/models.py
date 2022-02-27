@@ -139,16 +139,14 @@ class _ModelBuilder(_BaseDbBuilder):
             name = self._form_name
             base_type = type(name, (BasicModel,), {'__tablename__': name})
 
-        required = {
-            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
-            ATTRIBUTE_NAME_OTHER_ATTRIBUTES: hasattr(base_type, ATTRIBUTE_NAME_OTHER_ATTRIBUTES)
-        }
+        required = self._get_required_attributes_for_base_model(base_type)
         return self._do_build(base_type, required)
 
 
 class _ParticipantModelBuilder(_BaseDbBuilder):
     def __init__(self, form_name: str, participant_type: str):
         super().__init__(form_name)
+        assert participant_type in ['required', 'optional']
         self._participant_type = participant_type
 
     def build(self, base_type: Type[Union[db.Model, BasicParticipantModel]] = None) -> Type[Union[db.Model, BasicParticipantModel]]:
@@ -156,10 +154,11 @@ class _ParticipantModelBuilder(_BaseDbBuilder):
             name = "{}_{}_participant".format(self._form_name, self._participant_type)
             base_type = type(name, (BasicParticipantModel,), {'__tablename__': name})
 
-        required = {
-            ATTRIBUTE_NAME_FIRSTNAME: hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME),
-            ATTRIBUTE_NAME_LASTNAME: hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
-        }
+        if self._participant_type == 'required':
+            required = self._get_required_attributes_for_required_participant(base_type)
+        else:
+            required = self._get_required_attributes_for_optional_participant(base_type)
+
         return self._do_build(base_type, required)
 
 
@@ -170,9 +169,7 @@ class _OtherAttributesBuilder(_BaseDbBuilder):
             name = self._form_name + "_attributes"
             base_type = type(name, (ModelAttributesModel,), {'__tablename__': name})
 
-        required = {
-            ATTRIBUTE_NAME_PRIVACY_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
-        }
+        required = self._get_required_attributes_for_other_attributes(base_type)
         return self._do_build(base_type, required)
 
 

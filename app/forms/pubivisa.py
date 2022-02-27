@@ -1,9 +1,6 @@
-from wtforms import StringField
-from wtforms.validators import DataRequired, length, InputRequired
 from datetime import datetime
 from typing import List, Iterable
 
-from app import db
 from app.email import EmailRecipient, make_greet_line, make_signature_line, make_fullname_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_phone_number, make_attribute_quota, make_attribute_name_consent, \
@@ -13,8 +10,8 @@ from app.form_lib.forms import get_guild_choices, choices_to_enum
 from app.form_lib.guilds import *
 from app.form_lib.form_controller import FormController, DataTableInfo, Event
 from app.form_lib.lib import Quota, StringAttribute
-from app.form_lib.models import BasicModel, basic_model_csv_map, binding_registration_csv_map,\
-    phone_number_csv_map, guild_name_csv_map
+from app.form_lib.models import basic_model_csv_map, binding_registration_csv_map, phone_number_csv_map,\
+    guild_name_csv_map
 from app.form_lib.util import make_types
 
 _form_name = file_path_to_form_name(__file__)

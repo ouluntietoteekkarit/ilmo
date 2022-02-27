@@ -62,7 +62,7 @@ def _make_attribute_drink(drink_enum: Type[Enum], validators: Iterable = None):
 
 
 def _make_attribute_liquor(liquor_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('liqour', 'Viinakaato *', 'Viinakaato', liquor_enum, validators=validators)
+    return EnumAttribute('liquor', 'Viinakaato *', 'Viinakaato', liquor_enum, validators=validators)
 
 
 def _make_attribute_wine(wine_enum: Type[Enum], validators: Iterable = None):

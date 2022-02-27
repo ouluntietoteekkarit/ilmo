@@ -75,7 +75,7 @@ class _Controller(FormController):
         email = recipient.get_email_address()
         phone_number = model.get_phone_number()
         departure_location = model.get_departure_location()
-        quota = model.get_quota_name()
+        quota = model.get_quota()
         if reserve:
             return ' '.join([
                 make_greet_line(recipient),

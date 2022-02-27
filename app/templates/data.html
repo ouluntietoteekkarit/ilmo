@@ -28,25 +28,19 @@
 {% endmacro %}
 
 
-{% macro participant_table_body(entries, event, table_info) %}
-    {% set quota_counts = dict.fromkeys(event.get_quotas().keys(), 0) %}
+{% macro participant_table_body(participants, event, table_info) %}
     {% set quotas = event.get_quotas() %}
+    {% set quota_counts = dict.fromkeys(quotas.keys(), 0) %}
     <tbody>
-        {%- call(entry, index) participant_table_rows(entries, event, 0, event.get_max_limit()) -%}
-            {% set quota_name = '_' %}
-            {% if entry.quota%}
-                {% set quota_name = entry.quota %}
+        {%- call(participant, index) participant_table_rows(participants, event, 0, event.get_max_limit()) -%}
+            {% set quota_name = participant.get_quota() %}
+            {% if quota_counts[quota_name] < quotas[quota_name].get_quota() %}
+                <td>{{ index }}.</td>
+            {% else %}
+                <td>{{ index }}. (Varasijalla)</td>
             {% endif %}
-            {% if entry.guild_name %}
-                {% set quota_name = entry.guild_name %}
-            {% endif %}
-            {% set dummy = quota_counts.update({quota_name: quota_counts[quota_name] + 1}) %}
-            <td>{{ index }}.
-            {% if quota_counts[quota_name] >= quotas[quota_name].get_quota() %}
-                (Varasijalla)
-            {% endif %}
-            </td>
-            {{ participant_table_row(entry, table_info) }}
+            {% set _ = quota_counts.update({quota_name: quota_counts[quota_name] + 1}) %}
+            {{ participant_table_row(participant, table_info) }}
         {%- endcall -%}
     </tbody>
 {% endmacro %}

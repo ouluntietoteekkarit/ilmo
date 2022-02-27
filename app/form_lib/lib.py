@@ -6,7 +6,7 @@ from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator, C
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
 ATTRIBUTE_NAME_EMAIL = 'email'
-ATTRIBUTE_NAME_QUOTA = 'quota_name'
+ATTRIBUTE_NAME_QUOTA = 'quota'
 ATTRIBUTE_NAME_PHONE_NUMBER = 'phone_number'
 ATTRIBUTE_NAME_DEPARTURE_LOCATION = 'departure_location'
 ATTRIBUTE_NAME_ALLERGIES = 'allergies'
@@ -19,8 +19,7 @@ ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT = 'binding_registration_consent'
 
 
 class TypeFactory(ABC):
-    def __init__(self,
-                 required_participant_attributes: Collection[BaseAttribute],
+    def __init__(self, required_participant_attributes: Collection[BaseAttribute],
                  optional_participant_attributes: Collection[BaseAttribute],
                  other_attributes: Collection[BaseAttribute],
                  required_participant_count: int,
@@ -30,6 +29,48 @@ class TypeFactory(ABC):
         self._other_attributes = other_attributes
         self._required_participant_count = required_participant_count
         self._optional_participant_count = optional_participant_count
+
+        self._check_attributes(self._required_participant_attributes,
+                               self._optional_participant_attributes,
+                               self._other_attributes)
+
+    def _check_attributes(self, required_participant_attributes: Collection[BaseAttribute],
+                          optional_participant_attributes: Collection[BaseAttribute],
+                          other_attributes: Collection[BaseAttribute]):
+        """Ensure that mandatory attributes are present in the collections
+        and that there are no conflicting attribute configurations."""
+
+        self._check_quota_attributes(required_participant_attributes, optional_participant_attributes)
+        self._check_email_presense(required_participant_attributes, other_attributes)
+
+    def _check_quota_attributes(self, required_participant_attributes: Collection[BaseAttribute],
+                                optional_participant_attributes: Collection[BaseAttribute]):
+        if len(optional_participant_attributes) == 0:
+            return
+
+        required_has_quota = False
+        optional_has_quota = False
+
+        for attribute in required_participant_attributes:
+            required_has_quota = required_has_quota or attribute.get_attribute() == ATTRIBUTE_NAME_QUOTA
+
+        for attribute in optional_participant_attributes:
+            optional_has_quota = optional_has_quota or attribute.get_attribute() == ATTRIBUTE_NAME_QUOTA
+
+        if required_has_quota != optional_has_quota:
+            raise Exception("Either both required and optional participant must have quota or neither must have it. This is to ensure correctness of form processing logic with sensible default values in place.")
+
+    def _check_email_presense(self, required_participant_attributes: Collection[BaseAttribute],
+                          other_attributes: Collection[BaseAttribute]):
+        has_email = False
+        for attribute in required_participant_attributes:
+            has_email = has_email or attribute.get_attribute() == ATTRIBUTE_NAME_EMAIL
+
+        for attribute in other_attributes:
+            has_email = has_email or attribute.get_attribute() == ATTRIBUTE_NAME_EMAIL
+
+        if not has_email:
+            raise Exception("Either required participant or form's other attributes must have an email attribute. This is so that registration email can be sent out.")
 
     @abstractmethod
     def make_type(self) -> Type[BaseModel]:
@@ -90,7 +131,7 @@ class BaseParticipant(BaseFormComponent):
     def get_email(self) -> str:
         return ''
 
-    def get_quota_name(self) -> str:
+    def get_quota(self) -> str:
         return Quota.default_quota_name()
 
     def get_phone_number(self) -> str:
@@ -113,7 +154,7 @@ class BaseOtherAttributes(BaseFormComponent):
 
 class BaseModel(BaseFormComponent):
     """Interface-like class for form's data models."""
-    def get_model_attributes(self) -> BaseOtherAttributes:
+    def get_other_attributes(self) -> BaseOtherAttributes:
         raise Exception("Not implemented")
 
     def get_required_participants(self) -> List[BaseParticipant]:
@@ -138,10 +179,10 @@ class BaseModel(BaseFormComponent):
     def get_quota_counts(self) -> List[Quota]:
         quotas = []
         for p in self.get_required_participants():
-            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
+            quotas.append(Quota(p.get_quota(), int(p.is_filled())))
 
         for p in self.get_optional_participants():
-            quotas.append(Quota(p.get_quota_name(), int(p.is_filled())))
+            quotas.append(Quota(p.get_quota(), int(p.is_filled())))
 
         return quotas
 
@@ -200,6 +241,30 @@ class BaseTypeBuilder(ABC):
     def build(self, base_type: Type[Generic[T]] = None) -> Type[Generic[T]]:
         pass
 
+    def _get_required_attributes_for_base_model(self, base_type: Type[BaseModel]) -> Dict[str, bool]:
+        return {
+            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
+            ATTRIBUTE_NAME_OTHER_ATTRIBUTES: hasattr(base_type, ATTRIBUTE_NAME_OTHER_ATTRIBUTES)
+        }
+
+    def _get_required_attributes_for_required_participant(self, base_type: Type[BaseParticipant]) -> Dict[str, bool]:
+        return {
+            ATTRIBUTE_NAME_FIRSTNAME: hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME),
+            ATTRIBUTE_NAME_LASTNAME: hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
+        }
+
+    def _get_required_attributes_for_optional_participant(self, base_type: Type[BaseParticipant]) -> Dict[str, bool]:
+        return {
+            ATTRIBUTE_NAME_FIRSTNAME: hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME),
+            ATTRIBUTE_NAME_LASTNAME: hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
+        }
+
+    def _get_required_attributes_for_other_attributes(self, base_type: Type[BaseOtherAttributes]) -> Dict[str, bool]:
+        return {
+            ATTRIBUTE_NAME_PRIVACY_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
+        }
+
+
     def _do_build(self, base_type: Type[Generic[T]], required: Dict[str, bool]) -> Type[Generic[T]]:
         for field in self._fields:
             field.attach_to(base_type)
@@ -209,7 +274,7 @@ class BaseTypeBuilder(ABC):
 
         for attr, value in required.items():
             if not value:
-                raise Exception(attr + "is a mandatory attribute of " + base_type.__name__)
+                raise Exception(attr + " is a mandatory attribute of " + base_type.__name__)
 
         return base_type
 

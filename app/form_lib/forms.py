@@ -37,40 +37,35 @@ class BaseFormBuilder(BaseTypeBuilder, ABC):
 
 
 class _FormBuilder(BaseFormBuilder):
-
     def __init__(self, asks_name_consent: bool):
         super().__init__()
         self._asks_name_consent = asks_name_consent
 
     def build(self, base_type: Type[BasicForm] = None) -> Type[BasicForm]:
         if not base_type:
-            class TmpForm(BasicForm):
-                pass
+            base_type = type('Form', (BasicForm,), {})
 
-            base_type = TmpForm
-
-        required = {
-            ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
-            ATTRIBUTE_NAME_OTHER_ATTRIBUTES: hasattr(base_type, ATTRIBUTE_NAME_OTHER_ATTRIBUTES)
-        }
+        required = self._get_required_attributes_for_base_model(base_type)
         form_type = self._do_build(base_type, required)
         form_type.asks_name_consent = self._asks_name_consent
         return form_type
 
 
 class _ParticipantFormBuilder(BaseFormBuilder):
+    def __init__(self, participant_type: str):
+        super().__init__()
+        self._participant_type = participant_type
 
     def build(self, base_type: Type[BasicParticipantForm] = None) -> Type[BasicParticipantForm]:
         if not base_type:
-            class TmpForm(BasicParticipantForm):
-                pass
+            name = "{}_ParticipantForm".format(self._participant_type)
+            base_type = type(name, (BasicParticipantForm,), {})
 
-            base_type = TmpForm
+        if self._participant_type == 'required':
+            required = self._get_required_attributes_for_required_participant(base_type)
+        else:
+            required = self._get_required_attributes_for_optional_participant(base_type)
 
-        required = {
-            ATTRIBUTE_NAME_FIRSTNAME: hasattr(base_type, ATTRIBUTE_NAME_FIRSTNAME),
-            ATTRIBUTE_NAME_LASTNAME: hasattr(base_type, ATTRIBUTE_NAME_LASTNAME)
-        }
         return self._do_build(base_type, required)
 
 
@@ -78,14 +73,9 @@ class _OtherAttributesBuilder(BaseFormBuilder):
 
     def build(self, base_type: Type[FormAttributesForm] = None) -> Type[FormAttributesForm]:
         if not base_type:
-            class TmpForm(FormAttributesForm):
-                pass
+            base_type = type('AttributesForm', (FormAttributesForm,), {})
 
-            base_type = TmpForm
-
-        required = {
-            ATTRIBUTE_NAME_PRIVACY_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
-        }
+        required = self._get_required_attributes_for_other_attributes(base_type)
         return self._do_build(base_type, required)
 
 
@@ -283,13 +273,13 @@ class FormTypeFactory(TypeFactory):
 
         if len(self._required_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._required_participant_attributes)
-            required_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(fields).build()
+            required_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder('required').add_fields(fields).build()
             tmp = make_attribute_required_participants(required_participant, self._required_participant_count)
             form_attributes.append(tmp)
 
         if self._optional_participant_count > 0 and len(self._optional_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._optional_participant_attributes)
-            optional_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder().add_fields(fields).build()
+            optional_participant: Type[BasicParticipantForm] = _ParticipantFormBuilder('optional').add_fields(fields).build()
             tmp = make_attribute_optional_participants(optional_participant, self._optional_participant_count)
             form_attributes.append(tmp)
 
@@ -321,7 +311,7 @@ class _FormAttributeFactory(AttributeFactory):
         attribute = params.get_attribute()
 
         def getter(self) -> Any:
-            return getattr(self, attribute).data
+            return getattr(self, attribute)
 
         getter.__name__ = "get_{}".format(attribute)
         return getter

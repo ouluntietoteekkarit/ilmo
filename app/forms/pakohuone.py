@@ -86,8 +86,9 @@ _Model = types.get_model_type()
 
 class _Controller(FormController):
 
-    def _check_form_submit(self, registrations: EventRegistrations, form: BasicForm, nowtime) -> str:
-        error_msg = super()._check_form_submit(registrations, form, nowtime)
+    def _check_form_submit(self, registrations: EventRegistrations,
+                           registration_quotas, form: BasicForm, nowtime: int) -> str:
+        error_msg = super()._check_form_submit(registrations, registration_quotas, form, nowtime)
         if len(error_msg) != 0:
             return error_msg
 

@@ -8,29 +8,25 @@
         Telegram tai tekstiviesti)</strong></p>
 {%- endblock -%}
 
+{%- macro participant_form(participant) -%}
+    {{ macros.form_field(participant.firstname) }}
+    {{ macros.form_field(participant.lastname) }}
+    {{ macros.form_field(participant.phone_number) }}
+    {{ macros.form_field(participant.email) }}
+    {{ macros.form_field(participant.quota) }}
+{%- endmacro -%}
+
 {%- block registration_form -%}
     {%- call macros.registration_form_routine(form) -%}
-        {{ macros.form_field(form.teamname) }}
-        {{ macros.form_field(form.firstname) }}
-        {{ macros.form_field(form.lastname) }}
-        {{ macros.form_field(form.phone0) }}
-        {{ macros.form_field(form.email) }}
-        {{ macros.form_field(form.kilta0) }}
-        {{ macros.form_field(form.etunimi1) }}
-        {{ macros.form_field(form.sukunimi1) }}
-        {{ macros.form_field(form.phone1) }}
-        {{ macros.form_field(form.email1) }}
-        {{ macros.form_field(form.kilta1) }}
-        {{ macros.form_field(form.etunimi2) }}
-        {{ macros.form_field(form.sukunimi2) }}
-        {{ macros.form_field(form.phone2) }}
-        {{ macros.form_field(form.email2) }}
-        {{ macros.form_field(form.kilta2) }}
-        {{ macros.form_field(form.etunimi3) }}
-        {{ macros.form_field(form.sukunimi3) }}
-        {{ macros.form_field(form.phone3) }}
-        {{ macros.form_field(form.email3) }}
-        {{ macros.form_field(form.kilta3) }}
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.teamname) }}
+        {% for participant in form.get_required_participants() %}
+            {{ participant_form(participant) }}
+        {% endfor %}
+        {% for participant in form.get_optional_participants() %}
+            {{ participant_form(participant) }}
+        {% endfor %}
+
         {{ macros.form_field(form.show_name_consent) }}
         {{ macros.form_field(form.privacy_consent) }}
         {{ macros.form_field(form.binding_registration_consent) }}
@@ -38,10 +34,11 @@
 {%- endblock -%}
 
 {%- block participant_list -%}
-    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, 0, event.get_participant_limit()) -%}
-        <p>{{ entry.teamname }}</p>
-    {%- endcall -%}
-    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, event.get_participant_limit(), event.get_max_limit()) -%}
-        <p>{{ entry.teamname }} (Varasijalla)</p>
+    {%- call(entry, quota, max_quota) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        {% if quota < max_quota %}
+            <p>{{ entry.teamname }}</p>
+        {% else %}
+            <p>{{ entry.teamname }} (Varasijalla)</p>
+        {% endif %}
     {%- endcall -%}
 {%- endblock -%}

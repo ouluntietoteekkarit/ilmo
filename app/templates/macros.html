@@ -58,32 +58,39 @@
 
 
 {% macro privacy_statement(module_info) %}
-    <a href="{{ url_for('static',filename='privacy_statements/' ~ module_info.get_form_name() ~ '.pdf') }}">Tietosuojaseloste</a>
+    {% set filename = 'privacy_statements/' ~ module_info.get_form_name() ~ '.pdf' %}
+    <a href="{{ url_for('static',filename=filename) }}">Tietosuojaseloste</a>
 {% endmacro %}
 
 
-{% macro participant_list_routine(entries, event, start, end) %}
+{% macro participant_list_routine(participants, event) %}
     {%- if event.get_list_participant_name() -%}
-        {%- for entry in entries[start:end] %}
-            {%- if entry.get_show_name_consent() %}
-                {{- caller(entry) -}}
+        {% set quota_counts = dict.fromkeys(event.get_quotas().keys(), 0) %}
+        {% set quotas = event.get_quotas() %}
+
+        {%- for participant in participants %}
+            {%- set quota_name = participant.quota -%}
+            {%- set quota_count = quota_counts[quota_name] -%}
+
+            {%- if participant.get_show_name_consent() %}
+                {# parameters: participant, quota_count, max_quota_count #}
+                {{- caller(participant, quota_count, quotas[quota_name].get_quota()) -}}
             {% endif %}
+
+            {% set _ = quota_counts.update({quota_count: quota_count + 1}) %}
         {% endfor -%}
     {%- endif -%}
 {% endmacro %}
 
 
 {% macro participant_list(entries, event) %}
-    {%- set limit = event.get_participant_limit() -%}
-    {%- set maxlimit = event.get_max_limit() -%}
-
-    {%- call(entry) participant_list_routine(entries, event, 0, limit) -%}
-        <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }}</p>
-    {%- endcall -%}
-
-    {%- call(entry) participant_list_routine(entries, event, limit, maxlimit) -%}
-        <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }} (Varasijalla)</p>
-    {%- endcall -%}
+    {% call(entry, quota_count, max_quota_count) participant_list_routine(entries, event) %}
+        {% if quota_count < max_quota_count %}
+            <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }}</p>
+        {% else %}
+            <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }} (Varasijalla)</p>
+        {% endif %}
+    {% endcall %}
 {% endmacro %}
 
 

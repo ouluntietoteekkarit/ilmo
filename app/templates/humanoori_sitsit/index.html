@@ -39,7 +39,7 @@
     {{ macros.form_field(form.firstname) }}
     {{ macros.form_field(form.lastname) }}
     {{ macros.form_field(form.email) }}
-    {{ macros.form_field(form.guild_name) }}
+    {{ macros.form_field(form.quota_name) }}
     <label class="control-label">Ruokajuoma</label>
     {{ macros.form_field(form.drink) }}
     <label class="control-label">Viinakaato</label>
@@ -55,9 +55,9 @@
         {{ participant_form(form.required_participants[0]) }}
         <br />
         <h4>Avecin tiedot</h4>
-        {{ participant_form(form.optional_participants[0]) }}
-        {{ macros.form_field(form.show_name_consent) }}
-        {{ macros.form_field(form.privacy_consent) }}
+        {{ participant_form(form.get_optional_participants()[0]) }}
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
     {%- endcall -%}
 {%- endblock -%}
 
