@@ -5,7 +5,7 @@ from typing import List, Iterable, Type
 
 from app.email import EmailRecipient, make_greet_line
 from app.form_lib.common_attributes import make_attribute_lastname, make_attribute_firstname, make_attribute_email, \
-    make_attribute_quota, make_attribute_privacy_consent, make_attribute_name_consent
+    make_attribute_quota, make_attribute_privacy_consent, make_attribute_name_consent, make_attribute_allergies
 from app.form_lib.form_controller import FormController, Event
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.lib import StringAttribute, EnumAttribute, Quota
@@ -115,10 +115,6 @@ def _make_attribute_wine(wine_enum: Type[Enum], validators: Iterable = None):
     return EnumAttribute('wine', 'Viini *', 'Viini', wine_enum, validators=validators)
 
 
-def _make_attribute_allergies(validators: Iterable = None):
-    return StringAttribute('allergies', 'Erityisruokavaliot/allergiat', 'Erityisruokavaliot', 200, validators=validators)
-
-
 def _make_attribute_searing_preference(validators: Iterable = None):
     return StringAttribute('seating_preference', 'Pyötäseuratoive', 'Pyötäseuratoive', 100, validators=validators)
 
@@ -137,7 +133,7 @@ participant_attributes = [
     _make_attribute_drink(_DrinkEnum),
     _make_attribute_liquor(_LiquorEnum),
     _make_attribute_wine(_WineEnum),
-    _make_attribute_allergies(),
+    make_attribute_allergies(),
     _make_attribute_searing_preference()
 ]
 

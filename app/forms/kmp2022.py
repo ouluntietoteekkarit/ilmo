@@ -8,7 +8,8 @@ from app.form_lib.form_controller import FormController, Event, Quota
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.guilds import GUILD_SIK, GUILD_OTIT
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
-    make_attribute_quota, make_attribute_departure_location, make_attribute_name_consent, make_attribute_privacy_consent
+    make_attribute_quota, make_attribute_departure_location, make_attribute_name_consent, \
+    make_attribute_privacy_consent, make_attribute_allergies
 from app.form_lib.lib import StringAttribute, EnumAttribute
 from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
 
@@ -84,10 +85,6 @@ def _make_attribute_sex(sex_enum: Type[Enum], validators: Iterable = None):
     return EnumAttribute('sex', 'Sukupuoli', 'Sukupuoli', sex_enum, validators=validators)
 
 
-def _make_attribute_allergies(validators: Iterable = None):
-    return StringAttribute('allergies', 'Erityisruokavaliot/allergiat', 'Erityisruokavaliot', 200, validators=validators)
-
-
 _form_name = make_form_name(__file__)
 
 _QUOTA_WITH_ACCOMODATION = GUILD_OTIT + ' (majoituksella)'
@@ -115,7 +112,7 @@ participant_attributes = [
     _make_attribute_roommate_preference(),
     _make_attribute_room_sex_composition(_SexCompositionEnum),
     _make_attribute_sex(_SexEnum),
-    _make_attribute_allergies()
+    make_attribute_allergies()
 ]
 
 other_attributes = [
