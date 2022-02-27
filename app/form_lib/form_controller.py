@@ -78,9 +78,9 @@ class FormController(ABC):
         Render the requested form for this event.
         Can be overridden in inheriting class to alter the behaviour.
         """
-        form = self._context.get_form_type()()
-        entries = self._context.get_model_type().query.all()
+        (entries, registration_quotas) = self._fetch_registration_info()
         registrations = EventRegistrations(entries)
+        form = self._context.get_form_type()()
         return self._render_index_view(registrations, form, datetime.now())
 
     def post_request_handler(self, request) -> Any:
@@ -159,7 +159,6 @@ class FormController(ABC):
         concerning current registration should be sent to.
         Can be overridden in inheriting classes to alter behaviour.
         """
-
         participants = list(model.get_required_participants()) + list(model.get_optional_participants())
         recipients = []
         emails = set()
@@ -188,10 +187,10 @@ class FormController(ABC):
         # MEMO: This routine is prone to data race since it does not use transactions
         event = self._context.get_event()
         nowtime = datetime.now()
-        entries = model.query.all()
+        (entries, registration_quotas) = self._fetch_registration_info()
+
         registrations = EventRegistrations(entries)
         event_quotas = event.get_quotas()
-        registration_quotas = self._count_registration_quotas(event_quotas, registrations.get_entries())
 
         error_msg = self._check_form_submit(registrations, registration_quotas, form, nowtime)
         if len(error_msg) != 0:
@@ -204,15 +203,10 @@ class FormController(ABC):
             flash(error_msg)
             return self._render_index_view(registrations, form, nowtime)
 
-        # MEMO: This may need to change as well as the email message depending on how group registration
-        #       reserve will be handled for cases where one of multiple quotas is exceeded
-        reserve = False
-        for quota_count in model.get_quota_counts():
-            quota_name = quota_count.get_name()
-            reserve = reserve or registration_quotas[quota_name] >= event_quotas[quota_name].get_quota()
+        model.set_is_in_reserve(self._calculate_reserve_status(model, registration_quotas, event_quotas))
 
-        self._send_emails(model, reserve)
-        flash(_make_success_msg(reserve))
+        self._send_emails(model)
+        flash(_make_success_msg(model.get_is_in_reserve()))
 
         return self._post_routine_output(registrations, form, nowtime)
 
@@ -287,6 +281,31 @@ class FormController(ABC):
 
         return ''
 
+    def _fetch_registration_info(self) -> Tuple[Collection[RegistrationModel], Dict[str, int]]:
+        event_quotas = self._context.get_event().get_quotas()
+        entries: Collection[RegistrationModel] = self._context.get_model_type().query.all()
+        registration_quotas = self._count_registration_quotas(event_quotas, entries)
+        self._calculate_reserve_statuses(entries, registration_quotas, event_quotas)
+        return entries, registration_quotas
+
+    def _calculate_reserve_statuses(self, entries: Iterable[RegistrationModel],
+                                    registration_quotas: Dict[str, int],
+                                    event_quotas: Dict[str, Quota]) -> None:
+        for entry in entries:
+            entry.set_is_in_reserve(self._calculate_reserve_status(entry, registration_quotas, event_quotas))
+
+    def _calculate_reserve_status(self, entry: RegistrationModel,
+                                  registration_quotas: Dict[str, int],
+                                  event_quotas: Dict[str, Quota]) -> bool:
+        # MEMO: If any registration participant is on reserve space, the whole registration
+        #       is considered to be on reserve.
+        reserve = False
+        for quota_count in entry.get_quota_counts():
+            quota_name = quota_count.get_name()
+            reserve = reserve or registration_quotas[quota_name] >= event_quotas[quota_name].get_quota()
+
+        return reserve
+
     def _insert_model(self, model: RegistrationModel) -> str:
         try:
             db.session.add(model)
@@ -299,10 +318,10 @@ class FormController(ABC):
 
         return 'Tietokanta virhe. Yritä uudestaan.'
 
-    def _send_emails(self, model: RegistrationModel, reserve: bool) -> None:
+    def _send_emails(self, model: RegistrationModel) -> None:
         subject = self._context.get_event().get_title()
         for recipient in self._get_email_recipient(model):
-            msg = self._get_email_msg(recipient, model, reserve)
+            msg = self._get_email_msg(recipient, model, model.get_is_in_reserve())
             send_email(msg, subject, recipient)
 
     def _render_index_view(self, registrations: EventRegistrations,
@@ -324,8 +343,7 @@ class FormController(ABC):
         """
         A helper method to render a data view template.
         """
-        model = self._context.get_model_type()
-        entries = model.query.all()
+        (entries, registration_quotas) = self._fetch_registration_info()
         registrations = EventRegistrations(entries)
         return render_template('data.html',
                                event=self._context.get_event(),
