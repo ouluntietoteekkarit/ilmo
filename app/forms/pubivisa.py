@@ -22,7 +22,6 @@ def get_module_info() -> ModuleInfo:
 
 class _Controller(FormController):
 
-    # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         participants = list(model.get_required_participants()) + list(model.get_optional_participants())
         return ' '.join([
@@ -57,9 +56,6 @@ other_attributes = [
 ]
 
 _types = make_types(required_participant_attributes, optional_participant_attributes, other_attributes, 3, 1, _form_name)
-_Form = _types.get_form_type()
-_Model = _types.get_model_type()
-
 
 _event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
                datetime(2020, 10, 10, 23, 59, 59), [Quota.default_quota(50, 0)], _types.asks_name_consent())

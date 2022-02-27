@@ -23,7 +23,6 @@ def get_module_info() -> ModuleInfo:
 
 class _Controller(FormController):
 
-    # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         if reserve:
             return """{}Olet ilmoittautunut OTiTin ja SIKin KMP:lle. Olet varasijalla. Jos KMP:lle jää jostain syystä vapaita
@@ -122,8 +121,6 @@ other_attributes = [
 ]
 
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
-_Form = _types.get_form_type()
-_Model = _types.get_model_type()
 
 _event = Event('OTiT KMP', datetime(2021, 2, 25, 13, 37, 00),
                datetime(2022, 3, 10, 0, 0, 0), _get_quotas(), _types.asks_name_consent())

@@ -124,9 +124,6 @@ other_attributes = [
 ]
 
 _types = make_types(participant_attributes, participant_attributes, other_attributes, 5, 1, _form_name)
-_Form = _types.get_form_type()
-_Model = _types.get_model_type()
-
 
 # MEMO: Kept here until validation logic has been designed.
 #
@@ -135,7 +132,6 @@ _Model = _types.get_model_type()
 #                              validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_FIRST)])
 # _Form.huone1930 = RadioField('Huone (19:30) *', choices=get_str_choices(_get_escape_games()),
 #                              validators=[RequiredIfValue(other_field_name='aika', value=_PAKO_TIME_SECOND)])
-
 
 _event = Event('OTY:n Pakopelipäivä', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
                [Quota.default_quota(20, 0)], _types.asks_name_consent())

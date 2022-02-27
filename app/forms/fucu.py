@@ -21,7 +21,6 @@ def get_module_info() -> ModuleInfo:
 
 class _Controller(FormController):
 
-    # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         firstname = recipient.get_firstname()
         lastname = recipient.get_lastname()
@@ -95,8 +94,6 @@ other_attributes = [
 ]
 
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
-_Model = _types.get_model_type()
-_Form = _types.get_form_type()
 
 _event = Event('OTiTin Fuksicursio', datetime(2021, 10, 29, 12, 00, 00),
                datetime(2021, 11, 4, 21, 00, 00), _get_quotas(), _types.asks_name_consent())

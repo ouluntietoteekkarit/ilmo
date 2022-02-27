@@ -22,7 +22,6 @@ def get_module_info() -> ModuleInfo:
 
 class _Controller(FormController):
 
-    # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         if reserve:
             return ' '.join([
@@ -131,8 +130,6 @@ other_attributes = [
     make_attribute_privacy_consent()
 ]
 _types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
-_Form = _types.get_form_type()
-_Model = _types.get_model_type()
 
 _event = Event('Humanöörisitsit', datetime(2021, 2, 21, 12, 00, 00),
                datetime(2022, 3, 6, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
