@@ -69,7 +69,7 @@ class ModuleInfo:
         self._form_endpoint_get_data_csv = endpoint
 
 
-def file_path_to_form_name(path: Union[str, Path]) -> str:
+def make_form_name(path: Union[str, Path]) -> str:
     """Reduces a file path plain filename"""
     # MEMO: Add sanitation if needed
     return splitext(split(path)[1])[0]

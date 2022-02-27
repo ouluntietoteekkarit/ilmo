@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 
 from datetime import datetime
@@ -6,12 +7,43 @@ from typing import List, Type, Iterable
 from app.email import EmailRecipient, make_greet_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_allergies, make_attribute_privacy_consent, make_attribute_name_consent
-from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
+from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.form_controller import FormController, Event
 from app.form_lib.lib import Quota, EnumAttribute
-from app.form_lib.util import make_types, choices_to_enum, make_data_table_info_from_attributes
+from app.form_lib.util import make_types, choices_to_enum
 
-_form_name = file_path_to_form_name(__file__)
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+def get_module_info() -> ModuleInfo:
+    return _module_info
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D
+
+
+class _Controller(FormController):
+
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool):
+        if reserve:
+            return ' '.join([
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Olet varasijalla. ",
+                "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
+                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
+            ])
+        else:
+            return ' '.join([
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
+                "\n\n Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
+                "kanssa 17€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille ",
+                "FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, ",
+                "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
+                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
+            ])
+
+_form_name = make_form_name(__file__)
 
 _DRINK_ALCOHOLIC = 'Alkoholillinen'
 _DRINK_NON_ALCOHOLIC = 'Alkoholiton'
@@ -84,37 +116,10 @@ _Form = _types.get_form_type()
 _Model = _types.get_model_type()
 
 
-class _Controller(FormController):
 
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool):
-        if reserve:
-            return ' '.join([
-                make_greet_line(recipient),
-                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Olet varasijalla. ",
-                "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-            ])
-        else:
-            return ' '.join([
-                make_greet_line(recipient),
-                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
-                "\n\n Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
-                "kanssa 17€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille ",
-                "FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, ",
-                "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
-                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-            ])
 
 
 _event = Event('OTiTin Pitsakaljasitsit', datetime(2021, 10, 26, 12, 00, 00),
                datetime(2021, 11, 9, 23, 59, 59), [Quota.default_quota(60, 30)], _types.asks_name_consent())
 _module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
-
-# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-def get_module_info() -> ModuleInfo:
-    return _module_info
-# P U B L I C   M O D U L E   I N T E R F A C E   E N D

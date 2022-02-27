@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import List, Iterable, Type
@@ -6,12 +7,62 @@ from app.email import EmailRecipient, make_greet_line
 from app.form_lib.common_attributes import make_attribute_lastname, make_attribute_firstname, make_attribute_email, \
     make_attribute_quota, make_attribute_privacy_consent, make_attribute_name_consent
 from app.form_lib.form_controller import FormController, Event
-from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
+from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.lib import StringAttribute, EnumAttribute, Quota
 from app.form_lib.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA
-from app.form_lib.util import make_types, choices_to_enum, get_quota_choices, make_data_table_info_from_attributes
+from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
 
-_form_name = file_path_to_form_name(__file__)
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+def get_module_info() -> ModuleInfo:
+    return _module_info
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D
+
+
+class _Controller(FormController):
+
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_recipient(self, model: _Model) -> List[EmailRecipient]:
+        """
+        A method to get all email recipients to whom an email
+        concerning current registration should be sent to.
+         Can be overridden in inheriting classes to alter behaviour.
+        """
+        recipients = [
+            EmailRecipient(model.get_firstname(), model.get_lastname(), model.get_email())
+        ]
+        if model.avec_firstname and model.avec_lastname:
+            recipients.append(EmailRecipient(model.avec_firstname, model.avec_lastname, model.avec_email))
+        return recipients
+
+    # MEMO: "Evil" Covariant parameter
+    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+        if reserve:
+            return ' '.join([
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut humanöörisitseille. Olet varasijalla.",
+                "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
+                "\n\nJos tulee kysyttävää, voit olla sähköpostitse yhteydessä joensuu@otit.fi"
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
+            ])
+        else:
+            return ' '.join([
+                make_greet_line(recipient),
+                """\nOlet ilmoittautunut humanöörisitseille. Sitsit järjestetään Walhallassa 14.3. klo 18:00 alkaen.
+
+Tässä vielä maksuohjeet:
+Maksettava summa on 23€. 46€ jos osallistut avecin kanssa. Maksu tapahtuu tilisiirrolla
+Communica ry:n tilille FI52 5741 3620 5641 27. Kirjoita viestikenttään oma nimesi, avecisi 
+nimi ja \"humanöörisitsit\". Maksun eräpäivä on 14.3.2022.
+
+Sitsien jatkoja varten mukaan OMPx2
+
+Jos tulee kysyttävää, voit olla sähköpostitse yhteydessä joensuu@otit.fi
+Älä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."""
+            ])
+
+
+_form_name = make_form_name(__file__)
 
 _DRINK_ALCOHOLIC = 'Alkoholillinen'
 _DRINK_BEER = 'Olut'
@@ -100,56 +151,7 @@ _types = make_types(participant_attributes, optional_participant_attributes, oth
 _Form = _types.get_form_type()
 _Model = _types.get_model_type()
 
-
-class _Controller(FormController):
-
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_recipient(self, model: _Model) -> List[EmailRecipient]:
-        """
-        A method to get all email recipients to whom an email
-        concerning current registration should be sent to.
-         Can be overridden in inheriting classes to alter behaviour.
-        """
-        recipients = [
-            EmailRecipient(model.get_firstname(), model.get_lastname(), model.get_email())
-        ]
-        if model.avec_firstname and model.avec_lastname:
-            recipients.append(EmailRecipient(model.avec_firstname, model.avec_lastname, model.avec_email))
-        return recipients
-
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
-        if reserve:
-            return ' '.join([
-                make_greet_line(recipient),
-                "\nOlet ilmoittautunut humanöörisitseille. Olet varasijalla.",
-                "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-                "\n\nJos tulee kysyttävää, voit olla sähköpostitse yhteydessä joensuu@otit.fi"
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-            ])
-        else:
-            return ' '.join([
-                make_greet_line(recipient),
-                """\nOlet ilmoittautunut humanöörisitseille. Sitsit järjestetään Walhallassa 14.3. klo 18:00 alkaen.
-                
-Tässä vielä maksuohjeet:
-Maksettava summa on 23€. 46€ jos osallistut avecin kanssa. Maksu tapahtuu tilisiirrolla
-Communica ry:n tilille FI52 5741 3620 5641 27. Kirjoita viestikenttään oma nimesi, avecisi 
-nimi ja \"humanöörisitsit\". Maksun eräpäivä on 14.3.2022.
-
-Sitsien jatkoja varten mukaan OMPx2
-
-Jos tulee kysyttävää, voit olla sähköpostitse yhteydessä joensuu@otit.fi
-Älä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."""
-            ])
-
-
 _event = Event('Humanöörisitsit', datetime(2021, 2, 21, 12, 00, 00),
                datetime(2022, 3, 6, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
 _module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
-
-# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-def get_module_info() -> ModuleInfo:
-    return _module_info
-# P U B L I C   M O D U L E   I N T E R F A C E   E N D
