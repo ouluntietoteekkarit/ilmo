@@ -27,9 +27,9 @@ other_attributes = [
     make_attribute_binding_registration_consent(),
     make_attribute_privacy_consent()
 ]
-types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
-_Form = types.get_form_type()
-_Model = types.get_model_type()
+_types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+_Form = _types.get_form_type()
+_Model = _types.get_model_type()
 
 
 class _Controller(FormController):
@@ -49,13 +49,9 @@ class _Controller(FormController):
         ])
 
 
-# MEMO: (attribute, header_text)
-
-_data_table_info = make_data_table_info_from_attributes(participant_attributes + other_attributes)
 _event = Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00),
-               datetime(2020, 10, 27, 23, 59, 59), [Quota.default_quota(50, 0)], _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, True, _form_name,
-                          _event, _Form, _Model, _data_table_info)
+               datetime(2020, 10, 27, 23, 59, 59), [Quota.default_quota(50, 0)], _types.asks_name_consent())
+_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T

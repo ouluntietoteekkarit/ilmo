@@ -95,9 +95,9 @@ other_attributes = [
     make_attribute_privacy_consent()
 ]
 
-types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
-_Form = types.get_form_type()
-_Model = types.get_model_type()
+_types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+_Form = _types.get_form_type()
+_Model = _types.get_model_type()
 
 
 class _Controller(FormController):
@@ -123,11 +123,9 @@ Jos tulee kysyttävää voit olla sähköpostitse yhteydessä kulttuuriministeri
 Älä vastaa tähän sähköpostiin. Viesti ei mene mihinkään. """.format(make_greet_line(recipient))
 
 
-_data_table_info = make_data_table_info_from_attributes(participant_attributes + other_attributes)
 _event = Event('OTiT KMP', datetime(2021, 2, 25, 13, 37, 00),
-               datetime(2022, 3, 10, 0, 0, 0), _get_quotas(), _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, True, _form_name,
-                          _event, _Form, _Model, _data_table_info)
+               datetime(2022, 3, 10, 0, 0, 0), _get_quotas(), _types.asks_name_consent())
+_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T

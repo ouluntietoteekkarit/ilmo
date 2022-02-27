@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import Type, Union, TYPE_CHECKING, Tuple
 from os.path import split, splitext
 
-from .forms import RegistrationForm
-from .models import RegistrationModel
+from .util import TypeInfo
 from .form_controller import FormContext
 
 if TYPE_CHECKING:
@@ -18,13 +17,16 @@ class ModuleInfo:
     boilerplate code from form scripts.
     """
 
-    def __init__(self, controller_type: Type[FormController], is_active: bool,
-                 form_name: str, event: Event, form: Type[RegistrationForm], model: Type[RegistrationModel],
-                 data_table_info: DataTableInfo):
+    def __init__(self, controller_type: Type[FormController], is_active: bool, form_name: str, event: Event,
+                 type_info: TypeInfo):
         self._controller_type = controller_type
         self._is_active = is_active
         self._form_name = form_name
-        self._context = FormContext(event, form, model, data_table_info)
+        self._type_info = type_info
+        self._context = FormContext(event,
+                                    type_info.get_form_type(),
+                                    type_info.get_model_type(),
+                                    type_info.get_data_info())
         self._form_endpoint_get_index = ""
         self._form_endpoint_post_index = ""
         self._form_endpoint_get_data = ""

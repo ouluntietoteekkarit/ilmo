@@ -6,7 +6,7 @@
     <thead>
     <tr>
         <th>#</th>
-        {%- for header in table_info.get_header_names() -%}
+        {%- for header in table_info.make_header_row() -%}
             <th>{{ header }}</th>
         {%- endfor -%}
     </tr>
@@ -15,32 +15,28 @@
 
 
 {% macro participant_table_row(entry, table_info) %}
-    {%- for attribute in table_info.get_attribute_names() -%}
-        <td>{{ entry|attr(attribute) }}</td>
+    {%- for cell in table_info.model_to_row(entry) -%}
+        <td>{{ cell }}</td>
     {%- endfor -%}
 {% endmacro %}
 
 
-{% macro participant_table_rows(entries, event, start, end) %}
-    {%- for entry in entries[start:end] -%}
-        <tr>{{- caller(entry, loop.index + start) -}}</tr>
+{% macro participant_table_rows(entries, event) %}
+    {%- for entry in entries -%}
+        <tr>{{- caller(entry, loop.index) -}}</tr>
     {%- endfor -%}
 {% endmacro %}
 
 
 {% macro participant_table_body(participants, event, table_info) %}
-    {% set quotas = event.get_quotas() %}
-    {% set quota_counts = dict.fromkeys(quotas.keys(), 0) %}
     <tbody>
-        {%- call(participant, index) participant_table_rows(participants, event, 0, event.get_max_limit()) -%}
-            {% set quota_name = participant.get_quota() %}
-            {% if quota_counts[quota_name] < quotas[quota_name].get_quota() %}
-                <td>{{ index }}.</td>
-            {% else %}
+        {%- call(entry, index) participant_table_rows(participants, event) -%}
+            {% if entry.get_is_in_reserve() %}
                 <td>{{ index }}. (Varasijalla)</td>
+            {% else %}
+                <td>{{ index }}.</td>
             {% endif %}
-            {% set _ = quota_counts.update({quota_name: quota_counts[quota_name] + 1}) %}
-            {{ participant_table_row(participant, table_info) }}
+            {{ participant_table_row(entry, table_info) }}
         {%- endcall -%}
     </tbody>
 {% endmacro %}

@@ -58,9 +58,9 @@ other_attributes = [
     make_attribute_privacy_consent()
 ]
 
-types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
-_Model = types.get_model_type()
-_Form = types.get_form_type()
+_types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+_Model = _types.get_model_type()
+_Form = _types.get_form_type()
 
 
 class _Controller(FormController):
@@ -91,12 +91,9 @@ class _Controller(FormController):
             ])
 
 
-# MEMO: (attribute, header_text)
-_data_table_info = make_data_table_info_from_attributes(participant_attributes + other_attributes)
 _event = Event('OTiTin Fuksicursio', datetime(2021, 10, 29, 12, 00, 00),
-               datetime(2021, 11, 4, 21, 00, 00), _get_quotas(), _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, True, _form_name,
-                          _event, _Form, _Model, _data_table_info)
+               datetime(2021, 11, 4, 21, 00, 00), _get_quotas(), _types.asks_name_consent())
+_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T

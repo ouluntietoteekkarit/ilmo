@@ -97,7 +97,9 @@ class FormController(ABC):
         return self._render_data_view()
 
     def get_data_csv_request_handler(self, request) -> Any:
-        return _export_to_csv(self._context.get_model_type().__tablename__)
+        (entries, _) = self._fetch_registration_info()
+        form_name = self._module_info.get_form_name()
+        return _export_to_csv(form_name, self._context.get_data_table_info(), entries)
 
     def _matching_identity(self, firstname0, firstname1, lastname0, lastname1, email0, email1):
         return (firstname0 != '' and lastname0 != '' and email0 != '' and
@@ -365,14 +367,83 @@ class DataTableInfo:
     when exporting the data as CSV.
     """
 
-    def __init__(self, table_structure: Iterable[Tuple[str, str]]):
-        (self._attribute_names, self._table_headers) = list(zip(*table_structure))
+    def __init__(self, required_participant_map: Iterable[Tuple[str, str]],
+                 optional_participant_map: Iterable[Tuple[str, str]],
+                 other_attributes_map: Iterable[Tuple[str, str]],
+                 max_required_participants: int,
+                 max_optional_participants: int):
 
-    def get_header_names(self) -> List:
-        return self._table_headers
+        self._required_participant = self._unpack(required_participant_map)
+        self._optional_participant = self._unpack(optional_participant_map)
+        self._other_attributes = self._unpack(other_attributes_map)
+        self._max_required_participants = max_required_participants
+        self._max_optional_participants = max_optional_participants
 
-    def get_attribute_names(self) -> List:
-        return self._attribute_names
+    def _unpack(self, attribute_map: Iterable[Tuple[str, str]]) -> Tuple[Collection[str], Collection[str]]:
+        names = []
+        headers = []
+        for name, header in attribute_map:
+            names.append(name)
+            headers.append(header)
+
+        return names, headers
+
+    def get_required_participant_attributes(self) -> Collection[str]:
+        return self._required_participant[0]
+
+    def get_optional_participant_attributes(self) -> Collection[str]:
+        return self._optional_participant[0]
+
+    def get_other_attributes(self) -> Collection[str]:
+        return self._other_attributes[0]
+
+    def _get_required_participant_headers(self) -> Collection[str]:
+        return self._required_participant[1]
+
+    def _get_optional_participant_headers(self) -> Collection[str]:
+        return self._optional_participant[1]
+
+    def _get_other_attribute_headers(self) -> Collection[str]:
+        return self._other_attributes[1]
+
+    def get_max_required_participants(self) -> int:
+        return self._max_required_participants
+
+    def get_max_optional_participants(self) -> int:
+        return self._max_optional_participants
+
+    def make_header_row(self):
+
+        def make_headers(names: Iterable[str], start: int, end: int):
+            exclude_number = start == 0 and end == 1
+            for i in range(start, start + end):
+                for name in names:
+                    yield f'{name}' if exclude_number else f'{name}_{i}'
+
+        yield from make_headers(self._get_required_participant_headers(),
+                                0, self._max_required_participants)
+        yield from make_headers(self._get_optional_participant_headers(),
+                                self._max_required_participants, self._max_optional_participants)
+        yield from [name for name in self._get_other_attribute_headers()]
+
+    def model_to_row(self, entry: RegistrationModel):
+
+        def participants_to_row(participants: Collection[BaseParticipant],
+                                attributes: Iterable[str],
+                                max_count: int) -> Iterable[str]:
+            for participant in participants:
+                yield from [(str(getattr(participant, attribute)) for attribute in attributes)]
+
+            yield from [''] * max(max_count - len(participants), 0)
+
+        yield from participants_to_row(entry.get_required_participants(),
+                                       self.get_required_participant_attributes(),
+                                       self._max_required_participants)
+        yield from participants_to_row(entry.get_optional_participants(),
+                                       self.get_optional_participant_attributes(),
+                                       self._max_optional_participants)
+        yield from [str(getattr(entry.get_other_attributes(), attribute))
+                    for attribute in self.get_other_attributes()]
 
 
 class Event(object):
@@ -417,13 +488,14 @@ class Event(object):
         return self._list_participant_names
 
 
-
-def _export_to_csv(table_name: str) -> Any:
+def _export_to_csv(form_name: str,
+                   table_info: DataTableInfo,
+                   entries: Collection[RegistrationModel]) -> Any:
     """
     A method to export and send out the event's registration data as a CSV file
     """
     os.system('mkdir csv')
-    csv_path = export_to_csv(table_name)
+    csv_path = export_to_csv(form_name, table_info, entries)
     (folder, file) = os.path.split(csv_path)
     try:
         return send_from_directory(directory=folder, filename=file, as_attachment=True)

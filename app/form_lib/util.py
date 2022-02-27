@@ -4,10 +4,31 @@ from enum import Enum
 from typing import Collection, Iterable, Type, List, Tuple
 
 from app.form_lib.form_controller import DataTableInfo
-from app.form_lib.forms import FormTypeFactory
+from app.form_lib.forms import FormTypeFactory, RegistrationForm
 from app.form_lib.guilds import Guild
-from app.form_lib.lib import BaseAttribute, TypeContainer, Quota
-from app.form_lib.models import DbTypeFactory
+from app.form_lib.lib import BaseAttribute, Quota
+from app.form_lib.models import DbTypeFactory, RegistrationModel
+
+
+class TypeInfo:
+    def __init__(self, model_type: Type[RegistrationModel],
+                 form_type: Type[RegistrationForm],
+                 data_info: DataTableInfo):
+        self._model_type = model_type
+        self._form_type = form_type
+        self._data_info = data_info
+
+    def get_model_type(self) -> Type[RegistrationModel]:
+        return self._model_type
+
+    def get_form_type(self) -> Type[RegistrationForm]:
+        return self._form_type
+
+    def get_data_info(self) -> DataTableInfo:
+        return self._data_info
+
+    def asks_name_consent(self) -> bool:
+        return self._form_type.asks_name_consent
 
 
 def make_types(required_participant_attributes: Collection[BaseAttribute],
@@ -15,7 +36,7 @@ def make_types(required_participant_attributes: Collection[BaseAttribute],
                other_attributes: Collection[BaseAttribute],
                required_participant_count: int,
                optional_participant_count: int,
-               form_name: str) -> TypeContainer:
+               form_name: str) -> TypeInfo:
 
     factories = {
         'form_type': FormTypeFactory(required_participant_attributes, optional_participant_attributes,
@@ -25,11 +46,16 @@ def make_types(required_participant_attributes: Collection[BaseAttribute],
                                     other_attributes, required_participant_count,
                                     optional_participant_count, form_name)
     }
-    types = {}
+    data_info = make_data_table_info_from_attributes(required_participant_attributes, optional_participant_attributes,
+                                                     other_attributes, required_participant_count,
+                                                     optional_participant_count)
+    types = {
+        'data_info': data_info
+    }
     for name, factory in factories.items():
         types[name] = factory.make_type()
 
-    return TypeContainer(**types)
+    return TypeInfo(**types)
 
 
 def choices_to_enum(form_name: str, enum_name: str, values: Iterable[str]) -> Type[Enum]:
@@ -58,9 +84,27 @@ def get_quota_choices(quotas: Iterable[Quota]):
         choices.append((quota.get_name(), quota.get_name()))
     return choices
 
-def make_data_table_info_from_attributes(attributes: Iterable[BaseAttribute]) -> DataTableInfo:
-    tmp = []
-    for attribute in attributes:
-        tmp.append((attribute.get_attribute(), attribute.get_short_label()))
 
-    return DataTableInfo(tmp)
+def make_data_table_info_from_attributes(
+        required_participant_attributes: Iterable[BaseAttribute],
+        optional_participant_attributes: Iterable[BaseAttribute],
+        other_attributes: Iterable[BaseAttribute],
+        max_required_participants: int,
+        max_optional_participants: int) -> DataTableInfo:
+
+    require_participant = []
+    optional_participant = []
+    other = []
+
+    for attribute in required_participant_attributes:
+        require_participant.append((attribute.get_attribute(), attribute.get_short_label()))
+
+    for attribute in optional_participant_attributes:
+        optional_participant.append((attribute.get_attribute(), attribute.get_short_label()))
+
+    for attribute in other_attributes:
+        other.append((attribute.get_attribute(), attribute.get_short_label()))
+
+    return DataTableInfo(require_participant, optional_participant, other,
+                         max_required_participants, max_optional_participants)
+

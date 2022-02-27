@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator, Collection, TypeVar, Generic
 
 # MEMO: System and well-known attributes.
+
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
 ATTRIBUTE_NAME_EMAIL = 'email'
@@ -431,21 +432,8 @@ class Quota:
         return Quota(Quota.default_quota_name(), quota, reserve_quota)
 
 
-class TypeContainer:
-    def __init__(self, model_type, form_type):
-        self._model_type = model_type
-        self._form_type = form_type
-
-    def get_model_type(self):
-        return self._model_type
-
-    def get_form_type(self):
-        return self._form_type
-
-
 def attributes_to_fields(factory: AttributeFactory,
-                         attributes: Iterable[BaseAttribute]
-                         ) -> Iterator[BaseAttachableAttribute]:
+                         attributes: Iterable[BaseAttribute]) -> Iterator[BaseAttachableAttribute]:
     for attribute in attributes:
         if isinstance(attribute, IntAttribute):
             yield factory.make_int_attribute(attribute)

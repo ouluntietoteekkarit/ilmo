@@ -25,9 +25,8 @@ class _Controller(FormController):
 
 _data_table_info = DataTableInfo(basic_model_csv_map())
 _event = Event('---', datetime(----),
-               datetime(----), -, _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, True, _form_name,
-                          _event, _Form, _Model, _data_table_info)
+               datetime(----), -, types.asks_name_consent())
+_module_info = ModuleInfo(_Controller, True, _form_name, _event, _Form, _data_table_info)
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
