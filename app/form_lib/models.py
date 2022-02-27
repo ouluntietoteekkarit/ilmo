@@ -18,7 +18,7 @@ class BasicParticipantModel(BaseParticipant, db.Model):
     id = db.Column(db.Integer(), primary_key=True)
 
 
-class ModelAttributesModel(BaseOtherAttributes, db.Model):
+class OtherAttributesModel(BaseOtherAttributes, db.Model):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True)
 
@@ -56,21 +56,21 @@ class DbTypeFactory(TypeFactory):
 
         if len(self._required_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._required_participant_attributes)
-            required_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name, 'required').add_fields(fields).build()
+            required_participant: Type[BasicParticipantModel] = _ParticipantBuilder(self._form_name, 'required').add_fields(fields).build()
             model_types.append(required_participant)
             tmp = make_attribute_required_participants(required_participant)
             form_attributes.append(tmp)
 
         if self._optional_participant_count > 0 and len(self._optional_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._optional_participant_attributes)
-            optional_participant: Type[BasicParticipantModel] = _ParticipantModelBuilder(self._form_name, 'optional').add_fields(fields).build()
+            optional_participant: Type[BasicParticipantModel] = _ParticipantBuilder(self._form_name, 'optional').add_fields(fields).build()
             model_types.append(optional_participant)
             tmp = make_attribute_optional_participants(optional_participant)
             form_attributes.append(tmp)
 
         if len(self._other_attributes) > 0:
             fields = attributes_to_fields(factory, self._other_attributes)
-            other_attributes: Type[ModelAttributesModel] = _OtherAttributesBuilder(self._form_name).add_fields(fields).build()
+            other_attributes: Type[OtherAttributesModel] = _OtherAttributesBuilder(self._form_name).add_fields(fields).build()
             model_types.append(other_attributes)
             tmp = make_attribute_form_attributes(other_attributes)
             form_attributes.append(tmp)
@@ -142,7 +142,7 @@ class _ModelBuilder(_BaseDbBuilder):
         return self._do_build(base_type, required)
 
 
-class _ParticipantModelBuilder(_BaseDbBuilder):
+class _ParticipantBuilder(_BaseDbBuilder):
     def __init__(self, form_name: str, participant_type: str):
         super().__init__(form_name)
         assert participant_type in ['required', 'optional']
@@ -163,10 +163,10 @@ class _ParticipantModelBuilder(_BaseDbBuilder):
 
 class _OtherAttributesBuilder(_BaseDbBuilder):
 
-    def build(self, base_type: Type[Union[db.Model, ModelAttributesModel]] = None) -> Type[Union[db.Model, ModelAttributesModel]]:
+    def build(self, base_type: Type[Union[db.Model, OtherAttributesModel]] = None) -> Type[Union[db.Model, OtherAttributesModel]]:
         if not base_type:
             name = self._form_name + "_attributes"
-            base_type = type(name, (ModelAttributesModel,), {'__tablename__': name})
+            base_type = type(name, (OtherAttributesModel,), {'__tablename__': name})
 
         required = self._get_required_attributes_for_other_attributes(base_type)
         return self._do_build(base_type, required)

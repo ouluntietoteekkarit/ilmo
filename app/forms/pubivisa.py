@@ -6,13 +6,12 @@ from app.form_lib.common_attributes import make_attribute_firstname, make_attrib
     make_attribute_phone_number, make_attribute_quota, make_attribute_name_consent, \
     make_attribute_binding_registration_consent, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import get_guild_choices, choices_to_enum
 from app.form_lib.guilds import *
 from app.form_lib.form_controller import FormController, DataTableInfo, Event
 from app.form_lib.lib import Quota, StringAttribute
 from app.form_lib.models import basic_model_csv_map, binding_registration_csv_map, phone_number_csv_map,\
     guild_name_csv_map
-from app.form_lib.util import make_types
+from app.form_lib.util import make_types, choices_to_enum, get_guild_choices
 
 _form_name = file_path_to_form_name(__file__)
 

@@ -7,11 +7,10 @@ from app.email import EmailRecipient, make_greet_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_allergies, make_attribute_privacy_consent, make_attribute_name_consent
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import choices_to_enum
 from app.form_lib.form_controller import FormController, DataTableInfo, Event
 from app.form_lib.lib import Quota, EnumAttribute
 from app.form_lib.models import basic_model_csv_map
-from app.form_lib.util import make_types
+from app.form_lib.util import make_types, choices_to_enum
 
 _form_name = file_path_to_form_name(__file__)
 

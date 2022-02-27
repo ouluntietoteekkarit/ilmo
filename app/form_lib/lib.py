@@ -19,97 +19,7 @@ ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
 ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT = 'binding_registration_consent'
 
 
-class TypeFactory(ABC):
-    def __init__(self, required_participant_attributes: Collection[BaseAttribute],
-                 optional_participant_attributes: Collection[BaseAttribute],
-                 other_attributes: Collection[BaseAttribute],
-                 required_participant_count: int,
-                 optional_participant_count: int):
-        self._required_participant_attributes = required_participant_attributes
-        self._optional_participant_attributes = optional_participant_attributes
-        self._other_attributes = other_attributes
-        self._required_participant_count = required_participant_count
-        self._optional_participant_count = optional_participant_count
-
-        self._check_attributes(self._required_participant_attributes,
-                               self._optional_participant_attributes,
-                               self._other_attributes)
-
-    def _check_attributes(self, required_participant_attributes: Collection[BaseAttribute],
-                          optional_participant_attributes: Collection[BaseAttribute],
-                          other_attributes: Collection[BaseAttribute]):
-        """Ensure that mandatory attributes are present in the collections
-        and that there are no conflicting attribute configurations."""
-
-        self._check_quota_attributes(required_participant_attributes, optional_participant_attributes)
-        self._check_email_presense(required_participant_attributes, other_attributes)
-
-    def _check_quota_attributes(self, required_participant_attributes: Collection[BaseAttribute],
-                                optional_participant_attributes: Collection[BaseAttribute]):
-        if len(optional_participant_attributes) == 0:
-            return
-
-        required_has_quota = False
-        optional_has_quota = False
-
-        for attribute in required_participant_attributes:
-            required_has_quota = required_has_quota or attribute.get_attribute() == ATTRIBUTE_NAME_QUOTA
-
-        for attribute in optional_participant_attributes:
-            optional_has_quota = optional_has_quota or attribute.get_attribute() == ATTRIBUTE_NAME_QUOTA
-
-        if required_has_quota != optional_has_quota:
-            raise Exception("Either both required and optional participant must have quota or neither must have it. This is to ensure correctness of form processing logic with sensible default values in place.")
-
-    def _check_email_presense(self, required_participant_attributes: Collection[BaseAttribute],
-                          other_attributes: Collection[BaseAttribute]):
-        has_email = False
-        for attribute in required_participant_attributes:
-            has_email = has_email or attribute.get_attribute() == ATTRIBUTE_NAME_EMAIL
-
-        for attribute in other_attributes:
-            has_email = has_email or attribute.get_attribute() == ATTRIBUTE_NAME_EMAIL
-
-        if not has_email:
-            raise Exception("Either required participant or form's other attributes must have an email attribute. This is so that registration email can be sent out.")
-
-    @abstractmethod
-    def make_type(self) -> Type[BaseRegistration]:
-        pass
-
-
-class AttributeFactory(ABC):
-
-    @abstractmethod
-    def make_int_attribute(self, params: IntAttribute) -> BaseAttachableAttribute:
-        pass
-
-    @abstractmethod
-    def make_string_attribute(self, params: StringAttribute) -> BaseAttachableAttribute:
-        pass
-
-    @abstractmethod
-    def make_bool_attribute(self, params: BoolAttribute) -> BaseAttachableAttribute:
-        pass
-
-    @abstractmethod
-    def make_datetime_attribute(self, params: DatetimeAttribute) -> BaseAttachableAttribute:
-        pass
-
-    @abstractmethod
-    def make_enum_attribute(self, params: EnumAttribute) -> BaseAttachableAttribute:
-        pass
-
-    @abstractmethod
-    def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
-        pass
-
-    @abstractmethod
-    def make_object_attribute(self, params: ObjectAttribute) -> BaseAttachableAttribute:
-        pass
-
-
-# MEMO: Must not have meta class.
+# MEMO: Must not have metaclass.
 class BaseFormComponent:
     pass
 
@@ -202,33 +112,94 @@ class BaseRegistration(BaseFormComponent):
         self._is_in_reserve = value
 
 
-class BaseAttachableAttribute(ABC):
-    def __init__(self, attribute_name: str, getter: Union[Callable[[Any], Any], None]):
-        self._attribute_name = attribute_name
-        self._getter = getter
+class TypeFactory(ABC):
+    def __init__(self, required_participant_attributes: Collection[BaseAttribute],
+                 optional_participant_attributes: Collection[BaseAttribute],
+                 other_attributes: Collection[BaseAttribute],
+                 required_participant_count: int,
+                 optional_participant_count: int):
+        self._required_participant_attributes = required_participant_attributes
+        self._optional_participant_attributes = optional_participant_attributes
+        self._other_attributes = other_attributes
+        self._required_participant_count = required_participant_count
+        self._optional_participant_count = optional_participant_count
 
-    def get_attribute_name(self) -> str:
-        return self._attribute_name
+        self._check_attributes(self._required_participant_attributes,
+                               self._optional_participant_attributes,
+                               self._other_attributes)
 
-    def attach_to(self, component: Type[BaseFormComponent]) -> Type[BaseFormComponent]:
-        setattr(component, self._attribute_name, self._make_field_value())
-        if self._getter:
-            setattr(component, self._getter.__name__, self._getter)
+    def _check_attributes(self, required_participant_attributes: Collection[BaseAttribute],
+                          optional_participant_attributes: Collection[BaseAttribute],
+                          other_attributes: Collection[BaseAttribute]):
+        """Ensure that mandatory attributes are present in the collections
+        and that there are no conflicting attribute configurations."""
 
-        return component
+        self._check_quota_attributes(required_participant_attributes, optional_participant_attributes)
+        self._check_email_presense(required_participant_attributes, other_attributes)
+
+    def _check_quota_attributes(self, required_participant_attributes: Collection[BaseAttribute],
+                                optional_participant_attributes: Collection[BaseAttribute]):
+        if len(optional_participant_attributes) == 0:
+            return
+
+        required_has_quota = False
+        optional_has_quota = False
+
+        for attribute in required_participant_attributes:
+            required_has_quota = required_has_quota or attribute.get_attribute() == ATTRIBUTE_NAME_QUOTA
+
+        for attribute in optional_participant_attributes:
+            optional_has_quota = optional_has_quota or attribute.get_attribute() == ATTRIBUTE_NAME_QUOTA
+
+        if required_has_quota != optional_has_quota:
+            raise Exception("Either both required and optional participant must have quota or neither must have it. This is to ensure correctness of form processing logic with sensible default values in place.")
+
+    def _check_email_presense(self, required_participant_attributes: Collection[BaseAttribute],
+                          other_attributes: Collection[BaseAttribute]):
+        has_email = False
+        for attribute in required_participant_attributes:
+            has_email = has_email or attribute.get_attribute() == ATTRIBUTE_NAME_EMAIL
+
+        for attribute in other_attributes:
+            has_email = has_email or attribute.get_attribute() == ATTRIBUTE_NAME_EMAIL
+
+        if not has_email:
+            raise Exception("Either required participant or form's other attributes must have an email attribute. This is so that registration email can be sent out.")
 
     @abstractmethod
-    def _make_field_value(self) -> Any:
+    def make_type(self) -> Type[BaseRegistration]:
         pass
 
 
-class NullAttachableAttribute(BaseAttachableAttribute):
+class AttributeFactory(ABC):
 
-    def attach_to(self, component: Type[BaseFormComponent]) -> Type[BaseFormComponent]:
-        return component
+    @abstractmethod
+    def make_int_attribute(self, params: IntAttribute) -> BaseAttachableAttribute:
+        pass
 
-    def _make_field_value(self) -> Any:
-        return None
+    @abstractmethod
+    def make_string_attribute(self, params: StringAttribute) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_bool_attribute(self, params: BoolAttribute) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_datetime_attribute(self, params: DatetimeAttribute) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_enum_attribute(self, params: EnumAttribute) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
+        pass
+
+    @abstractmethod
+    def make_object_attribute(self, params: ObjectAttribute) -> BaseAttachableAttribute:
+        pass
 
 
 T = TypeVar('T', bound=BaseFormComponent)
@@ -292,6 +263,35 @@ class BaseTypeBuilder(ABC):
                 raise Exception(attr + " is a mandatory attribute of " + base_type.__name__)
 
         return base_type
+
+
+class BaseAttachableAttribute(ABC):
+    def __init__(self, attribute_name: str, getter: Union[Callable[[Any], Any], None]):
+        self._attribute_name = attribute_name
+        self._getter = getter
+
+    def get_attribute_name(self) -> str:
+        return self._attribute_name
+
+    def attach_to(self, component: Type[BaseFormComponent]) -> Type[BaseFormComponent]:
+        setattr(component, self._attribute_name, self._make_field_value())
+        if self._getter:
+            setattr(component, self._getter.__name__, self._getter)
+
+        return component
+
+    @abstractmethod
+    def _make_field_value(self) -> Any:
+        pass
+
+
+class NullAttachableAttribute(BaseAttachableAttribute):
+
+    def attach_to(self, component: Type[BaseFormComponent]) -> Type[BaseFormComponent]:
+        return component
+
+    def _make_field_value(self) -> Any:
+        return None
 
 
 class BaseAttribute(ABC):
