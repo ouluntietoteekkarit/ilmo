@@ -155,7 +155,7 @@ class FormController(ABC):
 
         return registration_quotas
 
-    def _get_email_recipient(self, model: RegistrationModel) -> List[EmailRecipient]:
+    def _get_email_recipients(self, model: RegistrationModel) -> Collection[BaseParticipant]:
         """
         A method to get all email recipients to whom an email
         concerning current registration should be sent to.
@@ -167,13 +167,16 @@ class FormController(ABC):
         for p in participants:
             email = p.get_email()
             if len(email) != 0 and email not in emails:
-                recipients.append(EmailRecipient(p.get_firstname(), p.get_lastname(), email))
+                recipients.append(p)
                 emails.add(email)
 
         return recipients
 
+    def _participant_to_email_recipient(self, participant: BaseParticipant) -> EmailRecipient:
+        return EmailRecipient(participant.get_firstname(), participant.get_lastname(), participant.get_email())
+
     @abstractmethod
-    def _get_email_msg(self, recipient: EmailRecipient, model: RegistrationModel, reserve: bool) -> str:
+    def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         pass
 
     def _form_to_model(self, form: RegistrationForm, nowtime: datetime) -> RegistrationModel:
@@ -322,9 +325,9 @@ class FormController(ABC):
 
     def _send_emails(self, model: RegistrationModel) -> None:
         subject = self._context.get_event().get_title()
-        for recipient in self._get_email_recipient(model):
+        for recipient in self._get_email_recipients(model):
             msg = self._get_email_msg(recipient, model, model.get_is_in_reserve())
-            send_email(msg, subject, recipient)
+            send_email(msg, subject, self._participant_to_email_recipient(recipient))
 
     def _render_index_view(self, registrations: EventRegistrations,
                            form: RegistrationForm, nowtime, **extra_template_args) -> Any:

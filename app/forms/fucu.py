@@ -2,11 +2,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List
 
-from app.email import EmailRecipient, make_greet_line
+from app.email import make_greet_line
 from app.form_lib.form_controller import FormController, Event
-from app.form_lib.lib import Quota
+from app.form_lib.lib import Quota, BaseParticipant
 from app.form_lib.form_module import ModuleInfo, make_form_name
-from app.form_lib.models import BasicParticipantModel
+from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_phone_number, make_attribute_departure_location, make_attribute_quota, make_attribute_name_consent, \
@@ -22,13 +22,13 @@ def get_module_info() -> ModuleInfo:
 class _Controller(FormController):
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, recipient: EmailRecipient, model: BasicParticipantModel, reserve: bool) -> str:
+    def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         firstname = recipient.get_firstname()
         lastname = recipient.get_lastname()
-        email = recipient.get_email_address()
-        phone_number = model.get_phone_number()
-        departure_location = model.get_departure_location()
-        quota = model.get_quota()
+        email = recipient.get_email()
+        phone_number = recipient.get_phone_number()
+        departure_location = recipient.get_departure_location()
+        quota = recipient.get_quota()
         if reserve:
             return ' '.join([
                 make_greet_line(recipient),

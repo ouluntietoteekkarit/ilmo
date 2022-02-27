@@ -3,14 +3,15 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Dict, Collection, Iterable, Type
 
-from app.email import EmailRecipient, make_greet_line, make_signature_line
+from app.email import make_greet_line
 from app.form_lib.form_controller import FormController, Event, Quota
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.guilds import GUILD_SIK, GUILD_OTIT
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_quota, make_attribute_departure_location, make_attribute_name_consent, \
     make_attribute_privacy_consent, make_attribute_allergies
-from app.form_lib.lib import StringAttribute, EnumAttribute
+from app.form_lib.lib import StringAttribute, EnumAttribute, BaseParticipant
+from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
 
 
@@ -23,7 +24,7 @@ def get_module_info() -> ModuleInfo:
 class _Controller(FormController):
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+    def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         if reserve:
             return """{}Olet ilmoittautunut OTiTin ja SIKin KMP:lle. Olet varasijalla. Jos KMP:lle jää jostain syystä vapaita
 paikkoja, sinuun voidaan olla yhteydessä.

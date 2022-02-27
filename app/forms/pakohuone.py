@@ -5,13 +5,14 @@ from datetime import datetime
 import json
 from typing import Any, List, Type, Iterable
 
-from app.email import EmailRecipient, make_greet_line, make_signature_line
+from app.email import make_greet_line, make_signature_line, make_fullname
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_phone_number, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.forms import RegistrationForm
-from app.form_lib.lib import Quota, EnumAttribute
+from app.form_lib.lib import Quota, EnumAttribute, BaseParticipant
 from app.form_lib.form_controller import FormController, Event, EventRegistrations
+from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types, choices_to_enum
 
 
@@ -49,24 +50,20 @@ class _Controller(FormController):
             **extra_template_args})
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+    def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         firstname = recipient.get_firstname()
         lastname = recipient.get_lastname()
+        participants = list(model.get_required_participants()) + list(model.get_optional_participants())
+
         return ' '.join([
             make_greet_line(recipient),
             "\nOlet ilmoittautunut OTYn Pakopelipäivä tapahtumaan. Syötit seuraavia tietoja: ",
             "\n'Nimi: ", firstname, " ", lastname,
-            "\nSähköposti: ", recipient.get_email_address(),
-            "\nPuhelinnumero: ", model.get_phone_number(),
-            "\nJoukkuelaisten nimet: ",
-            "\n", model.firstname, " ", model.lastname,
-            "\n", model.etunimi1, " ", model.sukunimi1,
-            "\n", model.etunimi2, " ", model.sukunimi2,
-            "\n", model.etunimi3, " ", model.sukunimi3,
-            "\n", model.etunimi4, " ", model.sukunimi4,
-            "\n", model.etunimi5, " ", model.sukunimi5,
-            "\n\n", make_signature_line()
-        ])
+            "\nSähköposti: ", recipient.get_email(),
+            "\nPuhelinnumero: ", recipient.get_phone_number(),
+            "\nJoukkuelaisten nimet:\n"] +
+            [make_fullname(participant.get_firstname(), participant.get_lastname()) for participant in participants] +
+            ["\n\n", make_signature_line()])
 
 
 _form_name = make_form_name(__file__)

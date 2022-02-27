@@ -3,12 +3,13 @@ from flask import render_template
 from datetime import datetime
 from typing import Any
 
-from app.email import EmailRecipient, make_greet_line, make_signature_line
+from app.email import make_greet_line, make_signature_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_privacy_consent
 from app.form_lib.form_controller import FormController, Event, EventRegistrations
-from app.form_lib.lib import Quota
+from app.form_lib.lib import Quota, BaseParticipant
 from app.form_lib.form_module import ModuleInfo, make_form_name
+from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types
 
 
@@ -24,14 +25,14 @@ class _Controller(FormController):
         return render_template('kysely_arvonta_juttu/redirect.html')
 
     # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool) -> str:
+    def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         firstname = recipient.get_firstname()
         lastname = recipient.get_lastname()
         return ' '.join([
             make_greet_line(recipient),
             "\nOlet jättänyt yhteystietosi hyvinvointi- ja etäopiskelukyselyn arvontaan. Syötit seuraavia tietoja: ",
             "\nNimi: ", firstname, " ", lastname,
-            "\nSähköposti: ", recipient.get_email_address(),
+            "\nSähköposti: ", recipient.get_email(),
             "\n\n", make_signature_line()
         ])
 
