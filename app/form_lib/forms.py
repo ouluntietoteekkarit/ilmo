@@ -11,24 +11,23 @@ from wtforms.validators import InputRequired, Optional
 
 from app.form_lib.guilds import Guild
 from app.form_lib.lib import BaseAttachableAttribute, BaseModel, BaseOtherAttributes, \
-    BaseParticipant, BaseTypeBuilder, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
-    ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, AttributeFactory, \
+    BaseParticipant, BaseTypeBuilder, AttributeFactory, \
     ObjectAttribute, IntAttribute, ListAttribute, DatetimeAttribute, BoolAttribute, \
     StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, EnumAttribute, attributes_to_fields, \
-    ATTRIBUTE_NAME_OTHER_ATTRIBUTES, ATTRIBUTE_NAME_NAME_CONSENT, Quota
+    ATTRIBUTE_NAME_NAME_CONSENT, Quota
 from app.form_lib.common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
     make_attribute_form_attributes
 
 
-class BasicParticipantForm(Form, BaseParticipant):
+class BasicParticipantForm(BaseParticipant, Form):
     pass
 
 
-class FormAttributesForm(Form, BaseOtherAttributes):
+class FormAttributesForm(BaseOtherAttributes, Form):
     asks_name_consent = False
 
 
-class BasicForm(FlaskForm, BaseModel):
+class BasicForm(BaseModel, FlaskForm):
     pass
 
 

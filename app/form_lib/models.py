@@ -6,25 +6,24 @@ from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict, Coll
 
 from app import db
 from .lib import BaseParticipant, BaseOtherAttributes, BaseModel, BaseAttachableAttribute, BaseFormComponent, \
-    BaseTypeBuilder, AttributeFactory, TypeFactory, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
-    ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, ATTRIBUTE_NAME_PRIVACY_CONSENT, BaseAttribute, ObjectAttribute, \
+    BaseTypeBuilder, AttributeFactory, TypeFactory, BaseAttribute, ObjectAttribute, \
     ListAttribute, DatetimeAttribute, BoolAttribute, StringAttribute, IntAttribute, EnumAttribute, \
-    attributes_to_fields, ATTRIBUTE_NAME_OTHER_ATTRIBUTES
+    attributes_to_fields
 from .common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
     make_attribute_form_attributes
 
 
-class BasicParticipantModel(db.Model, BaseParticipant):
+class BasicParticipantModel(BaseParticipant, db.Model):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True)
 
 
-class ModelAttributesModel(db.Model, BaseOtherAttributes):
+class ModelAttributesModel(BaseOtherAttributes, db.Model):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True)
 
 
-class BasicModel(db.Model, BaseModel):
+class BasicModel(BaseModel, db.Model):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True)
     create_time = db.Column(db.DateTime())

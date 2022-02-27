@@ -110,18 +110,22 @@ class AttributeFactory(ABC):
 
 # MEMO: Must not have meta class.
 class BaseFormComponent:
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class BaseParticipant(BaseFormComponent):
     """
-    Interface-like class for form's participant models.
+    Interface-like/mixin class for form's participant models.
     Constains getters for all well known attributes to
     help typing.
 
     MEMO: The getter naming must match that of the overriding
           getters that are created dynamically.
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def get_firstname(self) -> str:
         raise Exception("Not implemented")
 
@@ -148,12 +152,17 @@ class BaseParticipant(BaseFormComponent):
 
 
 class BaseOtherAttributes(BaseFormComponent):
-    """Interface-like class for form's attribute models."""
-    pass
+    """Interface-like/mixin class for form's attribute models."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class BaseModel(BaseFormComponent):
-    """Interface-like class for form's data models."""
+    """Interface-like/mixin class for form's data models."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._in_reserve = False
+
     def get_other_attributes(self) -> BaseOtherAttributes:
         raise Exception("Not implemented")
 
@@ -185,6 +194,12 @@ class BaseModel(BaseFormComponent):
             quotas.append(Quota(p.get_quota(), int(p.is_filled())))
 
         return quotas
+
+    def get_in_reserve(self) -> bool:
+        return self._in_reserve
+
+    def set_in_reserve(self, value: bool) -> None:
+        self._in_reserve = value
 
 
 class BaseAttachableAttribute(ABC):
