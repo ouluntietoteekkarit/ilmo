@@ -27,18 +27,18 @@
             {{ participant_form(participant) }}
         {% endfor %}
 
-        {{ macros.form_field(form.show_name_consent) }}
-        {{ macros.form_field(form.privacy_consent) }}
-        {{ macros.form_field(form.binding_registration_consent) }}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
+        {{ macros.form_field(other.binding_registration_consent) }}
     {%- endcall -%}
 {%- endblock -%}
 
 {%- block participant_list -%}
-    {%- call(entry, quota, max_quota) macros.participant_list_routine(registrations.get_entries(), event) -%}
-        {% if quota < max_quota %}
-            <p>{{ entry.teamname }}</p>
+    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        {% if is_in_reserve %}
+            <p>{{ entry.get_other_attributes().teamname }} (Varasijalla)</p>
         {% else %}
-            <p>{{ entry.teamname }} (Varasijalla)</p>
+            <p>{{ entry.get_other_attributes().teamname }}</p>
         {% endif %}
     {%- endcall -%}
 {%- endblock -%}

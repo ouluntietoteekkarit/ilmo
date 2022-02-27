@@ -48,7 +48,7 @@ class _Controller(FormController):
 _data_table_info = DataTableInfo(basic_model_csv_map())
 _event = Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00),
                datetime(2020, 11, 23, 23, 59, 59), [Quota.default_quota(4000, 0)], _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, False, _form_name,
+_module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
 

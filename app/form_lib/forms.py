@@ -10,7 +10,7 @@ from wtforms import StringField, BooleanField, SelectField, FormField, Form, Fie
 from wtforms.validators import InputRequired, Optional
 
 from app.form_lib.guilds import Guild
-from app.form_lib.lib import BaseAttachableAttribute, BaseModel, BaseOtherAttributes, \
+from app.form_lib.lib import BaseAttachableAttribute, BaseRegistration, BaseOtherAttributes, \
     BaseParticipant, BaseTypeBuilder, AttributeFactory, \
     ObjectAttribute, IntAttribute, ListAttribute, DatetimeAttribute, BoolAttribute, \
     StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, EnumAttribute, attributes_to_fields, \
@@ -27,7 +27,7 @@ class FormAttributesForm(BaseOtherAttributes, Form):
     asks_name_consent = False
 
 
-class BasicForm(BaseModel, FlaskForm):
+class RegistrationForm(BaseRegistration, FlaskForm):
     pass
 
 
@@ -40,9 +40,9 @@ class _FormBuilder(BaseFormBuilder):
         super().__init__()
         self._asks_name_consent = asks_name_consent
 
-    def build(self, base_type: Type[BasicForm] = None) -> Type[BasicForm]:
+    def build(self, base_type: Type[RegistrationForm] = None) -> Type[RegistrationForm]:
         if not base_type:
-            base_type = type('Form', (BasicForm,), {})
+            base_type = type('Form', (RegistrationForm,), {})
 
         required = self._get_required_attributes_for_base_model(base_type)
         form_type = self._do_build(base_type, required)

@@ -93,7 +93,7 @@ _data_table_info = DataTableInfo(
      ('kilta3', 'kilta3')])
 _event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
                datetime(2020, 10, 10, 23, 59, 59), [Quota.default_quota(50, 0)], _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, False, _form_name,
+_module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
 

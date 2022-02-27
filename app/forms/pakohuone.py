@@ -8,7 +8,7 @@ from app.email import EmailRecipient, make_greet_line, make_signature_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_phone_number, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import BasicForm, choices_to_enum
+from app.form_lib.forms import RegistrationForm, choices_to_enum
 from app.form_lib.lib import Quota, EnumAttribute
 from app.form_lib.form_controller import FormController, DataTableInfo, Event, EventRegistrations
 from app.form_lib.models import basic_model_csv_map, phone_number_csv_map
@@ -47,11 +47,11 @@ def _make_time_attribute(time_enum: Type[Enum], validators: Iterable = None):
 
 
 def _make_room1800_attribute(games_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('huone1800', 'Huone (18:00) *', 'Huone (18:00)', games_enum, validators=validators)
+    return EnumAttribute('room1800', 'Huone (18:00) *', 'Huone (18:00)', games_enum, validators=validators)
 
 
 def _make_room1930_attribute(games_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('huone1930', 'Huone (19:30) *', 'Huone (19:30)', games_enum, validators=validators)
+    return EnumAttribute('room1930', 'Huone (19:30) *', 'Huone (19:30)', games_enum, validators=validators)
 
 
 _TimeEnum = choices_to_enum(_form_name, 'time', _get_game_times())
@@ -87,18 +87,18 @@ _Model = types.get_model_type()
 class _Controller(FormController):
 
     def _check_form_submit(self, registrations: EventRegistrations,
-                           registration_quotas, form: BasicForm, nowtime: int) -> str:
+                           registration_quotas, form: RegistrationForm, nowtime: int) -> str:
         error_msg = super()._check_form_submit(registrations, registration_quotas, form, nowtime)
         if len(error_msg) != 0:
             return error_msg
 
         # Check escape room availability
-        chosen_time = form.aika.data
-        early_room = form.huone1800.data
-        later_room = form.huone1930.data
+        chosen_time = form.time.data
+        early_room = form.room1800.data
+        later_room = form.room1930.data
         for entry in registrations.get_entries():
-            if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.huone1800 == early_room) or (
-                    entry.aika == _PAKO_TIME_SECOND and entry.huone1930 == later_room)):
+            if entry.aika == chosen_time and ((entry.aika == _PAKO_TIME_FIRST and entry.room1800 == early_room) or (
+                    entry.time == _PAKO_TIME_SECOND and entry.room1930 == later_room)):
                 return 'Valisemasi huone on jo varattu valitsemanasi aikana'
 
         return error_msg
@@ -106,7 +106,7 @@ class _Controller(FormController):
     def _render_index_view(self, registrations: EventRegistrations, form: _Form, nowtime, **extra_template_args) -> Any:
         varatut = []
         for entry in registrations.get_entries():
-            varatut.append((entry.aika, entry.huone1800, entry.huone1930))
+            varatut.append((entry.time, entry.room1800, entry.room1930))
         return super()._render_index_view(registrations, form, nowtime, **{
             'varatut': json.dumps(varatut),
             **extra_template_args})
@@ -134,9 +134,9 @@ class _Controller(FormController):
 
 # MEMO: (attribute, header_text)
 _data_table_info = DataTableInfo([
-    ('aika', 'aika'),
-    ('huone1800', 'huone1800'),
-    ('huone1930', 'huone1930')] +
+    ('time', 'aika'),
+    ('room1800', 'huone1800'),
+    ('room1930', 'huone1930')] +
     basic_model_csv_map() +
     phone_number_csv_map() + [
     ('etunimi1', 'etunimi1'),
@@ -151,7 +151,7 @@ _data_table_info = DataTableInfo([
     ('sukunimi5', 'sukunimi5')])
 _event = Event('OTY:n Pakopelipäivä', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
                [Quota.default_quota(20, 0)], _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, False, _form_name,
+_module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
 

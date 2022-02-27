@@ -68,47 +68,35 @@
 
 
 {% macro participant_list_routine(entries, event) %}
-
-    {%- macro reserve_check(participants, ns) -%}
-        {%- for participant in required_participants -%}
-            {%- set quota_name = participant.quota -%}
-            {%- set quota_count = quota_counts[quota_name] -%}
-            {%- set ns.reserve = ns.reserve or quota_count < quotas[quota_name].get_quota() -%}
-            {%- set _ = quota_counts.update({quota_name: quota_count + 1}) -%}
-        {%- endfor -%}
-    {%- endmacro -%}
-
     {%- if event.get_list_participant_name() -%}
-        {%- set quotas = event.get_quotas() -%}
-        {%- set quota_counts = dict.fromkeys(quotas.keys(), 0) -%}
-
         {%- for entry in entries %}
-            {%- set required_participants = entry.get_required_participants() -%}
-            {%- set optional_participants = entry.get_optional_participants() -%}
-            {%- set ns = namespace(reserve = false) -%}
-
-            {# MEMO: Calculate if this entry is on a reserve place. #}
-            {% reserver_check(required_participants, ns) %}
-            {% reserver_check(optional_participants, ns) %}
-
             {% if entry.get_other_attributes().get_show_name_consent() %}
-                {# parameters: required_participants, optional_participants, reserve #}
-                {{- caller(required_participants, optional_participants, ns.reserve) -}}
+                {{- caller(entry, entry.get_is_in_reserve()) -}}
             {% endif %}
-
         {% endfor -%}
     {%- endif -%}
 {% endmacro %}
 
 
 {% macro participant_list(entries, event) %}
-    {% call(entry, quota_count, max_quota_count) participant_list_routine(entries, event) %}
-        {% if quota_count < max_quota_count %}
-            <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }}</p>
-        {% else %}
-            <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }} (Varasijalla)</p>
-        {% endif %}
-    {% endcall %}
+    {# TODO: See if the HTML could be made prettier #}
+    {%- call(entry, is_in_reserve) participant_list_routine(entries, event) -%}
+        <p>
+        {%- for participant in entry.get_required_participants() -%}
+            {{ participant.get_firstname() }} {{ participant.get_lastname() }}
+            {{ ", " if not loop.last }}
+        {%- endfor -%}
+        {%- for participant in entry.get_optional_participants() -%}
+            {# MEMO: Required participants should never be empty so the comma can preceed here #}
+            {{ ", " }}
+            {{ participant.get_firstname() }} {{ participant.get_lastname() }}
+        {%- endfor -%}
+        {%- if is_in_reserve -%}
+            (Varasijalla)
+        {%- else -%}
+        {%- endif -%}
+        </p>
+    {%- endcall -%}
 {% endmacro %}
 
 

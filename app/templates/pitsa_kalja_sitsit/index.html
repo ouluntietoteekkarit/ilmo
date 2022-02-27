@@ -31,16 +31,19 @@
 
 {%- block registration_form -%}
     {%- call macros.registration_form_routine(form) -%}
-        {{ macros.form_field(form.firstname) }}
-        {{ macros.form_field(form.lastname) }}
-        {{ macros.form_field(form.email) }}
-        {{ macros.form_field(form.alkoholi) }}
+        {%- set participant = form.get_required_participants()[0] -%}
+        {{ macros.form_field(participant.firstname) }}
+        {{ macros.form_field(participant.lastname) }}
+        {{ macros.form_field(participant.email) }}
+        {{ macros.form_field(participant.alcohol) }}
         <div id="mieto" style="display: none;">
-            {{ macros.form_field(form.mieto) }}
+            {{ macros.form_field(participant.drink_strength) }}
         </div>
-        {{ macros.form_field(form.pitsa) }}
-        {{ macros.form_field(form.allergiat) }}
-        {{ macros.form_field(form.show_name_consent) }}
-        {{ macros.form_field(form.privacy_consent) }}
+        {{ macros.form_field(participant.pizza) }}
+        {{ macros.form_field(participant.allergies) }}
+
+        {%- set other = form.get_other_attributes() -%}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
     {%- endcall -%}
 {%- endblock -%}

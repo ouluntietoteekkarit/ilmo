@@ -13,38 +13,41 @@
         10 per kierros. Ensimmäinen kierros alkaa 18:00 ja toinen kierros 19:30.</p>
 {%- endblock -%}
 
+{%- macro participant_entry(participant) -%}
+    {{ macros.form_field(participant.firstname) }}
+    {{ macros.form_field(participant.lastname) }}
+{%- endmacro -%}
+
 {%- block registration_form -%}
     {%- call macros.registration_form_routine(form) -%}
-        {{ macros.form_field(form.aika) }}
-        <div id="huone1800" style="display: none;">
-            {{ macros.form_field(form.huone1800) }}
+        {%- set other = form.get_other_attributes() -%}
+
+        {{ macros.form_field(other.time) }}
+        <div id="room1800" style="display: none;">
+            {{ macros.form_field(other.room1800) }}
         </div>
-        <div id="huone1930" style="display: none;">
-            {{ macros.form_field(form.huone1930) }}
+        <div id="room1930" style="display: none;">
+            {{ macros.form_field(other.room1930) }}
         </div>
-        {{ macros.form_field(form.firstname) }}
-        {{ macros.form_field(form.lastname) }}
-        {{ macros.form_field(form.phone0) }}
-        {{ macros.form_field(form.email) }}
-        {{ macros.form_field(form.etunimi1) }}
-        {{ macros.form_field(form.sukunimi1) }}
-        {{ macros.form_field(form.etunimi2) }}
-        {{ macros.form_field(form.sukunimi2) }}
-        {{ macros.form_field(form.etunimi3) }}
-        {{ macros.form_field(form.sukunimi3) }}
-        {{ macros.form_field(form.etunimi4) }}
-        {{ macros.form_field(form.sukunimi4) }}
-        {{ macros.form_field(form.etunimi5) }}
-        {{ macros.form_field(form.sukunimi5) }}
-        {{ macros.form_field(form.privacy_consent) }}
+        {{ macros.form_field(other.phone_number) }}
+        {{ macros.form_field(other.email) }}
+
+        {%- for participant in form.get_required_participants() -%}
+            {{ participant_entry(participant) }}
+        {%- endfor -%}
+        {%- for participant in form.get_optional_participants() -%}
+            {{ participant_entry(participant) }}
+        {%- endfor -%}
+        {{ macros.form_field(other.privacy_consent) }}
     {%- endcall -%}
 {%- endblock -%}
 
 {%- block participant_list -%}
-    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, 0, event.get_participant_limit()) -%}
-        <p>{{ entry.teamname }}</p>
-    {%- endcall -%}
-    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, event.get_participant_limit(), event.get_max_limit()) -%}
-        <p>{{ entry.teamname }} (Varasijalla)</p>
+    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        {%- if is_in_reserve -%}
+            <p>{{ entry.get_other_attributes().teamname }} (Varasijalla)</p>
+        {%- else -%}
+            <p>{{ entry.get_other_attributes().teamname }}</p>
+        {%- endif -%}
     {%- endcall -%}
 {%- endblock -%}

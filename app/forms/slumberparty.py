@@ -12,7 +12,7 @@ from app.form_lib.forms import get_guild_choices, choices_to_enum
 from app.form_lib.guilds import *
 from app.form_lib.form_controller import FormController, DataTableInfo, Event
 from app.form_lib.lib import Quota
-from app.form_lib.models import BasicModel, basic_model_csv_map, phone_number_csv_map, guild_name_csv_map, \
+from app.form_lib.models import RegistrationModel, basic_model_csv_map, phone_number_csv_map, guild_name_csv_map, \
     binding_registration_csv_map
 from app.form_lib.util import make_types
 
@@ -61,7 +61,7 @@ _data_table_info = DataTableInfo(basic_model_csv_map() +
                                  binding_registration_csv_map())
 _event = Event('Slumberparty', datetime(2020, 10, 21, 12, 00, 00),
                datetime(2020, 10, 27, 23, 59, 59), [Quota.default_quota(50, 0)], _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, False, _form_name,
+_module_info = ModuleInfo(_Controller, True, _form_name,
                           _event, _Form, _Model, _data_table_info)
 
 

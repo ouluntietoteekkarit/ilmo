@@ -11,8 +11,8 @@ from .lib import Quota, BaseParticipant
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
-    from .forms import BasicForm
-    from .models import BasicModel
+    from .forms import RegistrationForm
+    from .models import RegistrationModel
 
 
 class FormContext:
@@ -21,7 +21,7 @@ class FormContext:
     information.
     """
 
-    def __init__(self, event: Event, form: Type[BasicForm], model: Type[BasicModel],
+    def __init__(self, event: Event, form: Type[RegistrationForm], model: Type[RegistrationModel],
                  data_table_info: DataTableInfo):
         self._event = event
         self._form = form
@@ -31,10 +31,10 @@ class FormContext:
     def get_event(self) -> Event:
         return self._event
 
-    def get_form_type(self) -> Type[BasicForm]:
+    def get_form_type(self) -> Type[RegistrationForm]:
         return self._form
 
-    def get_model_type(self) -> Type[BasicModel]:
+    def get_model_type(self) -> Type[RegistrationModel]:
         return self._model
 
     def get_data_table_info(self) -> DataTableInfo:
@@ -46,11 +46,11 @@ class EventRegistrations:
     A class to hold dynamic registration data
     """
 
-    def __init__(self, entries: Collection[BasicModel]):
+    def __init__(self, entries: Collection[RegistrationModel]):
         self._entries = entries
         self._participant_count = self._count_total_participants(self._entries)
 
-    def _count_total_participants(self, entries: Collection[BasicModel]) -> int:
+    def _count_total_participants(self, entries: Collection[RegistrationModel]) -> int:
         """
         A method to count the number of event participants.
         """
@@ -103,7 +103,7 @@ class FormController(ABC):
         return (firstname0 != '' and lastname0 != '' and email0 != '' and
                 firstname0 == firstname1 and lastname0 == lastname1 and email0 == email1)
 
-    def _find_from_entries(self, entries: Iterable[BasicModel], form: BasicForm) -> Tuple[bool, str]:
+    def _find_from_entries(self, entries: Iterable[RegistrationModel], form: RegistrationForm) -> Tuple[bool, str]:
         """
         A method to find if the individual described by the form is
         found in the entries. Can be overridden in inheriting classes
@@ -124,7 +124,7 @@ class FormController(ABC):
 
         return False, ''
 
-    def _find_in_self(self, form: BasicForm) -> Tuple[bool, str]:
+    def _find_in_self(self, form: RegistrationForm) -> Tuple[bool, str]:
         """
         Ensure that form itself contains each participant only once.
         """
@@ -142,7 +142,7 @@ class FormController(ABC):
 
         return False, ''
 
-    def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[BasicModel]) -> Dict[str, int]:
+    def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[RegistrationModel]) -> Dict[str, int]:
         """
         A method to count the number of event participants per quota.
         """
@@ -153,7 +153,7 @@ class FormController(ABC):
 
         return registration_quotas
 
-    def _get_email_recipient(self, model: BasicModel) -> List[EmailRecipient]:
+    def _get_email_recipient(self, model: RegistrationModel) -> List[EmailRecipient]:
         """
         A method to get all email recipients to whom an email
         concerning current registration should be sent to.
@@ -172,10 +172,10 @@ class FormController(ABC):
         return recipients
 
     @abstractmethod
-    def _get_email_msg(self, recipient: EmailRecipient, model: BasicModel, reserve: bool) -> str:
+    def _get_email_msg(self, recipient: EmailRecipient, model: RegistrationModel, reserve: bool) -> str:
         pass
 
-    def _form_to_model(self, form: BasicForm, nowtime: datetime) -> BasicModel:
+    def _form_to_model(self, form: RegistrationForm, nowtime: datetime) -> RegistrationModel:
         """
         A method to convert form into a model.
         Can be overridden in inheriting classes to alter behaviour.
@@ -184,7 +184,7 @@ class FormController(ABC):
         form.populate_obj(model)
         return model
 
-    def _post_routine(self, form: BasicForm, model: Type[BasicModel]) -> Any:
+    def _post_routine(self, form: RegistrationForm, model: Type[RegistrationModel]) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         event = self._context.get_event()
         nowtime = datetime.now()
@@ -216,7 +216,7 @@ class FormController(ABC):
 
         return self._post_routine_output(registrations, form, nowtime)
 
-    def _post_routine_output(self, registrations, form: BasicForm, nowtime) -> Any:
+    def _post_routine_output(self, registrations, form: RegistrationForm, nowtime) -> Any:
         """
         A method that handles post request output rendering.
         Can be overridden in inheriting classes to alter behaviour.
@@ -224,7 +224,7 @@ class FormController(ABC):
         return self._render_index_view(registrations, form, nowtime)
 
     def _check_form_submit(self, registrations: EventRegistrations, registration_quotas: Dict[str, int],
-                           form: BasicForm, nowtime) -> str:
+                           form: RegistrationForm, nowtime) -> str:
         """
         Checks that the submitted form is correctly filled
         and that all registration conditions are met.
@@ -258,7 +258,7 @@ class FormController(ABC):
 
         return ""
 
-    def _validate_form(self, form: BasicForm) -> bool:
+    def _validate_form(self, form: RegistrationForm) -> bool:
         valid = form.get_required_participants().validate(form)
         other_attributes = form.get_other_attributes()
         valid = other_attributes.validate(other_attributes.form) and valid
@@ -287,7 +287,7 @@ class FormController(ABC):
 
         return ''
 
-    def _insert_model(self, model: BasicModel) -> str:
+    def _insert_model(self, model: RegistrationModel) -> str:
         try:
             db.session.add(model)
             db.session.commit()
@@ -299,14 +299,14 @@ class FormController(ABC):
 
         return 'Tietokanta virhe. Yritä uudestaan.'
 
-    def _send_emails(self, model: BasicModel, reserve: bool) -> None:
+    def _send_emails(self, model: RegistrationModel, reserve: bool) -> None:
         subject = self._context.get_event().get_title()
         for recipient in self._get_email_recipient(model):
             msg = self._get_email_msg(recipient, model, reserve)
             send_email(msg, subject, recipient)
 
     def _render_index_view(self, registrations: EventRegistrations,
-                           form: BasicForm, nowtime, **extra_template_args) -> Any:
+                           form: RegistrationForm, nowtime, **extra_template_args) -> Any:
         """
         A method to render the index.html template of this event.
         """

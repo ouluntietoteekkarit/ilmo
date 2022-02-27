@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator, Collection, TypeVar, Generic
 
+# MEMO: System and well-known attributes.
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
 ATTRIBUTE_NAME_EMAIL = 'email'
@@ -73,7 +74,7 @@ class TypeFactory(ABC):
             raise Exception("Either required participant or form's other attributes must have an email attribute. This is so that registration email can be sent out.")
 
     @abstractmethod
-    def make_type(self) -> Type[BaseModel]:
+    def make_type(self) -> Type[BaseRegistration]:
         pass
 
 
@@ -110,8 +111,7 @@ class AttributeFactory(ABC):
 
 # MEMO: Must not have meta class.
 class BaseFormComponent:
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class BaseParticipant(BaseFormComponent):
@@ -157,11 +157,11 @@ class BaseOtherAttributes(BaseFormComponent):
         super().__init__(*args, **kwargs)
 
 
-class BaseModel(BaseFormComponent):
+class BaseRegistration(BaseFormComponent):
     """Interface-like/mixin class for form's data models."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._in_reserve = False
+        self._is_in_reserve = False
 
     def get_other_attributes(self) -> BaseOtherAttributes:
         raise Exception("Not implemented")
@@ -195,11 +195,11 @@ class BaseModel(BaseFormComponent):
 
         return quotas
 
-    def get_in_reserve(self) -> bool:
-        return self._in_reserve
+    def get_is_in_reserve(self) -> bool:
+        return self._is_in_reserve
 
-    def set_in_reserve(self, value: bool) -> None:
-        self._in_reserve = value
+    def set_is_in_reserve(self, value: bool) -> None:
+        self._is_in_reserve = value
 
 
 class BaseAttachableAttribute(ABC):
@@ -256,7 +256,7 @@ class BaseTypeBuilder(ABC):
     def build(self, base_type: Type[Generic[T]] = None) -> Type[Generic[T]]:
         pass
 
-    def _get_required_attributes_for_base_model(self, base_type: Type[BaseModel]) -> Dict[str, bool]:
+    def _get_required_attributes_for_base_model(self, base_type: Type[BaseRegistration]) -> Dict[str, bool]:
         return {
             ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS: hasattr(base_type, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS),
             ATTRIBUTE_NAME_OTHER_ATTRIBUTES: hasattr(base_type, ATTRIBUTE_NAME_OTHER_ATTRIBUTES)

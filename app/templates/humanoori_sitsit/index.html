@@ -39,7 +39,7 @@
     {{ macros.form_field(form.firstname) }}
     {{ macros.form_field(form.lastname) }}
     {{ macros.form_field(form.email) }}
-    {{ macros.form_field(form.quota_name) }}
+    {{ macros.form_field(form.quota) }}
     <label class="control-label">Ruokajuoma</label>
     {{ macros.form_field(form.drink) }}
     <label class="control-label">Viinakaato</label>
@@ -63,28 +63,19 @@
 
 
 {%- block participant_list -%}
-    {%- call(entry, quota_count, max_quota_count) macros.participant_list_routine(registrations.get_entries(), event) -%}
-        {% if quota_count < max_quota_count %}
-            <p>{{ entry.firstname }} {{ entry.lastname }}
-            {%- if entry.avec_firstname and entry.avec_lastname %}
-                & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
-            {%- endif -%}
-        {% else %}
-            <p>{{ entry.firstname }} {{ entry.lastname }}
-            {%- if entry.avec_firstname and entry.avec_lastname %}
-                & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
-            {%- endif -%}
-        (Varasijalla)
-        </p>
-        {% endif %}
-        </p>
-    {%- endcall -%}
-    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, event.get_participant_limit(), event.get_max_limit()) -%}
-        <p>{{ entry.firstname }} {{ entry.lastname }}
-        {%- if entry.avec_firstname and entry.avec_lastname %}
+    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        <p>
+        {%- set participant = entry.get_required_participants()[0] -%}
+        {{ participant.firstname }} {{ participant.lastname }}
+
+        {%- set avec = entry.get_optional_participants()[0] if entry.get_optional_participants()|length > 0 -%}
+        {%- if avec and avec.avec_firstname and avec.avec_lastname %}
             & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
         {%- endif -%}
-        (Varasijalla)
+
+        {% if is_in_reserve %}
+            {{ " (Varasijalla)" }}
+        {% endif %}
         </p>
     {%- endcall -%}
 {%- endblock -%}

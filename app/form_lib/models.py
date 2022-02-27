@@ -5,7 +5,7 @@ from enum import Enum
 from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict, Collection, TypeVar
 
 from app import db
-from .lib import BaseParticipant, BaseOtherAttributes, BaseModel, BaseAttachableAttribute, BaseFormComponent, \
+from .lib import BaseParticipant, BaseOtherAttributes, BaseRegistration, BaseAttachableAttribute, BaseFormComponent, \
     BaseTypeBuilder, AttributeFactory, TypeFactory, BaseAttribute, ObjectAttribute, \
     ListAttribute, DatetimeAttribute, BoolAttribute, StringAttribute, IntAttribute, EnumAttribute, \
     attributes_to_fields
@@ -23,7 +23,7 @@ class ModelAttributesModel(BaseOtherAttributes, db.Model):
     id = db.Column(db.Integer(), primary_key=True)
 
 
-class BasicModel(BaseModel, db.Model):
+class RegistrationModel(BaseRegistration, db.Model):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True)
     create_time = db.Column(db.DateTime())
@@ -49,7 +49,7 @@ class DbTypeFactory(TypeFactory):
         for table in child_tables:
             table.parent_id = db.Column(db.Integer, db.ForeignKey(parent_id_column))
 
-    def make_type(self) -> Type[BasicModel]:
+    def make_type(self) -> Type[RegistrationModel]:
         factory = _DbAttributeFactory()
         form_attributes = []
         model_types = []
@@ -133,10 +133,10 @@ class _BaseDbBuilder(BaseTypeBuilder, ABC):
 
 class _ModelBuilder(_BaseDbBuilder):
 
-    def build(self, base_type: Type[Union[db.Model, BasicModel]] = None) -> Type[Union[db.Model, BasicModel]]:
+    def build(self, base_type: Type[Union[db.Model, RegistrationModel]] = None) -> Type[Union[db.Model, RegistrationModel]]:
         if not base_type:
             name = self._form_name
-            base_type = type(name, (BasicModel,), {'__tablename__': name})
+            base_type = type(name, (RegistrationModel,), {'__tablename__': name})
 
         required = self._get_required_attributes_for_base_model(base_type)
         return self._do_build(base_type, required)
