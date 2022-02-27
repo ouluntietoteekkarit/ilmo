@@ -1,10 +1,12 @@
 import base64
 import shlex
 import os
+import html
 
 
 _EMAIL_SENDER_BOT = 'no-reply@otit.fi'
 _EMAIL_ENCODING = 'utf-8'
+
 
 class EmailRecipient:
 
@@ -29,8 +31,10 @@ def kapsi_url(path: str):
 
 def send_email(msg: str, subject: str, recipient: EmailRecipient):
     # MEMO: Subject must use encoded word
+    # MEMO: HTML escaping here prevents use of HTML layout in the email
     subject = _encode_word(subject, _EMAIL_ENCODING)
     content_type = 'text/html; charset={}'.format(_EMAIL_ENCODING)
+    msg = html.escape(msg)
     cmd = "echo {} | mail  --content-type={} --append=From:{} --subject={} {}".format(
         shlex.quote(msg),
         shlex.quote(content_type),
