@@ -3,14 +3,13 @@ from enum import Enum
 from typing import List, Dict, Collection, Iterable, Type
 
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, Quota
+from app.form_lib.form_controller import FormController, Event, Quota
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
 from app.form_lib.guilds import GUILD_SIK, GUILD_OTIT
-from app.form_lib.models import basic_model_csv_map, departure_location_csv_map
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_quota, make_attribute_departure_location, make_attribute_name_consent, make_attribute_privacy_consent
 from app.form_lib.lib import StringAttribute, EnumAttribute
-from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
+from app.form_lib.util import make_types, choices_to_enum, get_quota_choices, make_data_table_info_from_attributes
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -124,15 +123,7 @@ Jos tulee kysyttävää voit olla sähköpostitse yhteydessä kulttuuriministeri
 Älä vastaa tähän sähköpostiin. Viesti ei mene mihinkään. """.format(make_greet_line(recipient))
 
 
-_data_table_info = DataTableInfo(
-    basic_model_csv_map() +
-    departure_location_csv_map() +
-    [('quota', 'kiintiö'),
-     ('roommate_preference', 'huonekaveri toiveet'),
-     ('room_sex_composition', 'huonekaverien sukupuoli'),
-     ('sex', 'sukupuoli'),
-     ('allergies', 'erikoisruokavaliot')]
-)
+_data_table_info = make_data_table_info_from_attributes(participant_attributes + other_attributes)
 _event = Event('OTiT KMP', datetime(2021, 2, 25, 13, 37, 00),
                datetime(2022, 3, 10, 0, 0, 0), _get_quotas(), _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, True, _form_name,

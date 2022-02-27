@@ -2,19 +2,14 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Iterable, Type
 
-from wtforms import StringField
-from wtforms.validators import length
-
 from app.email import EmailRecipient, make_greet_line
 from app.form_lib.common_attributes import make_attribute_lastname, make_attribute_firstname, make_attribute_email, \
     make_attribute_quota, make_attribute_privacy_consent, make_attribute_name_consent
-from app.form_lib.form_controller import FormController, DataTableInfo, Event
+from app.form_lib.form_controller import FormController, Event
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.forms import BasicParticipantForm
 from app.form_lib.lib import StringAttribute, EnumAttribute, Quota
 from app.form_lib.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA
-from app.form_lib.models import basic_model_csv_map
-from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
+from app.form_lib.util import make_types, choices_to_enum, get_quota_choices, make_data_table_info_from_attributes
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -149,21 +144,7 @@ Jos tulee kysyttävää, voit olla sähköpostitse yhteydessä joensuu@otit.fi
             ])
 
 
-_data_table_info = DataTableInfo(
-    basic_model_csv_map() +
-    [('drink', 'juoma'),
-     ('liquor', 'viinakaato'),
-     ('wine', 'viini'),
-     ('allergies', 'erityisruokavaliot/allergiat'),
-     ('seating_preference', 'pöytäseuratoive'),
-     ('avec_firstname', 'avec etunimi'),
-     ('avec_lastname', 'avec sukunimi'),
-     ('avec_email', 'avec sähköposti',),
-     ('avec_drink', 'avec juoma'),
-     ('avec_liquor', 'avec viinakaato'),
-     ('avec_wine', 'avec viini'),
-     ('avec_allergies', 'avec erityisruokavaliot/allergiat'),
-     ('avec_seating_preference', 'avec pöytäseuratoive')])
+_data_table_info = make_data_table_info_from_attributes(participant_attributes + other_attributes)
 _event = Event('Humanöörisitsit', datetime(2021, 2, 21, 12, 00, 00),
                datetime(2022, 3, 6, 23, 59, 59), _get_quotas(), _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, True, _form_name,

@@ -5,11 +5,10 @@ from typing import Any
 from app.email import EmailRecipient, make_greet_line, make_signature_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_privacy_consent
-from app.form_lib.form_controller import FormController, DataTableInfo, Event, EventRegistrations
+from app.form_lib.form_controller import FormController, Event, EventRegistrations
 from app.form_lib.lib import Quota
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
-from app.form_lib.models import basic_model_csv_map
-from app.form_lib.util import make_types
+from app.form_lib.util import make_types, make_data_table_info_from_attributes
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -45,7 +44,7 @@ class _Controller(FormController):
         ])
 
 
-_data_table_info = DataTableInfo(basic_model_csv_map())
+_data_table_info = make_data_table_info_from_attributes(participant_attributes + other_attributes)
 _event = Event('Hyvinvointi- ja etäopiskelukysely arvonta', datetime(2020, 11, 2, 12, 00, 00),
                datetime(2020, 11, 23, 23, 59, 59), [Quota.default_quota(4000, 0)], _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, True, _form_name,

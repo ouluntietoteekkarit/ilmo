@@ -69,6 +69,6 @@ def make_attribute_optional_participants(participant_type: Type[BaseParticipant]
     return ListAttribute(ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, '', '', participant_type, count)
 
 
-def make_attribute_form_attributes(form_type: Type[BaseOtherAttributes]) -> BaseAttribute:
+def make_attribute_other_attributes(form_type: Type[BaseOtherAttributes]) -> BaseAttribute:
     # TODO: Add required modifier
     return ObjectAttribute(ATTRIBUTE_NAME_OTHER_ATTRIBUTES, '', '', form_type)

@@ -7,11 +7,9 @@ from app.form_lib.common_attributes import make_attribute_firstname, make_attrib
     make_attribute_binding_registration_consent, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, file_path_to_form_name
 from app.form_lib.guilds import *
-from app.form_lib.form_controller import FormController, DataTableInfo, Event
+from app.form_lib.form_controller import FormController, Event
 from app.form_lib.lib import Quota, StringAttribute
-from app.form_lib.models import basic_model_csv_map, binding_registration_csv_map, phone_number_csv_map,\
-    guild_name_csv_map
-from app.form_lib.util import make_types, choices_to_enum, get_guild_choices
+from app.form_lib.util import make_types, choices_to_enum, get_guild_choices, make_data_table_info_from_attributes
 
 _form_name = file_path_to_form_name(__file__)
 
@@ -70,26 +68,8 @@ class _Controller(FormController):
 
 # MEMO: (attribute, header_text)
 # MEMO: Exclude id, teamname and person count
-_data_table_info = DataTableInfo(
-    basic_model_csv_map() +
-    binding_registration_csv_map() +
-    phone_number_csv_map() +
-    guild_name_csv_map() +
-    [('etunimi1', 'etunimi1'),
-     ('sukunimi1', 'sukunimi1'),
-     ('email1', 'email1'),
-     ('phone1', 'phone1'),
-     ('kilta1', 'kilta1'),
-     ('etunimi2', 'etunimi2'),
-     ('sukunimi2', 'sukunimi2'),
-     ('email2', 'email2'),
-     ('phone2', 'phone2'),
-     ('kilta2', 'kilta2'),
-     ('etunimi3', 'etunimi3'),
-     ('sukunimi3', 'sukunimi3'),
-     ('email3', 'email3'),
-     ('phone3', 'phone3'),
-     ('kilta3', 'kilta3')])
+_data_table_info = make_data_table_info_from_attributes(
+    required_participant_attributes + optional_participant_attributes + other_attributes)
 _event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
                datetime(2020, 10, 10, 23, 59, 59), [Quota.default_quota(50, 0)], _Form.asks_name_consent)
 _module_info = ModuleInfo(_Controller, True, _form_name,

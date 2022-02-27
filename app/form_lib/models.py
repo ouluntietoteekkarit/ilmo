@@ -10,7 +10,7 @@ from .lib import BaseParticipant, BaseOtherAttributes, BaseRegistration, BaseAtt
     ListAttribute, DatetimeAttribute, BoolAttribute, StringAttribute, IntAttribute, EnumAttribute, \
     attributes_to_fields
 from .common_attributes import make_attribute_required_participants, make_attribute_optional_participants, \
-    make_attribute_form_attributes
+    make_attribute_other_attributes
 
 
 class BasicParticipantModel(BaseParticipant, db.Model):
@@ -56,9 +56,9 @@ class DbTypeFactory(TypeFactory):
 
         if len(self._required_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._required_participant_attributes)
-            required_participant: Type[BasicParticipantModel] = _ParticipantBuilder(self._form_name, 'required').add_fields(fields).build()
-            model_types.append(required_participant)
-            tmp = make_attribute_required_participants(required_participant)
+            required_participants: Type[BasicParticipantModel] = _ParticipantBuilder(self._form_name, 'required').add_fields(fields).build()
+            model_types.append(required_participants)
+            tmp = make_attribute_required_participants(required_participants)
             form_attributes.append(tmp)
 
         if self._optional_participant_count > 0 and len(self._optional_participant_attributes) > 0:
@@ -72,7 +72,7 @@ class DbTypeFactory(TypeFactory):
             fields = attributes_to_fields(factory, self._other_attributes)
             other_attributes: Type[OtherAttributesModel] = _OtherAttributesBuilder(self._form_name).add_fields(fields).build()
             model_types.append(other_attributes)
-            tmp = make_attribute_form_attributes(other_attributes)
+            tmp = make_attribute_other_attributes(other_attributes)
             form_attributes.append(tmp)
 
         model = _ModelBuilder(self._form_name).add_fields(attributes_to_fields(factory, form_attributes)).build()
@@ -228,43 +228,3 @@ class _AttachableRelationshipColumn(_AttachableColumn):
 
     def _make_field_value(self) -> Any:
         return db.relationship(self._model_class)
-
-
-def basic_model_csv_map() -> List[Tuple[str, str]]:
-    # MEMO: (attribute, header_text)
-    return [
-        ('firstname', 'etunimi'),
-        ('lastname', 'sukunimi'),
-        ('email', 'email'),
-        ('privacy_consent', 'hyväksyn tietosuojaselosteen'),
-        ('show_name_consent', 'hyväksyn nimen julkaisun'),
-        ('datetime', 'pvm')
-    ]
-
-
-def phone_number_csv_map() -> List[Tuple[str, str]]:
-    # MEMO: (attribute, header_text)
-    return [
-        ('phone_number', 'puhelinnumero')
-    ]
-
-
-def guild_name_csv_map() -> List[Tuple[str, str]]:
-    # MEMO: (attribute, header_text)
-    return [
-        ('guild_name', 'kilta')
-    ]
-
-
-def departure_location_csv_map() -> List[Tuple[str, str]]:
-    # MEMO: (attribute, header_text)
-    return [
-        ('departure_location', 'lähtopaikka')
-    ]
-
-
-def binding_registration_csv_map() -> List[Tuple[str, str]]:
-    # MEMO: (attribute, header_text)
-    return [
-        ('binding_registration_consent', 'ymmärrän että ilmoittautuminen on sitova')
-    ]

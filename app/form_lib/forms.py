@@ -14,7 +14,7 @@ from app.form_lib.lib import BaseAttachableAttribute, BaseRegistration, BaseOthe
     DatetimeAttribute, BoolAttribute, StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, \
     EnumAttribute, attributes_to_fields, ATTRIBUTE_NAME_NAME_CONSENT
 from app.form_lib.common_attributes import make_attribute_required_participants, \
-    make_attribute_optional_participants, make_attribute_form_attributes
+    make_attribute_optional_participants, make_attribute_other_attributes
 
 
 class BasicParticipantForm(BaseParticipant, Form):
@@ -44,8 +44,8 @@ class FormTypeFactory(TypeFactory):
 
         if len(self._required_participant_attributes) > 0:
             fields = attributes_to_fields(factory, self._required_participant_attributes)
-            required_participant: Type[BasicParticipantForm] = _ParticipantBuilder('required').add_fields(fields).build()
-            tmp = make_attribute_required_participants(required_participant, self._required_participant_count)
+            required_participants: Type[BasicParticipantForm] = _ParticipantBuilder('required').add_fields(fields).build()
+            tmp = make_attribute_required_participants(required_participants, self._required_participant_count)
             form_attributes.append(tmp)
 
         if self._optional_participant_count > 0 and len(self._optional_participant_attributes) > 0:
@@ -57,7 +57,7 @@ class FormTypeFactory(TypeFactory):
         if len(self._other_attributes) > 0:
             fields = attributes_to_fields(factory, self._other_attributes)
             other_attributes: Type[OtherAttributesForm] = _OtherAttributesBuilder().add_fields(fields).build()
-            tmp = make_attribute_form_attributes(other_attributes)
+            tmp = make_attribute_other_attributes(other_attributes)
             form_attributes.append(tmp)
 
         asks_name_consent = self._determine_asks_name_consent()

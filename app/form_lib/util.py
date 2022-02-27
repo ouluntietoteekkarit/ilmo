@@ -3,6 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Collection, Iterable, Type, List, Tuple
 
+from app.form_lib.form_controller import DataTableInfo
 from app.form_lib.forms import FormTypeFactory
 from app.form_lib.guilds import Guild
 from app.form_lib.lib import BaseAttribute, TypeContainer, Quota
@@ -56,3 +57,10 @@ def get_quota_choices(quotas: Iterable[Quota]):
     for quota in quotas:
         choices.append((quota.get_name(), quota.get_name()))
     return choices
+
+def make_data_table_info_from_attributes(attributes: Iterable[BaseAttribute]) -> DataTableInfo:
+    tmp = []
+    for attribute in attributes:
+        tmp.append((attribute.get_attribute(), attribute.get_short_label()))
+
+    return DataTableInfo(tmp)
