@@ -33,14 +33,17 @@
 
 {%- block registration_form -%}
     {% call macros.registration_form_routine(form) %}
-        {{ macros.form_field(form.firstname) }}
-        {{ macros.form_field(form.lastname) }}
-        {{ macros.form_field(form.email) }}
-        {{ macros.form_field(form.phone_number) }}
-        {{ macros.form_field(form.departure_location) }}
-        {{ macros.form_field(form.kiintio) }}
-        {{ macros.form_field(form.show_name_consent) }}
-        {{ macros.form_field(form.privacy_consent) }}
+        {% set p = form.get_required_participants()[0] %}
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
+        {{ macros.form_field(p.phone_number) }}
+        {{ macros.form_field(p.departure_location) }}
+        {{ macros.form_field(p.kiintio) }}
+
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
     {%- endcall -%}
 {%- endblock -%}
 

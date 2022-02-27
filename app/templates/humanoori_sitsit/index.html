@@ -63,11 +63,20 @@
 
 
 {%- block participant_list -%}
-    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, 0, event.get_participant_limit()) -%}
-        <p>{{ entry.firstname }} {{ entry.lastname }}
-        {%- if entry.avec_firstname and entry.avec_lastname %}
-            & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
-        {%- endif -%}
+    {%- call(entry, quota_count, max_quota_count) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        {% if quota_count < max_quota_count %}
+            <p>{{ entry.firstname }} {{ entry.lastname }}
+            {%- if entry.avec_firstname and entry.avec_lastname %}
+                & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
+            {%- endif -%}
+        {% else %}
+            <p>{{ entry.firstname }} {{ entry.lastname }}
+            {%- if entry.avec_firstname and entry.avec_lastname %}
+                & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
+            {%- endif -%}
+        (Varasijalla)
+        </p>
+        {% endif %}
         </p>
     {%- endcall -%}
     {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, event.get_participant_limit(), event.get_max_limit()) -%}

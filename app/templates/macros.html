@@ -17,10 +17,14 @@
 
 {% macro basic_registration_form(form) %}
     {%- call registration_form_routine(form) -%}
-        {{ form_field(form.firstname) }}
-        {{ form_field(form.lastname) }}
-        {{ form_field(form.email) }}
-        {{ form_field(form.privacy_consent) }}
+        {% for participant in form.get_required_participants() %}
+            {{ form_field(participant.firstname) }}
+            {{ form_field(participant.lastname) }}
+            {{ form_field(participant.email) }}
+        {% endfor %}
+
+        {% set other = form.get_other_attributes() %}
+        {{ form_field(other.privacy_consent) }}
     {%- endcall -%}
 {% endmacro %}
 
@@ -63,21 +67,35 @@
 {% endmacro %}
 
 
-{% macro participant_list_routine(participants, event) %}
-    {%- if event.get_list_participant_name() -%}
-        {% set quota_counts = dict.fromkeys(event.get_quotas().keys(), 0) %}
-        {% set quotas = event.get_quotas() %}
+{% macro participant_list_routine(entries, event) %}
 
-        {%- for participant in participants %}
+    {%- macro reserve_check(participants, ns) -%}
+        {%- for participant in required_participants -%}
             {%- set quota_name = participant.quota -%}
             {%- set quota_count = quota_counts[quota_name] -%}
+            {%- set ns.reserve = ns.reserve or quota_count < quotas[quota_name].get_quota() -%}
+            {%- set _ = quota_counts.update({quota_name: quota_count + 1}) -%}
+        {%- endfor -%}
+    {%- endmacro -%}
 
-            {%- if participant.get_show_name_consent() %}
-                {# parameters: participant, quota_count, max_quota_count #}
-                {{- caller(participant, quota_count, quotas[quota_name].get_quota()) -}}
+    {%- if event.get_list_participant_name() -%}
+        {%- set quotas = event.get_quotas() -%}
+        {%- set quota_counts = dict.fromkeys(quotas.keys(), 0) -%}
+
+        {%- for entry in entries %}
+            {%- set required_participants = entry.get_required_participants() -%}
+            {%- set optional_participants = entry.get_optional_participants() -%}
+            {%- set ns = namespace(reserve = false) -%}
+
+            {# MEMO: Calculate if this entry is on a reserve place. #}
+            {% reserver_check(required_participants, ns) %}
+            {% reserver_check(optional_participants, ns) %}
+
+            {% if entry.get_other_attributes().get_show_name_consent() %}
+                {# parameters: required_participants, optional_participants, reserve #}
+                {{- caller(required_participants, optional_participants, ns.reserve) -}}
             {% endif %}
 
-            {% set _ = quota_counts.update({quota_count: quota_count + 1}) %}
         {% endfor -%}
     {%- endif -%}
 {% endmacro %}
