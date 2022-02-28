@@ -1,10 +1,9 @@
 {% macro form_errors(form, hiddens=True) %}
     {%- if form.errors %}
         {%- for fieldname, errors in form.errors.items() %}
-            {%- if bootstrap_is_hidden_field(form[fieldname]) and hiddens or
-            not bootstrap_is_hidden_field(form[fieldname]) and hiddens != 'only' %}
+            {%- if bootstrap_is_hidden_field(form[fieldname]) and hiddens or not bootstrap_is_hidden_field(form[fieldname]) and hiddens != 'only' %}
                 {%- for error in errors %}
-                <p class="error">{{error}}</p>
+                    <p class="error">{{error}}</p>
                 {%- endfor %}
             {%- endif %}
         {%- endfor %}
@@ -25,9 +24,7 @@
 
 {% macro _render_checkbox(field, form_type, horizontal_columns, button_map, required) %}
     {% call _hz_form_wrap(horizontal_columns, form_type, True, required=required) %}
-        <div class="checkbox">
-            <label>{{field()|safe}} {{field.label.text|safe}}</label>
-        </div>
+        <div class="checkbox"><label>{{field()|safe}} {{field.label.text|safe}}</label></div>
     {% endcall %}
 {% endmacro %}
 
@@ -37,9 +34,7 @@
     {{field.label(class="control-label")|safe}}
     {% call _hz_form_wrap(horizontal_columns, form_type, True, required=required) %}
         {% for item in field -%}
-            <div class="radio">
-                <label>{{item|safe}} {{item.label.text|safe}}</label>
-            </div>
+            <div class="radio"><label>{{item|safe}} {{item.label.text|safe}}</label></div>
         {% endfor %}
     {% endcall %}
 {% endmacro %}
@@ -60,17 +55,16 @@
              the code below ensures that things don't break horribly if we run into
              one, but does not try too hard to get things pretty. #}
     <fieldset>
-    <legend>{{field.label}}</legend>
-    {%- for subfield in field %}
-        {% if not bootstrap_is_hidden_field(subfield) -%}
-            {{ form_field(subfield, form_type=form_type, horizontal_columns=horizontal_columns, button_map=button_map) }}
-        {%- endif %}
-    {%- endfor %}
+        <legend>{{field.label}}</legend>
+        {%- for subfield in field %}
+            {% if not bootstrap_is_hidden_field(subfield) -%}
+                {{ form_field(subfield, form_type=form_type, horizontal_columns=horizontal_columns, button_map=button_map) }}
+            {%- endif %}
+        {%- endfor %}
     </fieldset>
 {% endmacro %}
 
-{% macro _render_inline_field(field, form_type, horizontal_columns, button_map, required) %}
-    {{field.label(class="sr-only")|safe}}
+{% macro _render_filefield(field) %}
     {% if field.type == 'FileField' %}
         {{field(**kwargs)|safe}}
     {% else %}
@@ -78,14 +72,15 @@
     {% endif %}
 {% endmacro %}
 
+{% macro _render_inline_field(field, form_type, horizontal_columns, button_map, required) %}
+    {{field.label(class="sr-only")|safe}}
+    {{ _render_filefield(field) }}
+{% endmacro %}
+
 {% macro _render_horizontal_field(field, form_type, horizontal_column, button_map, required) %}
     {{field.label(class="control-label " + (" col-%s-%s" % horizontal_columns[0:2]))|safe}}
     <div class=" col-{{horizontal_columns[0]}}-{{horizontal_columns[2]}}">
-        {% if field.type == 'FileField' %}
-            {{field(**kwargs)|safe}}
-        {% else %}
-            {{field(class="form-control", **kwargs)|safe}}
-        {% endif %}
+        {{ _render_filefield(field) }}
     </div>
     {%- if field.errors %}
         {%- for error in field.errors %}
@@ -102,11 +97,7 @@
 
 {% macro _render_basic_field(field, form_type, horizontal_columns, button_map, required) %}
     {{field.label(class="control-label")|safe}}
-    {% if field.type == 'FileField' %}
-        {{field(**kwargs)|safe}}
-    {% else %}
-        {{field(class="form-control", **kwargs)|safe}}
-    {% endif %}
+    {{ _render_filefield(field) }}
 
     {%- if field.errors %}
         {%- for error in field.errors %}
@@ -120,21 +111,21 @@
 {% macro form_field(field, form_type="basic", horizontal_columns=('lg', 2, 10), button_map={}) %}
     {# this is a workaround hack for the more straightforward-code of just passing required=required parameter. older versions of wtforms do not have
     the necessary fix for required=False attributes, but will also not set the required flag in the first place. we skirt the issue using the code below #}
-    {% if field.flags.required and not required in kwargs %}
+    {%- if field.flags.required and not required in kwargs -%}
         {% set kwargs = dict(required=True, **kwargs) %}
-    {% endif %}
+    {%- endif -%}
     {%- if field.widget.input_type == 'checkbox' -%} {{ _render_checkbox(field, form_type, horizontal_columns, button_map, required) }}
     {%- elif field.type == 'RadioField' -%}          {{ _render_radiofield(field, form_type, horizontal_columns, button_map, required) }}
     {%- elif field.type == 'SubmitField' -%}         {{ _render_submitfield(field, form_type, horizontal_columns, button_map, required) }}
     {%- elif field.type == 'FormField' -%}           {{ _render_formfield(field, form_type, horizontal_columns, button_map, required) }}
-    {% else -%}
+    {%- else -%}
         <div class="form-group {% if field.errors %} has-error{% endif -%} {%- if field.flags.required %} required{% endif -%}">
         {%- if form_type == "inline" -%}             {{ _render_inline_field(field, form_type, horizontal_columns, button_map, required) }}
         {%- elif form_type == "horizontal" -%}       {{ _render_horizontal_field(field, form_type, horizontal_columns, button_map, required) }}
         {%- else -%}                                 {{ _render_basic_field(field, form_type, horizontal_columns, button_map, required) }}
         {%- endif -%}
         </div>
-    {% endif %}
+    {%- endif -%}
 {% endmacro %}
 
 {# valid form types are "basic", "inline" and "horizontal" #}
