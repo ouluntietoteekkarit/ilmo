@@ -91,7 +91,7 @@ class FormController(ABC):
         methods that are used during the post routine should be
         preferred for overriding.
         """
-        return self._post_routine(self._context.get_form_type()(), self._context.get_model_type())
+        return self._post_routine(self._context.get_form_type()())
 
     def get_data_request_handler(self, request) -> Any:
         return self._render_data_view()
@@ -191,7 +191,7 @@ class FormController(ABC):
         form.populate_obj(model)
         return model
 
-    def _post_routine(self, form: RegistrationForm, model: Type[RegistrationModel]) -> Any:
+    def _post_routine(self, form: RegistrationForm) -> Any:
         # MEMO: This routine is prone to data race since it does not use transactions
         event = self._context.get_event()
         nowtime = datetime.now()
@@ -420,16 +420,17 @@ class DataTableInfo:
 
     def make_header_row(self):
 
-        def make_headers(names: Iterable[str], start: int, end: int):
-            exclude_number = start == 0 and end == 1
+        def make_headers(names: Iterable[str], start: int, end: int, omit_numbering: bool):
             for i in range(start, start + end):
                 for name in names:
-                    yield f'{name}' if exclude_number else f'{name}_{i}'
+                    yield f'{name}' if omit_numbering else f'{name}_{i + 1}'
+
+        omit_numbering = self._max_required_participants + self._max_optional_participants == 1
 
         yield from make_headers(self._get_required_participant_headers(),
-                                0, self._max_required_participants)
+                                0, self._max_required_participants, omit_numbering)
         yield from make_headers(self._get_optional_participant_headers(),
-                                self._max_required_participants, self._max_optional_participants)
+                                self._max_required_participants, self._max_optional_participants, omit_numbering)
         yield from [name for name in self._get_other_attribute_headers()]
 
     def model_to_row(self, entry: RegistrationModel):
