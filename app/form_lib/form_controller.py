@@ -7,7 +7,7 @@ from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collec
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
-from .lib import Quota, BaseParticipant, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS
+from .lib import Quota, BaseParticipant, AttributeFactory
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
@@ -394,13 +394,13 @@ class DataTableInfo:
 
         return names, headers
 
-    def get_required_participant_attributes(self) -> Collection[str]:
+    def get_required_participant_attributes_getters(self) -> Collection[str]:
         return self._required_participant[0]
 
-    def get_optional_participant_attributes(self) -> Collection[str]:
+    def get_optional_participant_attributes_getters(self) -> Collection[str]:
         return self._optional_participant[0]
 
-    def get_other_attributes(self) -> Collection[str]:
+    def get_other_attributes_getters(self) -> Collection[str]:
         return self._other_attributes[0]
 
     def _get_required_participant_headers(self) -> Collection[str]:
@@ -435,21 +435,24 @@ class DataTableInfo:
     def model_to_row(self, entry: RegistrationModel):
 
         def participants_to_row(participants: Collection[BaseParticipant],
-                                attributes: Iterable[str],
+                                attributes: Collection[str],
                                 max_count: int) -> Iterable[str]:
             for participant in participants:
-                yield from [(str(getattr(participant, attribute)) for attribute in attributes)]
+                yield from [
+                    str(getattr(participant, attribute)())
+                    for attribute in attributes
+                ]
 
-            yield from [''] * max(max_count - len(participants), 0)
+            yield from [''] * max(max_count - len(participants), 0) * len(attributes)
 
         yield from participants_to_row(entry.get_required_participants(),
-                                       self.get_required_participant_attributes(),
+                                       self.get_required_participant_attributes_getters(),
                                        self._max_required_participants)
         yield from participants_to_row(entry.get_optional_participants(),
-                                       self.get_optional_participant_attributes(),
+                                       self.get_optional_participant_attributes_getters(),
                                        self._max_optional_participants)
-        yield from [str(getattr(entry.get_other_attributes(), attribute))
-                    for attribute in self.get_other_attributes()]
+        yield from [str(getattr(entry.get_other_attributes(), attribute)())
+                    for attribute in self.get_other_attributes_getters()]
 
 
 class Event(object):

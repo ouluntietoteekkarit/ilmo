@@ -174,8 +174,12 @@ class TypeFactory(ABC):
 
 class AttributeFactory(ABC):
 
+    @staticmethod
+    def make_getter_name(attribute: str):
+        return f"get_{attribute}"
+
     def _name_getter(self, getter: Callable[[], Any], attribute: str) -> Callable[[], Any]:
-        getter.__name__ = f"get_{attribute}"
+        getter.__name__ = self.make_getter_name(attribute)
         return getter
 
     def _make_getter(self, params: BaseAttribute) -> Callable[[], Any]:

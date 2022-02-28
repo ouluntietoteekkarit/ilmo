@@ -127,7 +127,7 @@ class _DbAttributeFactory(AttributeFactory):
         attribute = params.get_attribute()
 
         def getter(self) -> Union[str, int]:
-            return getattr(self, attribute).value
+            return getattr(self, attribute).name
 
         return self._name_getter(getter, attribute)
 

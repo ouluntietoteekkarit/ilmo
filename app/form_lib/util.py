@@ -7,7 +7,7 @@ from typing import Collection, Iterable, Type, List, Tuple, Callable
 from app.form_lib.form_controller import DataTableInfo
 from app.form_lib.forms import FormTypeFactory, RegistrationForm
 from app.form_lib.guilds import Guild
-from app.form_lib.lib import BaseAttribute, Quota
+from app.form_lib.lib import BaseAttribute, Quota, AttributeFactory
 from app.form_lib.models import DbTypeFactory, RegistrationModel
 
 
@@ -110,13 +110,16 @@ def make_data_table_info_from_attributes(
     other = []
 
     for attribute in required_participant_attributes:
-        require_participant.append((attribute.get_attribute(), attribute.get_short_label()))
+        attribute_getter = AttributeFactory.make_getter_name(attribute.get_attribute())
+        require_participant.append((attribute_getter, attribute.get_short_label()))
 
     for attribute in optional_participant_attributes:
-        optional_participant.append((attribute.get_attribute(), attribute.get_short_label()))
+        attribute_getter = AttributeFactory.make_getter_name(attribute.get_attribute())
+        optional_participant.append((attribute_getter, attribute.get_short_label()))
 
     for attribute in other_attributes:
-        other.append((attribute.get_attribute(), attribute.get_short_label()))
+        attribute_getter = AttributeFactory.make_getter_name(attribute.get_attribute())
+        other.append((attribute_getter, attribute.get_short_label()))
 
     return DataTableInfo(require_participant, optional_participant, other,
                          max_required_participants, max_optional_participants)
