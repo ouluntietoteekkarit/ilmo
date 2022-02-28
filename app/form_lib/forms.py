@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from datetime import datetime
 from enum import Enum
 from typing import Tuple, Iterable, Type, Union, Any, Callable
 
@@ -21,7 +22,7 @@ class BasicParticipantForm(BaseParticipant, Form):
     pass
 
 
-class OtherAttributesForm(BaseOtherAttributes, Form):
+class OtherAttributesForm(BaseFormComponent, Form):
     asks_name_consent = False
 
 
@@ -38,30 +39,41 @@ class FormTypeFactory(TypeFactory):
 
         return False
 
-    def make_type(self):
+    def make_type(self) -> Tuple[Type[RegistrationForm], Callable[[int, int, datetime], RegistrationForm]]:
+
+        def factory_method(required_participant_count: int,
+                           optional_participant_count: int,
+                           time: datetime) -> RegistrationForm:
+            return form_type()
+
         factory = _FormAttributeFactory()
         form_attributes = []
 
         if len(self._required_participant_attributes) > 0:
-            fields = attributes_to_fields(factory, self._required_participant_attributes)
-            required_participants: Type[BasicParticipantForm] = _ParticipantBuilder('required').add_fields(fields).build()
-            tmp = make_attribute_required_participants(required_participants, self._required_participant_count)
-            form_attributes.append(tmp)
+            required_participants: Type[BasicParticipantForm] = (
+                _ParticipantBuilder('required')
+                .add_fields(attributes_to_fields(factory, self._required_participant_attributes))
+                .build())
+            form_attributes.append(make_attribute_required_participants(required_participants, self._required_participant_count))
 
         if self._optional_participant_count > 0 and len(self._optional_participant_attributes) > 0:
-            fields = attributes_to_fields(factory, self._optional_participant_attributes)
-            optional_participant: Type[BasicParticipantForm] = _ParticipantBuilder('optional').add_fields(fields).build()
-            tmp = make_attribute_optional_participants(optional_participant, self._optional_participant_count)
-            form_attributes.append(tmp)
+            optional_participant: Type[BasicParticipantForm] = (
+                _ParticipantBuilder('optional')
+                .add_fields(attributes_to_fields(factory, self._optional_participant_attributes))
+                .build())
+            form_attributes.append(make_attribute_optional_participants(optional_participant, self._optional_participant_count))
 
         if len(self._other_attributes) > 0:
-            fields = attributes_to_fields(factory, self._other_attributes)
-            other_attributes: Type[OtherAttributesForm] = _OtherAttributesBuilder().add_fields(fields).build()
-            tmp = make_attribute_other_attributes(other_attributes)
-            form_attributes.append(tmp)
+            other_attributes: Type[OtherAttributesForm] = (
+                _OtherAttributesBuilder()
+                .add_fields(attributes_to_fields(factory, self._other_attributes))
+                .build())
+            form_attributes.append(make_attribute_other_attributes(other_attributes))
 
         asks_name_consent = self._determine_asks_name_consent()
-        return _FormBuilder(asks_name_consent).add_fields(attributes_to_fields(factory, form_attributes)).build()
+        form_type = _FormBuilder(asks_name_consent).add_fields(attributes_to_fields(factory, form_attributes)).build()
+
+        return form_type, factory_method
 
 
 class _FormAttributeFactory(AttributeFactory):
@@ -74,18 +86,18 @@ class _FormAttributeFactory(AttributeFactory):
             params.get_attribute(),
             params.get_label(),
             self._get_validators(params),
-            self._make_getter(params)
+            self._make_data_getter(params)
         )
 
-    def _make_getter(self, params: BaseAttribute) -> Callable[[], Any]:
-        # MEMO: May be possible to eliminate this method
+    def _make_data_getter(self, params: BaseAttribute) -> Callable[[], Any]:
+        """Returns the data contained within WTForm's field object.
+        Use _make_getter to obtain the field object itself."""
         attribute = params.get_attribute()
 
         def getter(self) -> Any:
-            return getattr(self, attribute)
+            return getattr(self, attribute).data
 
-        getter.__name__ = "get_{}".format(attribute)
-        return getter
+        return self._name_getter(getter, attribute)
 
     def make_int_attribute(self, params: IntAttribute) -> BaseAttachableAttribute:
         return _AttachableIntField(*self._params_to_args(params))
@@ -106,15 +118,20 @@ class _FormAttributeFactory(AttributeFactory):
         return _AttachableEnumField(*self._params_to_args(params), enum_type)
 
     def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
-        # MEMO: Ensures crash if field is missing
         list_type = params.get_list_type()
-        count = params.get_count()
-        return _AttachableFieldListField(*self._params_to_args(params), FormField(list_type), count)
+        return _AttachableFieldListField(params.get_attribute(),
+                                         params.get_label(),
+                                         self._get_validators(params),
+                                         self._make_getter(params),
+                                         FormField(list_type),
+                                         params.get_count())
 
     def make_object_attribute(self, params: ObjectAttribute) -> BaseAttachableAttribute:
-        # MEMO: Ensures crash if form_type is missing
-        form_type = params.get_object_type()
-        return _AttachableFormField(*self._params_to_args(params), form_type)
+        return _AttachableFormField(params.get_attribute(),
+                                    params.get_label(),
+                                    self._get_validators(params),
+                                    self._make_getter(params),
+                                    params.get_object_type())
 
 
 class _BaseFormBuilder(BaseTypeBuilder, ABC):

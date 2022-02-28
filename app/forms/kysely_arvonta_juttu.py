@@ -7,6 +7,7 @@ from app.email import make_greet_line, make_signature_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_privacy_consent
 from app.form_lib.form_controller import FormController, Event, EventRegistrations
+from app.form_lib.forms import RegistrationForm
 from app.form_lib.lib import Quota, BaseParticipant
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.models import RegistrationModel
@@ -21,7 +22,7 @@ def get_module_info() -> ModuleInfo:
 
 class _Controller(FormController):
 
-    def _post_routine_output(self, registrations: EventRegistrations, form: _Form, nowtime) -> Any:
+    def _post_routine_output(self, registrations: EventRegistrations, form: RegistrationForm, nowtime) -> Any:
         return render_template('kysely_arvonta_juttu/redirect.html')
 
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:

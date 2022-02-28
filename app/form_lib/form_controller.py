@@ -7,7 +7,7 @@ from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collec
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
-from .lib import Quota, BaseParticipant
+from .lib import Quota, BaseParticipant, ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
@@ -184,7 +184,10 @@ class FormController(ABC):
         A method to convert form into a model.
         Can be overridden in inheriting classes to alter behaviour.
         """
-        model = self._context.get_model_type()(datetime=nowtime)
+        model_factory = self._module_info.get_type_info().get_model_factory_method()
+        required_count = len(form.get_required_participants())
+        optional_count = len(form.get_optional_participants())
+        model = model_factory(required_count, optional_count, nowtime)
         form.populate_obj(model)
         return model
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
-from typing import Collection, Iterable, Type, List, Tuple
+from typing import Collection, Iterable, Type, List, Tuple, Callable
 
 from app.form_lib.form_controller import DataTableInfo
 from app.form_lib.forms import FormTypeFactory, RegistrationForm
@@ -12,17 +13,27 @@ from app.form_lib.models import DbTypeFactory, RegistrationModel
 
 class TypeInfo:
     def __init__(self, model_type: Type[RegistrationModel],
+                 model_factory_method: Callable[[int, int, datetime], RegistrationModel],
                  form_type: Type[RegistrationForm],
+                 form_factory_method: Callable[[int, int, datetime], RegistrationForm],
                  data_info: DataTableInfo):
         self._model_type = model_type
+        self._model_factory_method = model_factory_method
         self._form_type = form_type
+        self._form_factory_method = form_factory_method
         self._data_info = data_info
 
     def get_model_type(self) -> Type[RegistrationModel]:
         return self._model_type
 
+    def get_model_factory_method(self) -> Callable[[int, int, datetime], RegistrationModel]:
+        return self._model_factory_method
+
     def get_form_type(self) -> Type[RegistrationForm]:
         return self._form_type
+
+    def get_form_factory_method(self) -> Callable[[int, int, datetime], RegistrationForm]:
+        return self._form_factory_method
 
     def get_data_info(self) -> DataTableInfo:
         return self._data_info
@@ -39,12 +50,12 @@ def make_types(required_participant_attributes: Collection[BaseAttribute],
                form_name: str) -> TypeInfo:
 
     factories = {
-        'form_type': FormTypeFactory(required_participant_attributes, optional_participant_attributes,
-                                     other_attributes, required_participant_count,
-                                     optional_participant_count),
-        'model_type': DbTypeFactory(required_participant_attributes, optional_participant_attributes,
-                                    other_attributes, required_participant_count,
-                                    optional_participant_count, form_name)
+        'form': FormTypeFactory(required_participant_attributes, optional_participant_attributes,
+                                other_attributes, required_participant_count,
+                                optional_participant_count),
+        'model': DbTypeFactory(required_participant_attributes, optional_participant_attributes,
+                               other_attributes, required_participant_count,
+                               optional_participant_count, form_name)
     }
     data_info = make_data_table_info_from_attributes(required_participant_attributes, optional_participant_attributes,
                                                      other_attributes, required_participant_count,
@@ -53,7 +64,9 @@ def make_types(required_participant_attributes: Collection[BaseAttribute],
         'data_info': data_info
     }
     for name, factory in factories.items():
-        types[name] = factory.make_type()
+        type_info = factory.make_type()
+        types[f'{name}_type'] = type_info[0]
+        types[f'{name}_factory_method'] = type_info[1]
 
     return TypeInfo(**types)
 

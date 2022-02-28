@@ -17,8 +17,8 @@ class ModuleInfo:
     boilerplate code from form scripts.
     """
 
-    def __init__(self, controller_type: Type[FormController], is_active: bool, form_name: str, event: Event,
-                 type_info: TypeInfo):
+    def __init__(self, controller_type: Type[FormController], is_active: bool,
+                 form_name: str, event: Event, type_info: TypeInfo):
         self._controller_type = controller_type
         self._is_active = is_active
         self._form_name = form_name
@@ -40,6 +40,9 @@ class ModuleInfo:
 
     def get_form_name(self) -> str:
         return self._form_name
+
+    def get_type_info(self) -> TypeInfo:
+        return self._type_info
 
     def get_form_context(self) -> FormContext:
         return self._context

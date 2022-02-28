@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator, Collection, TypeVar, Generic
+from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator, Collection, TypeVar, Generic, Tuple
 
 # MEMO: System and well-known attributes.
 
@@ -168,11 +168,25 @@ class TypeFactory(ABC):
             raise Exception("Either required participant or form's other attributes must have an email attribute. This is so that registration email can be sent out.")
 
     @abstractmethod
-    def make_type(self) -> Type[BaseRegistration]:
+    def make_type(self) -> Tuple[Type[BaseRegistration], Callable[[int, int], BaseRegistration]]:
         pass
 
 
 class AttributeFactory(ABC):
+
+    def _name_getter(self, getter: Callable[[], Any], attribute: str) -> Callable[[], Any]:
+        getter.__name__ = f"get_{attribute}"
+        return getter
+
+    def _make_getter(self, params: BaseAttribute) -> Callable[[], Any]:
+        # MEMO: Default getter creator. Specialized getters creators may be
+        #       written as needed.
+        attribute = params.get_attribute()
+
+        def getter(self) -> Any:
+            return getattr(self, attribute)
+
+        return self._name_getter(getter, attribute)
 
     @abstractmethod
     def make_int_attribute(self, params: IntAttribute) -> BaseAttachableAttribute:
