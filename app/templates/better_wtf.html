@@ -1,3 +1,9 @@
+{# MEMO: This is an altered version of wtf.html that fixes some
+         inconsistencies in the macro library. The macros were
+         split up into smaller pieces to make the code easier to
+         navigate. **kwargs may not work properly.
+
+#}
 {% macro form_errors(form, hiddens=True) %}
     {%- if form.errors %}
         {%- for fieldname, errors in form.errors.items() %}
@@ -31,8 +37,8 @@
 {% macro _render_radiofield(field, form_type, horizontal_columns, button_map, required) %}
     {# note: A cleaner solution would be rendering depending on the widget,
              this is just a hack for now, until I can think of something better #}
-    {{field.label(class="control-label")|safe}}
     {% call _hz_form_wrap(horizontal_columns, form_type, True, required=required) %}
+        {{field.label(class="control-label")|safe}}
         {% for item in field -%}
             <div class="radio"><label>{{item|safe}} {{item.label.text|safe}}</label></div>
         {% endfor %}

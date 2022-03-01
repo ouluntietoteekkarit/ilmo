@@ -123,7 +123,8 @@ class _DbAttributeFactory(AttributeFactory):
         )
 
     def _make_enum_getter(self, params: BaseAttribute) -> Callable[[], Any]:
-        # MEMO: enum.value may be incorrect
+        # MEMO: enum.value causes data handling bugs.
+        # MEMO: enum.name may be incorrect
         attribute = params.get_attribute()
 
         def getter(self) -> Union[str, int]:
@@ -135,7 +136,6 @@ class _DbAttributeFactory(AttributeFactory):
         return _AttachableIntColumn(*self._params_to_args(params))
 
     def make_string_attribute(self, params: StringAttribute) -> BaseAttachableAttribute:
-        # MEMO: Ensures crash if length is missing
         length = params.get_length()
         return _AttachableStringColumn(*self._params_to_args(params), length)
 
