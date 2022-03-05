@@ -34,8 +34,8 @@
 	<script type="text/javascript" src="{{ url_for('static', filename='js/form.js') }}"></script>
 </head>
 <body>
-{% with messages = get_flashed_messages() %}
-	{% if messages %}
+{%- with messages = get_flashed_messages() -%}
+	{%- if messages -%}
 		<div class="container p-3">
 			<ul class="alert alert-primary alert-dismissible" role="alert">
 				{% for message in messages %}
@@ -43,10 +43,10 @@
 				{% endfor %}
 			</ul>
 		</div>
-	{% endif %}
-{% endwith %}
-{% block content %}{% endblock %}
-{% block extra_js %}{% endblock %}
+	{%- endif -%}
+{%- endwith -%}
+{%- block content -%}{%- endblock -%}
+{%- block extra_js -%}{%- endblock -%}
 <script type="text/javascript">
 	function main(){
 		hookOptionalFieldsets();

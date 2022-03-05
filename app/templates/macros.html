@@ -1,113 +1,100 @@
 {% import "better_wtf.html" as wtf %}
 
+{%- macro format_datetime(datetime) -%}
+	{{ datetime.strftime('%d.%m.%Y %H:%M') }}
+{%- endmacro -%}
 
-{% macro format_datetime(datetime) %}
-    {{ datetime.strftime('%d.%m.%Y %H:%M') }}
-{% endmacro %}
+{%- macro registration_form_routine(form) -%}
+	<form class="form form-horizontal" method="post" role="form" novalidate>
+		{{ form.hidden_tag() }}
+		{{ caller() }}
+		{{ form_submit_button() }}
+	</form>
+{%- endmacro -%}
 
+{%- macro registration_optional_participant() -%}
+	{# A wrapper macro for individual optional participant form fields. #}
+	<fieldset class="optional-participant">
+		{{ caller() }}
+	</fieldset>
+{%- endmacro -%}
 
-{% macro registration_form_routine(form) %}
-    <form class="form form-horizontal" method="post" role="form" novalidate>
-        {{- form.hidden_tag() -}}
-        {{- caller() -}}
-        {{- form_submit_button() -}}
-    </form>
-{% endmacro %}
+{%- macro basic_registration_form(form) -%}
+	{%- call registration_form_routine(form) -%}
+		{%- for participant in form.get_required_participants() -%}
+			{{ form_field(participant.firstname) }}
+			{{ form_field(participant.lastname) }}
+			{{ form_field(participant.email) }}
+		{%- endfor -%}
 
+		{% set other = form.get_other_attributes() %}
+		{{ form_field(other.privacy_consent) }}
+	{%- endcall -%}
+{%- endmacro -%}
 
-{% macro registration_optional_participant() %}
-    {# A wrapper macro for individual optional participant form fields. #}
-    <fieldset class="optional-participant">
-        {{- caller() -}}
-    </fieldset>
-{% endmacro %}
+{%- macro form_field(field) -%}
+	{#
+		TODO: wtf.form_field is poorly made and needs to be replaced.
+			  Look into replacing it and keep the replacement bootstrap
+			  compatible.
+	#}
+	{{ wtf.render_field(field) }}
+{%- endmacro -%}
 
-{% macro basic_registration_form(form) %}
-    {%- call registration_form_routine(form) -%}
-        {% for participant in form.get_required_participants() %}
-            {{ form_field(participant.firstname) }}
-            {{ form_field(participant.lastname) }}
-            {{ form_field(participant.email) }}
-        {% endfor %}
-
-        {% set other = form.get_other_attributes() %}
-        {{ form_field(other.privacy_consent) }}
-    {%- endcall -%}
-{% endmacro %}
-
-
-{% macro form_field(field) %}
-    {#
-        TODO: wtf.form_field is poorly made and needs to be replaced.
-              Look into replacing it and keep the replacement bootstrap
-              compatible.
-    #}
-    {{ field }}
-    {# {{- wtf.form_field(field) -}} #}
-{% endmacro %}
-
-
-{% macro form_submit_button() %}
-    <button class="btn btn-info">
-        <input class="btn btn-default" value="Ilmoittaudu" type="submit">
-    </button>
-{% endmacro %}
-
+{%- macro form_submit_button() -%}
+	<button class="btn btn-info">
+		<input class="btn btn-default" value="Ilmoittaudu" type="submit">
+	</button>
+{%- endmacro -%}
 
 {% macro registration_begins(event) %}
-    <h5>Ilmoittautuminen alkaa {{ format_datetime(event.get_start_time()) }}</h5>
+	<h5>Ilmoittautuminen alkaa {{ format_datetime(event.get_start_time()) }}</h5>
 {% endmacro %}
-
 
 {% macro registration_ends(event) %}
-    <h5>Ilmoittautuminen päättyy {{ format_datetime(event.get_end_time()) }}</h5>
+	<h5>Ilmoittautuminen päättyy {{ format_datetime(event.get_end_time()) }}</h5>
 {% endmacro %}
-
 
 {% macro registration_ended(event) %}
-    <h5>Ilmoittautuminen on päättynyt</h5>
+	<h5>Ilmoittautuminen on päättynyt</h5>
 {% endmacro %}
-
 
 {% macro privacy_statement(module_info) %}
-    {% set filename = 'privacy_statements/' ~ module_info.get_form_name() ~ '.pdf' %}
-    <a href="{{ url_for('static',filename=filename) }}">Tietosuojaseloste</a>
+	{%- set filename = 'privacy_statements/' ~ module_info.get_form_name() ~ '.pdf' -%}
+	<a href="{{ url_for('static',filename=filename) }}">Tietosuojaseloste</a>
 {% endmacro %}
 
+{%- macro participant_list_routine(entries, event) -%}
+	{%- if event.get_list_participant_name() -%}
+		{%- for entry in entries -%}
+			{%- if entry.get_other_attributes().get_show_name_consent() -%}
+				{{ caller(entry, entry.get_is_in_reserve()) }}
+			{%- endif -%}
+		{%- endfor -%}
+	{%- endif -%}
+{%- endmacro -%}
 
-{% macro participant_list_routine(entries, event) %}
-    {%- if event.get_list_participant_name() -%}
-        {%- for entry in entries %}
-            {% if entry.get_other_attributes().get_show_name_consent() %}
-                {{- caller(entry, entry.get_is_in_reserve()) -}}
-            {% endif %}
-        {% endfor -%}
-    {%- endif -%}
-{% endmacro %}
+{%- macro participant_list(entries, event) -%}
+	{# TODO: See if the HTML could be made prettier #}
+	{%- call(entry, is_in_reserve) participant_list_routine(entries, event) -%}
+		<p>
+		{%- for participant in entry.get_required_participants() -%}
+			{{ participant.get_firstname() }} {{ participant.get_lastname() }}
+			{{ ", " if not loop.last }}
+		{%- endfor -%}
+		{%- for participant in entry.get_optional_participants() -%}
+			{# MEMO: Required participants should never be empty so the comma can preceed here #}
+			{{ ", " }}
+			{{ participant.get_firstname() }} {{ participant.get_lastname() }}
+		{%- endfor -%}
+		{%- if is_in_reserve -%}
+			(Varasijalla)
+		{%- else -%}
+		{%- endif -%}
+		</p>
+	{%- endcall -%}
+{%- endmacro -%}
 
-
-{% macro participant_list(entries, event) %}
-    {# TODO: See if the HTML could be made prettier #}
-    {%- call(entry, is_in_reserve) participant_list_routine(entries, event) -%}
-        <p>
-        {%- for participant in entry.get_required_participants() -%}
-            {{ participant.get_firstname() }} {{ participant.get_lastname() }}
-            {{ ", " if not loop.last }}
-        {%- endfor -%}
-        {%- for participant in entry.get_optional_participants() -%}
-            {# MEMO: Required participants should never be empty so the comma can preceed here #}
-            {{ ", " }}
-            {{ participant.get_firstname() }} {{ participant.get_lastname() }}
-        {%- endfor -%}
-        {%- if is_in_reserve -%}
-            (Varasijalla)
-        {%- else -%}
-        {%- endif -%}
-        </p>
-    {%- endcall -%}
-{% endmacro %}
-
-
-{% macro participant_count(registrations, event) %}
-    <h2>Osallistujat {{ registrations.get_participant_count() }}/{{ event.get_participant_limit() }}</h2>
-{% endmacro %}
+{%- macro participant_count(registrations, event) -%}
+	<h2>Osallistujat {{ registrations.get_participant_count() }}/{{ event.get_participant_limit() }}</h2>
+{%- endmacro -%}
