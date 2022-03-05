@@ -9,7 +9,9 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SelectField, FormField, Form, FieldList, Field, RadioField, \
     IntegerField, DateTimeField
 from wtforms.validators import InputRequired, Optional
+from wtforms.widgets import Select
 
+from .widgets import CustomTextInput, CustomCheckboxInput, CustomSelect
 from app.form_lib.lib import BaseAttachableAttribute, BaseRegistration, BaseOtherAttributes, \
     BaseParticipant, BaseTypeBuilder, AttributeFactory, ObjectAttribute, IntAttribute, ListAttribute, \
     DatetimeAttribute, BoolAttribute, StringAttribute, BaseAttribute, TypeFactory, BaseFormComponent, \
@@ -22,7 +24,7 @@ class BasicParticipantForm(BaseParticipant, Form):
     pass
 
 
-class OtherAttributesForm(BaseFormComponent, Form):
+class OtherAttributesForm(BaseOtherAttributes, Form):
     asks_name_consent = False
 
 
@@ -191,19 +193,19 @@ class _AttachableField(BaseAttachableAttribute, ABC):
 class _AttachableIntField(_AttachableField):
 
     def _make_field_value(self) -> Any:
-        return IntegerField(self._label, validators=self._validators)
+        return IntegerField(self._label, validators=self._validators, widget=CustomTextInput())
 
 
 class _AttachableStringField(_AttachableField):
 
     def _make_field_value(self) -> Any:
-        return StringField(self._label, validators=self._validators)
+        return StringField(self._label, validators=self._validators, widget=CustomTextInput())
 
 
 class _AttachableBoolField(_AttachableField):
 
     def _make_field_value(self) -> Any:
-        return BooleanField(self._label, validators=self._validators)
+        return BooleanField(self._label, validators=self._validators, widget=CustomCheckboxInput())
 
 
 class _AttachableDatetimeField(_AttachableField):
@@ -217,7 +219,7 @@ class _AttachableDatetimeField(_AttachableField):
         self._format = format
 
     def _make_field_value(self) -> Any:
-        return DateTimeField(self._label, validators=self._validators, format=self._format)
+        return DateTimeField(self._label, validators=self._validators, format=self._format, widget=CustomTextInput())
 
 
 class _AttachableEnumField(_AttachableField):
@@ -232,8 +234,8 @@ class _AttachableEnumField(_AttachableField):
 
     def _make_choices(self, enum_type: Type[Enum]):
         choices = []
-        for name in enum_type.__members__:
-            choices.append((name, name))
+        for member in enum_type:
+            choices.append((member.value, member.name))
 
         return choices
 
@@ -243,9 +245,12 @@ class _AttachableEnumField(_AttachableField):
         if length == 0:
             raise Exception("Empty enumeration is not allowed.")
         elif length > 4:
-            return SelectField(self._label, choices=choices, validators=self._validators)
+            choices.insert(0, ('', 'Valitse'))
+            return SelectField(self._label, choices=choices, validators=self._validators, widget=CustomSelect())
         else:
-            return RadioField(self._label, choices=choices, validators=self._validators)
+            choices.insert(0, ('', 'Valitse'))
+            return SelectField(self._label, choices=choices, validators=self._validators, widget=CustomSelect())
+            return RadioField(self._label, choices=choices, validators=self._validators, widget=CustomListWidget(prefix_label=False))
 
 
 class _AttachableFieldListField(_AttachableField):
@@ -307,7 +312,7 @@ class RequiredIfValue(InputRequired):
     """Validator which makes a field required if another field is set and has a truthy value.
     Sources:
         - http://wtforms.simplecodes.com/docs/1.0.1/validators.html
-        - http://stackoverflow.com/questions/8463209/how-to-make-a-field-conditionally-optional-in-wtforms
+        - https://stackoverflow.com/questions/8463209/how-to-make-a-field-conditionally-optional-in-wtforms
         - https://www.reddit.com/r/flask/comments/7y1k6p/af_wtforms_required_if_validator/
     """
 
@@ -358,5 +363,3 @@ class FlatFormField(FormField):
         self.form.populate_obj(tmp)
         for attr in vars(tmp):
             setattr(obj, self.name + '_' + attr, getattr(tmp, attr))
-
-

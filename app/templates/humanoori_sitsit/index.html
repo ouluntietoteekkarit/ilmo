@@ -19,7 +19,7 @@
 
 
 {%- block event_info -%}
-    <p>OTiTin, Prosen ja Communican yhteiset humanöörisitsit ovat täällä taas! <br \>
+    <p>OTiTin, Prosen ja Communican yhteiset humanöörisitsit ovat täällä taas! <br />
     Sitsit pidetään Walhallassa maanantaina 14.3. klo 18:00 alkaen. Tulkaahan ajoissa paikalle!<br />
     Pukukoodina toimii Cocktail Lasten synttäri -twistillä<br />
     Jatkoilla lämpenee sauna, joten sinne OPMx2
@@ -36,6 +36,8 @@
 
 
 {% macro participant_form(form) %}
+    {{ form }}
+    {#
     {{ macros.form_field(form.firstname) }}
     {{ macros.form_field(form.lastname) }}
     {{ macros.form_field(form.email) }}
@@ -45,14 +47,17 @@
     {{ macros.form_field(form.wine) }}
     {{ macros.form_field(form.allergies) }}
     {{ macros.form_field(form.seating_preference) }}
+    #}
 {% endmacro %}
 
 {%- block registration_form -%}
     {%- call macros.registration_form_routine(form) -%}
         {{ participant_form(form.required_participants[0]) }}
         <br />
-        <h4>Avecin tiedot</h4>
-        {{ participant_form(form.get_optional_participants()[0]) }}
+        {% call macros.registration_optional_participant() %}
+            <legend>Avecin tiedot</legend>
+            {{ participant_form(form.get_optional_participants()[0]) }}
+        {% endcall %}
         {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
         {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
     {%- endcall -%}

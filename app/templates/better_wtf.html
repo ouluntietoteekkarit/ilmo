@@ -16,9 +16,9 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro _hz_form_wrap(horizontal_columns, form_type, add_group=False, required=False) %}
+{% macro _hz_form_wrap(horizontal_columns, form_type, add_group=False) %}
     {% if form_type == "horizontal" %}
-        {% if add_group %}<div class="form-group{% if required %} required{% endif %}">{% endif %}
+        {% if add_group %}<div class="form-group">{% endif %}
             <div class="col-{{horizontal_columns[0]}}-offset-{{horizontal_columns[1]}} col-{{horizontal_columns[0]}}-{{horizontal_columns[2]}}">
                 {{caller()}}
             </div>
@@ -28,16 +28,16 @@
     {% endif %}
 {% endmacro %}
 
-{% macro _render_checkbox(field, form_type, horizontal_columns, button_map, required) %}
-    {% call _hz_form_wrap(horizontal_columns, form_type, True, required=required) %}
+{% macro _render_checkbox(field, form_type, horizontal_columns, button_map) %}
+    {% call _hz_form_wrap(horizontal_columns, form_type, True) %}
         <div class="checkbox"><label>{{field()|safe}} {{field.label.text|safe}}</label></div>
     {% endcall %}
 {% endmacro %}
 
-{% macro _render_radiofield(field, form_type, horizontal_columns, button_map, required) %}
+{% macro _render_radiofield(field, form_type, horizontal_columns, button_map) %}
     {# note: A cleaner solution would be rendering depending on the widget,
              this is just a hack for now, until I can think of something better #}
-    {% call _hz_form_wrap(horizontal_columns, form_type, True, required=required) %}
+    {% call _hz_form_wrap(horizontal_columns, form_type, True) %}
         {{field.label(class="control-label")|safe}}
         {% for item in field -%}
             <div class="radio"><label>{{item|safe}} {{item.label.text|safe}}</label></div>
@@ -45,17 +45,17 @@
     {% endcall %}
 {% endmacro %}
 
-{% macro _render_submitfield(field, form_type, horizontal_columns, button_map, required) %}
+{% macro _render_submitfield(field, form_type, horizontal_columns, button_map) %}
     {# deal with jinja scoping issues? #}
     {% set field_kwargs = kwargs %}
 
     {# note: same issue as above - should check widget, not field type #}
-    {% call _hz_form_wrap(horizontal_columns, form_type, True, required=required) %}
+    {% call _hz_form_wrap(horizontal_columns, form_type, True) %}
         {{field(class='btn btn-%s' % button_map.get(field.name, 'default'), **field_kwargs)}}
     {% endcall %}
 {% endmacro %}
 
-{% macro _render_formfield(field, form_type, horizontal_columns, button_map, required) %}
+{% macro _render_formfield(field, form_type, horizontal_columns, button_map) %}
     {# note: FormFields are tricky to get right and complex setups requiring
              these are probably beyond the scope of what this macro tries to do.
              the code below ensures that things don't break horribly if we run into
@@ -78,30 +78,30 @@
     {% endif %}
 {% endmacro %}
 
-{% macro _render_inline_field(field, form_type, horizontal_columns, button_map, required) %}
+{% macro _render_inline_field(field, form_type, horizontal_columns, button_map) %}
     {{field.label(class="sr-only")|safe}}
     {{ _render_filefield(field) }}
 {% endmacro %}
 
-{% macro _render_horizontal_field(field, form_type, horizontal_column, button_map, required) %}
+{% macro _render_horizontal_field(field, form_type, horizontal_column, button_map) %}
     {{field.label(class="control-label " + (" col-%s-%s" % horizontal_columns[0:2]))|safe}}
     <div class=" col-{{horizontal_columns[0]}}-{{horizontal_columns[2]}}">
         {{ _render_filefield(field) }}
     </div>
     {%- if field.errors %}
         {%- for error in field.errors %}
-            {% call _hz_form_wrap(horizontal_columns, form_type, required=required) %}
+            {% call _hz_form_wrap(horizontal_columns, form_type) %}
                 <p class="help-block">{{error}}</p>
             {% endcall %}
         {%- endfor %}
     {%- elif field.description -%}
-        {% call _hz_form_wrap(horizontal_columns, form_type, required=required) %}
+        {% call _hz_form_wrap(horizontal_columns, form_type) %}
             <p class="help-block">{{field.description|safe}}</p>
         {% endcall %}
     {%- endif %}
 {% endmacro %}
 
-{% macro _render_basic_field(field, form_type, horizontal_columns, button_map, required) %}
+{% macro _render_basic_field(field, form_type, horizontal_columns, button_map) %}
     {{field.label(class="control-label")|safe}}
     {{ _render_filefield(field) }}
 
@@ -115,20 +115,15 @@
 {% endmacro %}
 
 {% macro form_field(field, form_type="basic", horizontal_columns=('lg', 2, 10), button_map={}) %}
-    {# this is a workaround hack for the more straightforward-code of just passing required=required parameter. older versions of wtforms do not have
-    the necessary fix for required=False attributes, but will also not set the required flag in the first place. we skirt the issue using the code below #}
-    {%- if field.flags.required and not required in kwargs -%}
-        {% set kwargs = dict(required=True, **kwargs) %}
-    {%- endif -%}
-    {%- if field.widget.input_type == 'checkbox' -%} {{ _render_checkbox(field, form_type, horizontal_columns, button_map, required) }}
-    {%- elif field.type == 'RadioField' -%}          {{ _render_radiofield(field, form_type, horizontal_columns, button_map, required) }}
-    {%- elif field.type == 'SubmitField' -%}         {{ _render_submitfield(field, form_type, horizontal_columns, button_map, required) }}
-    {%- elif field.type == 'FormField' -%}           {{ _render_formfield(field, form_type, horizontal_columns, button_map, required) }}
+    {%- if field.widget.input_type == 'checkbox' -%} {{ _render_checkbox(field, form_type, horizontal_columns, button_map) }}
+    {%- elif field.type == 'RadioField' -%}          {{ _render_radiofield(field, form_type, horizontal_columns, button_map) }}
+    {%- elif field.type == 'SubmitField' -%}         {{ _render_submitfield(field, form_type, horizontal_columns, button_map) }}
+    {%- elif field.type == 'FormField' -%}           {{ _render_formfield(field, form_type, horizontal_columns, button_map) }}
     {%- else -%}
-        <div class="form-group {% if field.errors %} has-error{% endif -%} {%- if field.flags.required %} required{% endif -%}">
-        {%- if form_type == "inline" -%}             {{ _render_inline_field(field, form_type, horizontal_columns, button_map, required) }}
-        {%- elif form_type == "horizontal" -%}       {{ _render_horizontal_field(field, form_type, horizontal_columns, button_map, required) }}
-        {%- else -%}                                 {{ _render_basic_field(field, form_type, horizontal_columns, button_map, required) }}
+        <div class="form-group {% if field.errors %} has-error{% endif -%}">
+        {%- if form_type == "inline" -%}             {{ _render_inline_field(field, form_type, horizontal_columns, button_map) }}
+        {%- elif form_type == "horizontal" -%}       {{ _render_horizontal_field(field, form_type, horizontal_columns, button_map) }}
+        {%- else -%}                                 {{ _render_basic_field(field, form_type, horizontal_columns, button_map) }}
         {%- endif -%}
         </div>
     {%- endif -%}
@@ -201,3 +196,4 @@ action="" is what we want, from http://www.ietf.org/rfc/rfc2396.txt:
     {%- endfor %}
     </form>
 {%- endmacro %}
+

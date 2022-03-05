@@ -1,46 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>OTiTin ilmot</title>
+	<!-- Jiska was here :DDD -->
 
-    <!-- Jiska was here :DDD -->
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>OTiTin ilmot</title>
 
-    <!-- Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" crossorigin="anonymous" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js" crossorigin="anonymous" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"></script>
+	<style>
+		/* Form error message styles */
+		.form-group.has-error .help-block {
+			margin-top: 1em;
+			padding: 0.2em;
+			color: #084298;
+			background-color: #cfe2ff;
+			border-color: #b6d4fe;
+		}
+	</style>
 
-    <style>
-        /* Form error message styles */
-        .form-group.has-error .help-block {
-            margin-top: 1em;
-            padding: 0.2em;
-            color: #084298;
-            background-color: #cfe2ff;
-            border-color: #b6d4fe;
-        }
-    </style>
+	{% block extra_styles %}{% endblock %}
 
-    {% block extra_styles %}{% endblock %}
+	<!-- Bootstrap -->
+	<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" crossorigin="anonymous" integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu">
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js" crossorigin="anonymous" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"></script>
+
+	<!-- First party JS. -->
+	<script type="text/javascript" src="{{ url_for('static', filename='js/form.js') }}"></script>
 </head>
 <body>
 {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        <div class="container p-3">
-            <ul class="alert alert-primary alert-dismissible" role="alert">
-                {% for message in messages %}
-                    <h2>{{ message|safe }}</h2>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
+	{% if messages %}
+		<div class="container p-3">
+			<ul class="alert alert-primary alert-dismissible" role="alert">
+				{% for message in messages %}
+					<h2>{{ message|safe }}</h2>
+				{% endfor %}
+			</ul>
+		</div>
+	{% endif %}
 {% endwith %}
 {% block content %}{% endblock %}
 {% block extra_js %}{% endblock %}
+<script type="text/javascript">
+	function main(){
+		hookOptionalFieldsets();
+	}
+	main();
+</script>
 </body>
 </html>

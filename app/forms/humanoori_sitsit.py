@@ -3,6 +3,8 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Iterable, Type
 
+from wtforms.validators import InputRequired
+
 from app.email import make_greet_line
 from app.form_lib.common_attributes import make_attribute_lastname, make_attribute_firstname, make_attribute_email, \
     make_attribute_quota, make_attribute_privacy_consent, make_attribute_name_consent, make_attribute_allergies
@@ -111,14 +113,14 @@ _LiquorEnum = choices_to_enum(_form_name, 'liquor', _get_liquors())
 _WineEnum = choices_to_enum(_form_name, 'wine', _get_wines())
 
 participant_attributes = [
-    make_attribute_firstname(),
-    make_attribute_lastname(),
-    make_attribute_email(),
+    make_attribute_firstname(validators=[InputRequired()]),
+    make_attribute_lastname(validators=[InputRequired()]),
+    make_attribute_email(validators=[InputRequired()]),
 ] + [
-    make_attribute_quota(_QuotaEnum),
-    _make_attribute_drink(_DrinkEnum),
-    _make_attribute_liquor(_LiquorEnum),
-    _make_attribute_wine(_WineEnum),
+    make_attribute_quota(_QuotaEnum, validators=[InputRequired()]),
+    _make_attribute_drink(_DrinkEnum, validators=[InputRequired()]),
+    _make_attribute_liquor(_LiquorEnum, validators=[InputRequired()]),
+    _make_attribute_wine(_WineEnum, validators=[InputRequired()]),
     make_attribute_allergies(),
     _make_attribute_searing_preference()
 ]
@@ -127,7 +129,7 @@ optional_participant_attributes = participant_attributes
 
 other_attributes = [
     make_attribute_name_consent(),
-    make_attribute_privacy_consent()
+    make_attribute_privacy_consent(validators=[InputRequired()])
 ]
 _types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
 

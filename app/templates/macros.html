@@ -7,13 +7,20 @@
 
 
 {% macro registration_form_routine(form) %}
-    <form class="form form-horizontal" method="post" role="form">
+    <form class="form form-horizontal" method="post" role="form" novalidate>
         {{- form.hidden_tag() -}}
         {{- caller() -}}
         {{- form_submit_button() -}}
     </form>
 {% endmacro %}
 
+
+{% macro registration_optional_participant() %}
+    {# A wrapper macro for individual optional participant form fields. #}
+    <fieldset class="optional-participant">
+        {{- caller() -}}
+    </fieldset>
+{% endmacro %}
 
 {% macro basic_registration_form(form) %}
     {%- call registration_form_routine(form) -%}
@@ -35,7 +42,8 @@
               Look into replacing it and keep the replacement bootstrap
               compatible.
     #}
-    {{- wtf.form_field(field) -}}
+    {{ field }}
+    {# {{- wtf.form_field(field) -}} #}
 {% endmacro %}
 
 

@@ -77,24 +77,24 @@ def choices_to_enum(form_name: str, enum_name: str, values: Iterable[str]) -> Ty
     return enum_type
 
 
-def get_str_choices(values: Iterable[str]) -> List[Tuple[str, str]]:
+def get_str_choices(values: Iterable[str]) -> List[str]:
     choices = []
     for val in values:
-        choices.append((val, val))
+        choices.append(val)
     return choices
 
 
-def get_guild_choices(guilds: Iterable[Guild]) -> list:
+def get_guild_choices(guilds: Iterable[Guild]) -> List[str]:
     choices = []
     for guild in guilds:
-        choices.append((guild.get_name(), guild.get_name()))
+        choices.append(guild.get_name())
     return choices
 
 
 def get_quota_choices(quotas: Iterable[Quota]):
     choices = []
     for quota in quotas:
-        choices.append((quota.get_name(), quota.get_name()))
+        choices.append(quota.get_name())
     return choices
 
 
