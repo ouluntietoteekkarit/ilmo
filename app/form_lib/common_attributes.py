@@ -44,31 +44,33 @@ def make_attribute_allergies(**extra_args: Dict[str, Any]) -> BaseAttribute:
     return StringAttribute(ATTRIBUTE_NAME_ALLERGIES, 'Erityisruokavaliot/allergiat', 'Erityisruokavaliot', 200, **extra_args)
 
 
-def make_attribute_name_consent(txt: str = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla', **extra_args: Dict[str, Any]) -> BaseAttribute:
+def make_attribute_name_consent(txt: str = "", **extra_args: Dict[str, Any]) -> BaseAttribute:
+    if len(txt) == 0:
+        txt = 'Sallin nimeni julkaisemisen osallistujalistassa tällä sivulla'
     # MEMO: Come up with a solution to this.
     # form.asks_name_consent = True
     return BoolAttribute(ATTRIBUTE_NAME_NAME_CONSENT, txt, 'Sallin nimenjulkaisun', **extra_args)
 
 
-def make_attribute_binding_registration_consent(txt: str = 'Ymmärrän, että ilmoittautuminen on sitova', **extra_args: Dict[str, Any]) -> BaseAttribute:
-    # TODO: Add required modifier
+def make_attribute_binding_registration_consent(txt: str = "", **extra_args: Dict[str, Any]) -> BaseAttribute:
+    if len(txt) == 0:
+        txt = 'Ymmärrän, että ilmoittautuminen on sitova'
     return BoolAttribute(ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT, txt, 'Sitoudun ilmoittautumiseen', **extra_args)
 
 
-def make_attribute_privacy_consent(txt: str = 'Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä', **extra_args: Dict[str, Any]) -> BaseAttribute:
-    # TODO: Add required modifier
-    return BoolAttribute(ATTRIBUTE_NAME_PRIVACY_CONSENT, txt, 'Hyväksyn tietosuojaselosteen')
+def make_attribute_privacy_consent(txt: str = "", **extra_args: Dict[str, Any]) -> BaseAttribute:
+    if len(txt) == 0:
+        txt = 'Olen lukenut tietosuojaselosteen ja hyväksyn tietojen käytön tapahtuman järjestämisessä'
+    return BoolAttribute(ATTRIBUTE_NAME_PRIVACY_CONSENT, txt, 'Hyväksyn tietosuojaselosteen', **extra_args)
 
 
 def make_attribute_required_participants(participant_type: Type[BaseParticipant], count: int = 1, **extra_args: Dict[str, Any]) -> BaseAttribute:
-    # TODO: Add required modifier
-    return ListAttribute(ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, '', '', participant_type, count)
+    return ListAttribute(ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, '', '', participant_type, count, **extra_args)
 
 
 def make_attribute_optional_participants(participant_type: Type[BaseParticipant], count: int = 0, **extra_args: Dict[str, Any]) -> BaseAttribute:
-    return ListAttribute(ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, '', '', participant_type, count)
+    return ListAttribute(ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, '', '', participant_type, count, **extra_args)
 
 
-def make_attribute_other_attributes(form_type: Type[BaseOtherAttributes]) -> BaseAttribute:
-    # TODO: Add required modifier
-    return ObjectAttribute(ATTRIBUTE_NAME_OTHER_ATTRIBUTES, '', '', form_type)
+def make_attribute_other_attributes(form_type: Type[BaseOtherAttributes], **extra_args: Dict[str, Any]) -> BaseAttribute:
+    return ObjectAttribute(ATTRIBUTE_NAME_OTHER_ATTRIBUTES, '', '', form_type, **extra_args)

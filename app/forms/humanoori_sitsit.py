@@ -129,7 +129,7 @@ optional_participant_attributes = participant_attributes
 
 other_attributes = [
     make_attribute_name_consent(),
-    make_attribute_privacy_consent(validators=[InputRequired()])
+    make_attribute_privacy_consent("", validators=[InputRequired()])
 ]
 _types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
 

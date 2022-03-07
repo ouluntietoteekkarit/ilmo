@@ -90,12 +90,10 @@ function hookOptionalFieldsets(){
 			removeLabelRequiredAttributes(fieldset);
 		}
 	}
-
 	var formInputSelector = ".form input,select,textarea";
 	var formLabelSelector = ".form label[data-is-required]";
 	var isRequiredAttr = "data-is-required";
 	var hasInputAttr = "data-has-input";
 	prepareOptionalFieldsets();
 	removeFormNovalidate();
-
 }

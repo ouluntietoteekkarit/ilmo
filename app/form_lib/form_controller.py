@@ -7,7 +7,7 @@ from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collec
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
-from .lib import Quota, BaseParticipant, AttributeFactory
+from .lib import Quota, BaseParticipant
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
@@ -46,7 +46,7 @@ class EventRegistrations:
     A class to hold dynamic registration data
     """
 
-    def __init__(self, entries: Collection[RegistrationModel]):
+    def __init__(self, entries: List[RegistrationModel]):
         self._entries = entries
         self._participant_count = self._count_total_participants(self._entries)
 
@@ -65,6 +65,9 @@ class EventRegistrations:
 
     def get_participant_count(self) -> int:
         return self._participant_count
+
+    def add_new_registration(self, entry: RegistrationModel) -> None:
+        self._entries.append(entry)
 
 
 class FormController(ABC):
@@ -189,6 +192,18 @@ class FormController(ABC):
         optional_count = len(form.get_optional_participants())
         model = model_factory(required_count, optional_count, nowtime)
         form.populate_obj(model)
+
+        # MEMO: Clear out empty entries to prevent invalid enum values from causing an error.
+        participants = model.get_required_participants()
+        for p in participants[:]:
+            if not p.is_filled():
+                participants.remove(p)
+
+        participants = model.get_optional_participants()
+        for p in participants[:]:
+            if not p.is_filled():
+                participants.remove(p)
+
         return model
 
     def _post_routine(self, form: RegistrationForm) -> Any:
@@ -215,7 +230,7 @@ class FormController(ABC):
 
         self._send_emails(model)
         flash(_make_success_msg(model.get_is_in_reserve()))
-
+        registrations.add_new_registration(model)
         return self._post_routine_output(registrations, form, nowtime)
 
     def _post_routine_output(self, registrations, form: RegistrationForm, nowtime) -> Any:
@@ -281,11 +296,14 @@ class FormController(ABC):
         """
         for form_quota in form_quotas:
             name = form_quota.get_name()
+            if name not in registration_quotas.keys():
+                return "Kelvoton arvo."
+
             registration_quotas[name] += form_quota.get_quota()
             if registration_quotas[name] > event_quotas[name].get_max_quota():
                 if name != Quota.default_quota_name():
-                    return 'Ilmoittautuminen on jo täynnä kiintiön {} osalta'.format(name)
-                return 'Ilmoittautuminen on jo täynnä'
+                    return 'Ilmoittautuminen on jo täynnä kiintiön {} osalta.'.format(name)
+                return 'Ilmoittautuminen on jo täynnä.'
 
         return ''
 

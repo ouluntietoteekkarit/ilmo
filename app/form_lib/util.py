@@ -73,7 +73,7 @@ def make_types(required_participant_attributes: Collection[BaseAttribute],
 
 def choices_to_enum(form_name: str, enum_name: str, values: Iterable[str]) -> Type[Enum]:
     name = '{}_{}'.format(form_name, enum_name)
-    enum_type: Type[Enum] = Enum(name, values)
+    enum_type: Type[Enum] = Enum(name, {member: member for member in values})
     return enum_type
 
 

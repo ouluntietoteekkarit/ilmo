@@ -99,10 +99,12 @@ class BaseRegistration(BaseFormComponent):
     def get_quota_counts(self) -> List[Quota]:
         quotas = []
         for p in self.get_required_participants():
-            quotas.append(Quota(p.get_quota(), int(p.is_filled())))
+            if p.is_filled():
+                quotas.append(Quota(p.get_quota(), 1))
 
         for p in self.get_optional_participants():
-            quotas.append(Quota(p.get_quota(), int(p.is_filled())))
+            if p.is_filled():
+                quotas.append(Quota(p.get_quota(), 1))
 
         return quotas
 
