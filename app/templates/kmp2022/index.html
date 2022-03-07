@@ -53,41 +53,24 @@
 
 {%- block registration_form -%}
     {%- call macros.registration_form_routine(form) -%}
+        {% set p = form.get_required_participants()[0] %}
         <h4>Henkilötiedot</h4>
-        {{ macros.form_field(form.firstname) }}
-        {{ macros.form_field(form.lastname) }}
-        {{ macros.form_field(form.email) }}
-        {{ macros.form_field(form.quota) }}
-        {{ macros.form_field(form.departure_busstop) }}
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
+        {{ macros.form_field(p.quota) }}
+        {{ macros.form_field(p.departure_location) }}
         <br />
         <div id="accomodation_form">
             <h4>Majoitustiedot</h4>
-            {{ macros.form_field(form.roommate_preference) }}
-            {{ macros.form_field(form.room_sex_composition) }}
-            {{ macros.form_field(form.sex) }}
-            {{ macros.form_field(form.allergies) }}
+            {{ macros.form_field(p.roommate_preference) }}
+            {{ macros.form_field(p.room_sex_composition) }}
+            {{ macros.form_field(p.sex) }}
+            {{ macros.form_field(p.allergies) }}
         </div>
 
-        {{ macros.form_field(form.show_name_consent) }}
-        {{ macros.form_field(form.privacy_consent) }}
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
     {%- endcall -%}
 {% endblock %}
-
-
-{%- block participant_list -%}
-
-    {% set quota_counts = dict.fromkeys(event.get_quotas().keys(), 0) %}
-    {% set quotas = event.get_quotas() %}
-
-    {% for entry in registrations.get_entries() %}
-        {% set dummy = quota_counts.update({entry.quota: quota_counts[entry.quota] + 1}) %}
-        {% if entry.get_show_name_consent() %}
-            <p>{{ entry.get_firstname() }} {{ entry.get_lastname() }}
-            {% if quota_counts[entry.quota] >= quotas[entry.quota].get_quota() %}
-                (Varasijalla)
-            {% endif %}
-            </p>
-        {% endif %}
-    {% endfor %}
-
-{%- endblock -%}

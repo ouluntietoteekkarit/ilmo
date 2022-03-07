@@ -3,6 +3,7 @@ import shlex
 import os
 import html
 
+from app.form_lib.lib import BaseParticipant
 
 _EMAIL_SENDER_BOT = 'no-reply@otit.fi'
 _EMAIL_ENCODING = 'utf-8'
@@ -45,7 +46,8 @@ def send_email(msg: str, subject: str, recipient: EmailRecipient):
     os.system(cmd)
 
 
-def make_greet_line(recipient: EmailRecipient) -> str:
+# MEMO: This should really take in an EmailRecipient instance
+def make_greet_line(recipient: BaseParticipant) -> str:
     return "Hei " + make_fullname(recipient.get_firstname(), recipient.get_lastname()) + "\n\n"
 
 
@@ -56,7 +58,7 @@ Terveisin: ropottilari"""
 
 
 def make_fullname(firstname: str, lastname: str) -> str:
-    return "{} {}".format(firstname, lastname)
+    return f"{firstname} {lastname}"
 
 
 def make_fullname_line(firstname: str, lastname: str) -> str:
@@ -70,4 +72,4 @@ def _encode_word(data: str, encoding: str):
     data = data.encode(encoding)
     data = base64.b64encode(data)
     data = data.decode('ascii')
-    return "=?{}?B?{}?=".format(encoding, data)
+    return f"=?{encoding}?B?{data}?="

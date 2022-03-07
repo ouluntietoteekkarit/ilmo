@@ -2,46 +2,45 @@
 {%- import "macros.html" as macros -%}
 
 {%- block event_info -%}
-    <p>Ilmoita koko joukkue (3-4 henkilöä) kerralla. Ilmoittautumisia otetaan vastaan, jos ilmoittautuneiden
-        yhteenlaskettu määrä joukkueenne mukaan lukien on korkeintaan 50</p>
-    <p><strong>Mikäli olet sairas etkä pääsekään paikalle, ole yhteydessä Riikka Haatajaan 0442828255 (Whatsapp,
-        Telegram tai tekstiviesti)</strong></p>
+	<p>Ilmoita koko joukkue (3-4 henkilöä) kerralla. Ilmoittautumisia otetaan vastaan, jos ilmoittautuneiden
+		yhteenlaskettu määrä joukkueenne mukaan lukien on korkeintaan 50</p>
+	<p><strong>Mikäli olet sairas etkä pääsekään paikalle, ole yhteydessä Riikka Haatajaan 0442828255 (Whatsapp,
+		Telegram tai tekstiviesti)</strong></p>
 {%- endblock -%}
 
+{%- macro participant_form(participant) -%}
+	{{ macros.form_field(participant.firstname) }}
+	{{ macros.form_field(participant.lastname) }}
+	{{ macros.form_field(participant.phone_number) }}
+	{{ macros.form_field(participant.email) }}
+	{{ macros.form_field(participant.quota) }}
+{%- endmacro -%}
+
 {%- block registration_form -%}
-    {%- call macros.registration_form_routine(form) -%}
-        {{ macros.form_field(form.teamname) }}
-        {{ macros.form_field(form.firstname) }}
-        {{ macros.form_field(form.lastname) }}
-        {{ macros.form_field(form.phone0) }}
-        {{ macros.form_field(form.email) }}
-        {{ macros.form_field(form.kilta0) }}
-        {{ macros.form_field(form.etunimi1) }}
-        {{ macros.form_field(form.sukunimi1) }}
-        {{ macros.form_field(form.phone1) }}
-        {{ macros.form_field(form.email1) }}
-        {{ macros.form_field(form.kilta1) }}
-        {{ macros.form_field(form.etunimi2) }}
-        {{ macros.form_field(form.sukunimi2) }}
-        {{ macros.form_field(form.phone2) }}
-        {{ macros.form_field(form.email2) }}
-        {{ macros.form_field(form.kilta2) }}
-        {{ macros.form_field(form.etunimi3) }}
-        {{ macros.form_field(form.sukunimi3) }}
-        {{ macros.form_field(form.phone3) }}
-        {{ macros.form_field(form.email3) }}
-        {{ macros.form_field(form.kilta3) }}
-        {{ macros.form_field(form.show_name_consent) }}
-        {{ macros.form_field(form.privacy_consent) }}
-        {{ macros.form_field(form.binding_registration_consent) }}
-    {%- endcall -%}
+	{%- call macros.registration_form_routine(form) -%}
+		{% set other = form.get_other_attributes() %}
+		{{ macros.form_field(other.teamname) }}
+		{% for participant in form.get_required_participants() %}
+			{{ participant_form(participant) }}
+		{% endfor %}
+		{% for participant in form.get_optional_participants() %}
+			{%- call macros.registration_optional_participant() -%}
+				{{ participant_form(participant) }}
+			{%- endcall -%}
+		{% endfor %}
+
+		{{ macros.form_field(other.show_name_consent) }}
+		{{ macros.form_field(other.privacy_consent) }}
+		{{ macros.form_field(other.binding_registration_consent) }}
+	{%- endcall -%}
 {%- endblock -%}
 
 {%- block participant_list -%}
-    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, 0, event.get_participant_limit()) -%}
-        <p>{{ entry.teamname }}</p>
-    {%- endcall -%}
-    {%- call(entry) macros.participant_list_routine(registrations.get_entries(), event, event.get_participant_limit(), event.get_max_limit()) -%}
-        <p>{{ entry.teamname }} (Varasijalla)</p>
-    {%- endcall -%}
+	{%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+		{% if is_in_reserve %}
+			<p>{{ entry.get_other_attributes().teamname }} (Varasijalla)</p>
+		{% else %}
+			<p>{{ entry.get_other_attributes().teamname }}</p>
+		{% endif %}
+	{%- endcall -%}
 {%- endblock -%}

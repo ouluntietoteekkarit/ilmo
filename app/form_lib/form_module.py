@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import Type, Union, TYPE_CHECKING, Tuple
 from os.path import split, splitext
 
-from .forms import BasicForm
-from .models import BasicModel
+from .util import TypeInfo
 from .form_controller import FormContext
 
 if TYPE_CHECKING:
@@ -19,12 +18,15 @@ class ModuleInfo:
     """
 
     def __init__(self, controller_type: Type[FormController], is_active: bool,
-                 form_name: str, event: Event, form: Type[BasicForm], model: Type[BasicModel],
-                 data_table_info: DataTableInfo):
+                 form_name: str, event: Event, type_info: TypeInfo):
         self._controller_type = controller_type
         self._is_active = is_active
         self._form_name = form_name
-        self._context = FormContext(event, form, model, data_table_info)
+        self._type_info = type_info
+        self._context = FormContext(event,
+                                    type_info.get_form_type(),
+                                    type_info.get_model_type(),
+                                    type_info.get_data_info())
         self._form_endpoint_get_index = ""
         self._form_endpoint_post_index = ""
         self._form_endpoint_get_data = ""
@@ -38,6 +40,9 @@ class ModuleInfo:
 
     def get_form_name(self) -> str:
         return self._form_name
+
+    def get_type_info(self) -> TypeInfo:
+        return self._type_info
 
     def get_form_context(self) -> FormContext:
         return self._context
@@ -67,7 +72,7 @@ class ModuleInfo:
         self._form_endpoint_get_data_csv = endpoint
 
 
-def file_path_to_form_name(path: Union[str, Path]) -> str:
+def make_form_name(path: Union[str, Path]) -> str:
     """Reduces a file path plain filename"""
     # MEMO: Add sanitation if needed
     return splitext(split(path)[1])[0]

@@ -1,16 +1,49 @@
-from wtforms import StringField, RadioField, SelectField
-from wtforms.validators import DataRequired, length
+from __future__ import annotations
+from enum import Enum
+
 from datetime import datetime
-from typing import List
+from typing import List, Type, Iterable
 
-from app import db
-from app.email import EmailRecipient, make_greet_line
-from .forms_util.form_module import ModuleInfo, file_path_to_form_name
-from .forms_util.forms import RequiredIf, get_str_choices, BasicForm, ShowNameConsentField
-from .forms_util.form_controller import FormController, DataTableInfo, Event, Quota
-from .forms_util.models import BasicModel, basic_model_csv_map
+from app.email import make_greet_line
+from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
+    make_attribute_allergies, make_attribute_privacy_consent, make_attribute_name_consent
+from app.form_lib.form_module import ModuleInfo, make_form_name
+from app.form_lib.form_controller import FormController, Event
+from app.form_lib.lib import Quota, EnumAttribute, BaseParticipant
+from app.form_lib.models import RegistrationModel
+from app.form_lib.util import make_types, choices_to_enum
 
-_form_name = file_path_to_form_name(__file__)
+
+# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
+def get_module_info() -> ModuleInfo:
+    return _module_info
+# P U B L I C   M O D U L E   I N T E R F A C E   E N D
+
+
+class _Controller(FormController):
+
+    def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool):
+        if reserve:
+            return ' '.join([
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Olet varasijalla. ",
+                "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
+                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
+            ])
+        else:
+            return ' '.join([
+                make_greet_line(recipient),
+                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
+                "\n\n Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
+                "kanssa 17€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille ",
+                "FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, ",
+                "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
+                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
+            ])
+
+_form_name = make_form_name(__file__)
 
 _DRINK_ALCOHOLIC = 'Alkoholillinen'
 _DRINK_NON_ALCOHOLIC = 'Alkoholiton'
@@ -45,60 +78,42 @@ def _get_pizzas() -> List[str]:
     ]
 
 
-@ShowNameConsentField()
-class _Form(BasicForm):
-    alkoholi = RadioField('Alkoholillinen/Alkoholiton *', choices=get_str_choices(_get_drinks()), validators=[DataRequired()])
-    mieto = SelectField('Mieto juoma *', choices=get_str_choices(_get_alcoholic_drinks()), validators=[RequiredIf(other_field_name='alkoholi', value=_DRINK_ALCOHOLIC)])
-    pitsa = SelectField('Pitsa *', choices=get_str_choices(_get_pizzas()), validators=[DataRequired()])
-    allergiat = StringField('Erityisruokavaliot/allergiat', validators=[length(max=200)])
+def _make_attribute_alcohol(alcohol_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('alcohol', 'Alkoholillinen/Alkoholiton *', 'Alkoholillinen/Alkoholiton', alcohol_enum, validators=validators)
 
 
-class _Model(BasicModel):
-    __tablename__ = _form_name
-    alkoholi = db.Column(db.String(32))
-    mieto = db.Column(db.String(32))
-    pitsa = db.Column(db.String(32))
-    allergiat = db.Column(db.String(256))
+def _make_attribute_drink_strength(drink_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('drink_strength', 'Mieto juoma *', 'Mieto juoma', drink_enum, validators=validators)
 
 
-class _Controller(FormController):
-
-    # MEMO: "Evil" Covariant parameter
-    def _get_email_msg(self, recipient: EmailRecipient, model: _Model, reserve: bool):
-        if reserve:
-            return ' '.join([
-                make_greet_line(recipient),
-                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Olet varasijalla. ",
-                "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
-                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-            ])
-        else:
-            return ' '.join([
-                make_greet_line(recipient),
-                "\nOlet ilmoittautunut OTiTin Pitsakalja sitseille. Tässä vielä maksuohjeet: ",
-                "\n\n Hinta alkoholillisen juoman kanssa on 20€ ja alkoholittoman juoman ",
-                "kanssa 17€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille ",
-                "FI03 4744 3020 0116 87. Kirjoita viestikenttään nimesi, ",
-                "Pitsakalja-sitsit sekä alkoholiton tai alkoholillinen valintasi mukaan.",
-                "\n\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä pepeministeri@otit.fi",
-                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-            ])
+def _make_attribute_pizza(pizza_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('pizza', 'Pitsa *', 'Pitsa', pizza_enum, validators=validators)
 
 
-# MEMO: (attribute, header_text)
-_data_table_info = DataTableInfo(basic_model_csv_map() + [
-        ('alkoholi', 'alkoholi'),
-        ('mieto', 'mieto'),
-        ('pitsa', 'pitsa'),
-        ('allergiat', 'allergia')])
+_AlcoholEnum = choices_to_enum(_form_name, 'alcohol', _get_drinks())
+_DrinkStrengthEnum = choices_to_enum(_form_name, 'drink_strength', _get_alcoholic_drinks())
+_PizzaEnum = choices_to_enum(_form_name, 'pizza', _get_pizzas())
+
+
+participant_attributes = [
+    make_attribute_firstname(),
+    make_attribute_lastname(),
+    make_attribute_email(),
+] + [
+    _make_attribute_alcohol(_AlcoholEnum),
+    _make_attribute_drink_strength(_DrinkStrengthEnum),
+    _make_attribute_pizza(_PizzaEnum),
+    make_attribute_allergies()
+]
+
+other_attributes = [
+    make_attribute_name_consent(),
+    make_attribute_privacy_consent()
+]
+
+_types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
+
 _event = Event('OTiTin Pitsakaljasitsit', datetime(2021, 10, 26, 12, 00, 00),
-               datetime(2021, 11, 9, 23, 59, 59), [Quota.default_quota(60, 30)], _Form.asks_name_consent)
-_module_info = ModuleInfo(_Controller, False, _form_name,
-                          _event, _Form, _Model, _data_table_info)
+               datetime(2021, 11, 9, 23, 59, 59), [Quota.default_quota(60, 30)], _types.asks_name_consent())
+_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
-
-# P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
-def get_module_info() -> ModuleInfo:
-    return _module_info
-# P U B L I C   M O D U L E   I N T E R F A C E   E N D
