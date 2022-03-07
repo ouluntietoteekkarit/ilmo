@@ -66,8 +66,8 @@
         {{ participant.firstname }} {{ participant.lastname }}
 
         {%- set avec = entry.get_optional_participants()[0] if entry.get_optional_participants()|length > 0 -%}
-        {%- if avec and avec.avec_firstname and avec.avec_lastname %}
-            & {{ entry.avec_firstname }} {{ entry.avec_lastname }}
+        {%- if avec and avec.firstname and avec.lastname %}
+            & {{ avec.firstname }} {{ avec.lastname }}
         {%- endif -%}
 
         {% if is_in_reserve %}

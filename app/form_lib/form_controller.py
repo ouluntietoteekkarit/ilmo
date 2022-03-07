@@ -67,6 +67,7 @@ class EventRegistrations:
         return self._participant_count
 
     def add_new_registration(self, entry: RegistrationModel) -> None:
+        self._participant_count += entry.get_participant_count()
         self._entries.append(entry)
 
 
