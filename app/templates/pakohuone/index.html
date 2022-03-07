@@ -2,52 +2,54 @@
 {%- import "macros.html" as macros -%}
 
 {%- block extra_js -%}
-    <script src="{{ url_for('static',filename='js/pakohuone.js') }}"></script>
-    <script type="text/javascript">
-        var varatut = myFunc({{ varatut | tojson }});
-    </script>
+	<script src="{{ url_for('static',filename='js/pakohuone.js') }}"></script>
+	<script type="text/javascript">
+		var varatut = myFunc({{ varatut | tojson }});
+	</script>
 {%- endblock -%}
 
 {%- block event_info -%}
-    <p>Ilmoita koko joukkue (5-6 henkilöä) kerralla. Huoneita on varattu
-        10 per kierros. Ensimmäinen kierros alkaa 18:00 ja toinen kierros 19:30.</p>
+	<p>Ilmoita koko joukkue (5-6 henkilöä) kerralla. Huoneita on varattu
+		10 per kierros. Ensimmäinen kierros alkaa 18:00 ja toinen kierros 19:30.</p>
 {%- endblock -%}
 
 {%- macro participant_entry(participant) -%}
-    {{ macros.form_field(participant.firstname) }}
-    {{ macros.form_field(participant.lastname) }}
+	{{ macros.form_field(participant.firstname) }}
+	{{ macros.form_field(participant.lastname) }}
 {%- endmacro -%}
 
 {%- block registration_form -%}
-    {%- call macros.registration_form_routine(form) -%}
-        {%- set other = form.get_other_attributes() -%}
+	{%- call macros.registration_form_routine(form) -%}
+		{%- set other = form.get_other_attributes() -%}
 
-        {{ macros.form_field(other.time) }}
-        <div id="room1800" style="display: none;">
-            {{ macros.form_field(other.room1800) }}
-        </div>
-        <div id="room1930" style="display: none;">
-            {{ macros.form_field(other.room1930) }}
-        </div>
-        {{ macros.form_field(other.phone_number) }}
-        {{ macros.form_field(other.email) }}
+		{{ macros.form_field(other.time) }}
+		<div id="room1800" style="display: none;">
+			{{ macros.form_field(other.room1800) }}
+		</div>
+		<div id="room1930" style="display: none;">
+			{{ macros.form_field(other.room1930) }}
+		</div>
+		{{ macros.form_field(other.phone_number) }}
+		{{ macros.form_field(other.email) }}
 
-        {%- for participant in form.get_required_participants() -%}
-            {{ participant_entry(participant) }}
-        {%- endfor -%}
-        {%- for participant in form.get_optional_participants() -%}
-            {{ participant_entry(participant) }}
-        {%- endfor -%}
-        {{ macros.form_field(other.privacy_consent) }}
-    {%- endcall -%}
+		{%- for participant in form.get_required_participants() -%}
+			{{ participant_entry(participant) }}
+		{%- endfor -%}
+		{%- for participant in form.get_optional_participants() -%}
+			{%- call macros.registration_optional_participant() -%}
+				{{ participant_entry(participant) }}
+			{%- endcal -%}
+		{%- endfor -%}
+		{{ macros.form_field(other.privacy_consent) }}
+	{%- endcall -%}
 {%- endblock -%}
 
 {%- block participant_list -%}
-    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
-        {%- if is_in_reserve -%}
-            <p>{{ entry.get_other_attributes().teamname }} (Varasijalla)</p>
-        {%- else -%}
-            <p>{{ entry.get_other_attributes().teamname }}</p>
-        {%- endif -%}
-    {%- endcall -%}
+	{%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+		{%- if is_in_reserve -%}
+			<p>{{ entry.get_other_attributes().teamname }} (Varasijalla)</p>
+		{%- else -%}
+			<p>{{ entry.get_other_attributes().teamname }}</p>
+		{%- endif -%}
+	{%- endcall -%}
 {%- endblock -%}

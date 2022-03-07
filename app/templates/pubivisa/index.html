@@ -2,43 +2,45 @@
 {%- import "macros.html" as macros -%}
 
 {%- block event_info -%}
-    <p>Ilmoita koko joukkue (3-4 henkilöä) kerralla. Ilmoittautumisia otetaan vastaan, jos ilmoittautuneiden
-        yhteenlaskettu määrä joukkueenne mukaan lukien on korkeintaan 50</p>
-    <p><strong>Mikäli olet sairas etkä pääsekään paikalle, ole yhteydessä Riikka Haatajaan 0442828255 (Whatsapp,
-        Telegram tai tekstiviesti)</strong></p>
+	<p>Ilmoita koko joukkue (3-4 henkilöä) kerralla. Ilmoittautumisia otetaan vastaan, jos ilmoittautuneiden
+		yhteenlaskettu määrä joukkueenne mukaan lukien on korkeintaan 50</p>
+	<p><strong>Mikäli olet sairas etkä pääsekään paikalle, ole yhteydessä Riikka Haatajaan 0442828255 (Whatsapp,
+		Telegram tai tekstiviesti)</strong></p>
 {%- endblock -%}
 
 {%- macro participant_form(participant) -%}
-    {{ macros.form_field(participant.firstname) }}
-    {{ macros.form_field(participant.lastname) }}
-    {{ macros.form_field(participant.phone_number) }}
-    {{ macros.form_field(participant.email) }}
-    {{ macros.form_field(participant.quota) }}
+	{{ macros.form_field(participant.firstname) }}
+	{{ macros.form_field(participant.lastname) }}
+	{{ macros.form_field(participant.phone_number) }}
+	{{ macros.form_field(participant.email) }}
+	{{ macros.form_field(participant.quota) }}
 {%- endmacro -%}
 
 {%- block registration_form -%}
-    {%- call macros.registration_form_routine(form) -%}
-        {% set other = form.get_other_attributes() %}
-        {{ macros.form_field(other.teamname) }}
-        {% for participant in form.get_required_participants() %}
-            {{ participant_form(participant) }}
-        {% endfor %}
-        {% for participant in form.get_optional_participants() %}
-            {{ participant_form(participant) }}
-        {% endfor %}
+	{%- call macros.registration_form_routine(form) -%}
+		{% set other = form.get_other_attributes() %}
+		{{ macros.form_field(other.teamname) }}
+		{% for participant in form.get_required_participants() %}
+			{{ participant_form(participant) }}
+		{% endfor %}
+		{% for participant in form.get_optional_participants() %}
+			{%- call macros.registration_optional_participant() -%}
+				{{ participant_form(participant) }}
+			{%- endcall -%}
+		{% endfor %}
 
-        {{ macros.form_field(other.show_name_consent) }}
-        {{ macros.form_field(other.privacy_consent) }}
-        {{ macros.form_field(other.binding_registration_consent) }}
-    {%- endcall -%}
+		{{ macros.form_field(other.show_name_consent) }}
+		{{ macros.form_field(other.privacy_consent) }}
+		{{ macros.form_field(other.binding_registration_consent) }}
+	{%- endcall -%}
 {%- endblock -%}
 
 {%- block participant_list -%}
-    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
-        {% if is_in_reserve %}
-            <p>{{ entry.get_other_attributes().teamname }} (Varasijalla)</p>
-        {% else %}
-            <p>{{ entry.get_other_attributes().teamname }}</p>
-        {% endif %}
-    {%- endcall -%}
+	{%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+		{% if is_in_reserve %}
+			<p>{{ entry.get_other_attributes().teamname }} (Varasijalla)</p>
+		{% else %}
+			<p>{{ entry.get_other_attributes().teamname }}</p>
+		{% endif %}
+	{%- endcall -%}
 {%- endblock -%}
