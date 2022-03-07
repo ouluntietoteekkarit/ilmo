@@ -27,6 +27,16 @@
 	{%- endif -%}
 {%- endmacro -%}
 
+{% macro _render_label(field, label_class) %}
+	{%- if field.flags.required -%}
+		{%- do kwargs.update({
+			'data-is-required': true,
+			'label-required': true
+		}) -%}
+	{%- endif -%}
+	{{ field.label(class=label_class, **kwargs)|safe }}
+{% endmacro %}
+
 {% macro render_hidden_errors(form_group_classes, form_type, horizontal_columns, form) %}
 	{%- if form.errors -%}
 		{%- for fieldname, errors in form.errors.items() -%}
@@ -56,10 +66,10 @@
 			{%- do field_kwargs.update({'role': 'switch'}) -%}
 		{%- endif -%}
 		<div class="{{ form_group_classes }} form-check
-{%- if field.type == 'SwitchField' -%} form-switch{%- endif -%}
-{%- if form_type == "inline" -%} form-check-inline{%- endif -%}">
+		{%- if field.type == 'SwitchField' -%} form-switch{%- endif -%}
+		{%- if form_type == "inline" -%} form-check-inline{%- endif -%}">
 			{{ _field_errors(field, "form-check-input", extra_classes, **field_kwargs) }}
-			{{ field.label(class="form-check-label", for=field.id)|safe }}
+			{{ _render_label(field, "form-check-label", for=field.id) }}
 			{{ _render_description_errors(form_group_classes, form_type, horizontal_columns, field) }}
 		</div>
 	{%- endcall -%}
@@ -80,7 +90,7 @@
 	{%- endif -%}
 
 	<div class="{{ form_group_classes }}">
-		{{ field.label(class=label_classes)|safe }}
+		{{ _render_label(field, label_classes) }}
 		{{ field_wrap_open }}
 		{%- for item in field -%}
 			<div class="{{ input_div_classes }}">
@@ -110,7 +120,7 @@
    the code below ensures that things don't break horribly if we run into
    one, but does not try too hard to get things pretty. #}
 	<fieldset>
-		<legend>{{ field.label }}</legend>
+		<legend>{{ _render_label(field, "form-label") }}</legend>
 		{%- for subfield in field -%}
 			{%- if not bootstrap_is_hidden_field(subfield) -%}
 				{{ render_field(subfield, form_type=form_type, horizontal_columns=horizontal_columns, button_map=button_map) }}
@@ -120,7 +130,7 @@
 {%- endmacro -%}
 
 {% macro _render_inline_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
-	{{ field.label(class="visually-hidden")|safe }}
+	{{ _render_label(field, "visually-hidden") }}
 	{%- if field.type in ['DecimalRangeField', 'IntegerRangeField'] %}
 		{{ _field_errors(field, "form-range", extra_classes, **kwargs) }}
 	{%- elif field.type == 'SelectField' -%}
@@ -131,7 +141,7 @@
 {%- endmacro -%}
 
 {% macro _render_horizontal_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
-	{{ field.label(class="col-form-label" + (" col-%s-%s" % horizontal_columns[0:2]))|safe }}
+	{{ _render_label(field, "col-form-label" + (" col-%s-%s" % horizontal_columns[0:2])) }}
 	<div class="col-{{ horizontal_columns[0] }}-{{ horizontal_columns[2] }}">
 	{%- if field.type in ['DecimalRangeField', 'IntegerRangeField'] %}
 		{{ _field_errors(field, "form-range", extra_classes, **kwargs) }}
@@ -145,7 +155,7 @@
 {%- endmacro -%}
 
 {% macro _render_basic_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
-	{{ field.label(class="form-label")|safe }}
+	{{ _render_label(field, "form-label") }}
 	{%- if field.type in ['DecimalRangeField', 'IntegerRangeField'] -%}
 		{{ _field_errors(field, "form-range", extra_classes, **kwargs) }}
 	{%- elif field.type == 'SelectField' -%}

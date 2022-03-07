@@ -92,15 +92,15 @@ def _get_quotas() -> List[Quota]:
 
 
 def _make_attribute_drink(drink_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('drink', 'Juoma *', 'Juoma', drink_enum, validators=validators)
+    return EnumAttribute('drink', 'Juoma', 'Juoma', drink_enum, validators=validators)
 
 
 def _make_attribute_liquor(liquor_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('liquor', 'Viinakaato *', 'Viinakaato', liquor_enum, validators=validators)
+    return EnumAttribute('liquor', 'Viinakaato', 'Viinakaato', liquor_enum, validators=validators)
 
 
 def _make_attribute_wine(wine_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('wine', 'Viini *', 'Viini', wine_enum, validators=validators)
+    return EnumAttribute('wine', 'Viini', 'Viini', wine_enum, validators=validators)
 
 
 def _make_attribute_searing_preference(validators: Iterable = None):
@@ -134,6 +134,6 @@ other_attributes = [
 _types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
 
 _event = Event('Humanöörisitsit', datetime(2021, 2, 21, 12, 00, 00),
-               datetime(2022, 3, 6, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
+               datetime(2023, 3, 6, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
 _module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 

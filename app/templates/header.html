@@ -19,6 +19,10 @@
 			background-color: #cfe2ff;
 			border-color: #b6d4fe;
 		}
+		/* Required field indicator */
+		.form label[data-is-required][label-required]::after {
+			content: " *";
+		}
 	</style>
 
 	{% block extra_styles %}{% endblock %}
