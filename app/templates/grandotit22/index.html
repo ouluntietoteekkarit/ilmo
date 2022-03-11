@@ -1,0 +1,69 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+
+{%- block extra_styles-%}
+	<style>
+		body {
+			background-image: url("{{ url_for('static', filename='img/humanoori_background.jpg') }}");
+			background-repeat: no-repeat;
+			background-size: 100%;
+		}
+
+		div.container {
+			background-color: white;
+			opacity: 0.9;
+		}
+	</style>
+{%- endblock -%}
+
+
+{%- block event_info -%}
+	<p>GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT</p>
+	<h3>Maksuohjeet:</h3>
+	<ul>
+		<li>Tilinumero: ---</li>
+		<li>Saaja: ---</li>
+		<li>Summa: liikaa</li>
+		<li>Viesti: ---</li>
+		<li>Eräpäivä: ---</li>
+	</ul>
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+	{{ macros.form_field(form.firstname) }}
+	{{ macros.form_field(form.lastname) }}
+	{{ macros.form_field(form.email) }}
+	{{ macros.form_field(form.board_year) }}
+	<h4>Haluan pitää puheen</h4>
+	{{ macros.form_field(form.speaker) }}
+	{{ macros.form_field(form.allergies) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+	{%- call macros.registration_form_routine(form) -%}
+		{{ participant_form(form.required_participants[0]) }}
+		<br />
+		{%- set other = form.get_other_attributes() -%}
+		{{ macros.form_field(other.show_name_consent) }}
+		{{ macros.form_field(other.privacy_consent) }}
+	{%- endcall -%}
+{%- endblock -%}
+
+{%- block participant_list -%}
+	{%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+		<p>
+		{%- set participant = entry.get_required_participants()[0] -%}
+		{{ participant.firstname }} {{ participant.lastname }}
+
+		{%- set avec = entry.get_optional_participants()[0] if entry.get_optional_participants()|length > 0 -%}
+		{%- if avec and avec.firstname and avec.lastname %}
+			& {{ avec.firstname }} {{ avec.lastname }}
+		{%- endif -%}
+
+		{% if is_in_reserve %}
+			{{ " (Varasijalla)" }}
+		{% endif %}
+		</p>
+	{%- endcall -%}
+{%- endblock -%}
