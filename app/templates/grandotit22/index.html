@@ -14,20 +14,26 @@
 			background-color: white;
 			opacity: 0.9;
 		}
+        #summary-table td {
+            padding-right: 10px;
+        }
 	</style>
 {%- endblock -%}
 
 
 {%- block event_info -%}
-	<p>GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT, GrandOTiT</p>
-	<h3>Maksuohjeet:</h3>
-	<ul>
-		<li>Tilinumero: ---</li>
-		<li>Saaja: ---</li>
-		<li>Summa: liikaa</li>
-		<li>Viesti: ---</li>
-		<li>Eräpäivä: ---</li>
-	</ul>
+	<p>Kutsu Grand OTiT tapahtumaan 28.5.2022</p>
+    <p>Oulun Tietoteekkarit kutsuvat tähän iltatapahtumaan jokaisen killan hallitukseksessa mukana olleen sekä kunniajäsenet.
+        Tapahtumassa on luvassa vähintäänkin syötävää, ohjelmaa, saunaa, kanssaoloa sekä vanhojen muistelua. Miksei myös uudempaan jäsenistöön tutustumista!
+        Tapahtuma kustantaa 10-20€ riippuen lopullisesta osallistujamäärästä. Lopullinen hinta ja maksuohjeet tarkennetaan lähempänä tapahtumaa.</p>
+    <table id="summary-table">
+        <tbody>
+            <tr><td>MITÄ:</td><td>GrandOTIT</td></tr>
+            <tr><td>MISSÄ:</td><td>Teekkaritalolla, Kalervontie 7 Oulu</td></tr>
+            <tr><td>MILLOIN:</td><td>28.5. klo 17.00 alkaen</td></tr>
+            <tr><td>Pukukoodi:</td><td>Cocktail</td></tr>
+        </tbody>
+    </table>
 {%- endblock -%}
 
 {% macro participant_form(form) %}
@@ -35,9 +41,10 @@
 	{{ macros.form_field(form.lastname) }}
 	{{ macros.form_field(form.email) }}
 	{{ macros.form_field(form.board_year) }}
-	<h4>Haluan pitää puheen</h4>
-	{{ macros.form_field(form.speaker) }}
 	{{ macros.form_field(form.allergies) }}
+    <br />
+    <h5>Haluan pitää puheen</h5>
+	{{ macros.form_field(form.speaker) }}
 {% endmacro %}
 
 {%- block registration_form -%}

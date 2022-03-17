@@ -54,7 +54,7 @@ participant_attributes = [
     make_attribute_lastname(validators=[InputRequired()]),
     make_attribute_email(validators=[InputRequired()]),
 ] + [
-    _make_attribute_board_year(validators=[InputRequired()]),
+    _make_attribute_board_year(),
     make_attribute_allergies(),
     _make_attribute_speech(),
 ]
