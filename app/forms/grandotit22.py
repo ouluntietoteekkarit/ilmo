@@ -8,13 +8,11 @@ from wtforms.validators import InputRequired
 from app.email import make_greet_line
 from app.form_lib.form_controller import FormController, Event, Quota
 from app.form_lib.form_module import ModuleInfo, make_form_name
-from app.form_lib.guilds import GUILD_SIK, GUILD_OTIT
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
-    make_attribute_quota, make_attribute_departure_location, make_attribute_name_consent, \
-    make_attribute_privacy_consent, make_attribute_allergies
-from app.form_lib.lib import StringAttribute, EnumAttribute, BaseParticipant, IntAttribute
+    make_attribute_name_consent, make_attribute_privacy_consent, make_attribute_allergies
+from app.form_lib.lib import StringAttribute, BaseParticipant, IntAttribute
 from app.form_lib.models import RegistrationModel
-from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
+from app.form_lib.util import make_types
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
@@ -27,9 +25,21 @@ class _Controller(FormController):
 
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         if reserve:
-            return """"""
+            return """{}Olet ilmoittaunut Grand OTiT iltatapahtumaan. Olet varasijalla. Teihin voidaan olla
+yhteydessä, mikäli paikkoja vapautuu.
+
+Kysymykset tapahtumaan liittyen voi lähettää osoitteeseen alumnivastaava@otit.fi.
+
+Älä vastaa tähän sähköpostiin. Viesti ei mene mihinkään.""".format(make_greet_line(recipient))
+
         else:
-            return """"""
+            return """{}Olet ilmoittautunut Grand OTiT iltatapahtumaan, joka järjestetään 28.5. klo 17.00 alkaen 
+Teekkaritalolla (Kalervontie 7 Oulu). Tapahtuman maksutiedot toimitetaan myöhemmin lähempänä ajankohtaa. Maksu 
+tulee olemaan 10-20€, riippuen lopullisesta osallistujamäärästä.
+
+Kysymykset tapahtumaan liittyen voi lähettää osoitteeseen alumnivastaava@otit.fi.
+
+Älä vastaa tähän sähköpostiin. Viesti ei mene mihinkään.""".format(make_greet_line(recipient))
 
 
 def _get_quotas() -> List[Quota]:
