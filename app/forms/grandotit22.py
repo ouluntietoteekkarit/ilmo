@@ -76,7 +76,7 @@ other_attributes = [
 
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
 
-_event = Event('Grand OTiT', datetime(2021, 2, 25, 13, 37, 00),
+_event = Event('Grand OTiT', datetime(2022, 2, 25, 13, 37, 00),
                datetime(2022, 5, 15, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
 _module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 

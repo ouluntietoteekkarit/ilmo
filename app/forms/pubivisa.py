@@ -59,6 +59,6 @@ _types = make_types(required_participant_attributes, optional_participant_attrib
 
 _event = Event('Pubivisa ilmoittautuminen', datetime(2020, 10, 7, 12, 00, 00),
                datetime(2020, 10, 10, 23, 59, 59), [Quota.default_quota(50, 0)], _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
 
 

@@ -115,5 +115,5 @@ _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_na
 
 _event = Event('OTiTin Pitsakaljasitsit', datetime(2021, 10, 26, 12, 00, 00),
                datetime(2021, 11, 9, 23, 59, 59), [Quota.default_quota(60, 30)], _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
 

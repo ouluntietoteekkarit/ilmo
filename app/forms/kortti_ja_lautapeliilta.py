@@ -54,4 +54,4 @@ _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_na
 
 _event = Event('Kortti- ja lautapeli-ilta', datetime(2020, 10, 7, 12, 00, 00),
                datetime(2020, 10, 13, 23, 59, 59), [Quota.default_quota(50, 0)], _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
