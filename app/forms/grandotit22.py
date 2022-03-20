@@ -33,8 +33,8 @@ Kysymykset tapahtumaan liittyen voi lähettää osoitteeseen alumnivastaava@otit
 Älä vastaa tähän sähköpostiin. Viesti ei mene mihinkään.""".format(make_greet_line(recipient))
 
         else:
-            return """{}Olet ilmoittautunut Grand OTiT iltatapahtumaan, joka järjestetään 28.5. klo 17.00 alkaen 
-Teekkaritalolla (Kalervontie 7 Oulu). Tapahtuman maksutiedot toimitetaan myöhemmin lähempänä ajankohtaa. Maksu 
+            return """{}Olet ilmoittautunut Grand OTiT iltatapahtumaan, joka järjestetään 28.5. klo 17.00 alkaen Teekkaritalolla 
+(Kalervontie 7 Oulu). Tapahtuman maksutiedot toimitetaan myöhemmin lähempänä ajankohtaa. Maksu 
 tulee olemaan 10-20€, riippuen lopullisesta osallistujamäärästä.
 
 Kysymykset tapahtumaan liittyen voi lähettää osoitteeseen alumnivastaava@otit.fi.
