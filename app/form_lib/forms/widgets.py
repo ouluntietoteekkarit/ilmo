@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 from wtforms.widgets import Input, TextArea, Select, ListWidget
 
+# MEMO: Bunch of custom widgets to fix some errors in WTForms rendering.
+
 
 class CustomInput(Input):
     """
