@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Dict, Collection, Iterable, Type
 
-from wtforms.validators import InputRequired
+from wtforms.validators import InputRequired, Optional
 
 from app.email import make_greet_line
 from app.form_lib.form_controller import FormController, Event, Quota
@@ -56,7 +56,7 @@ def _make_attribute_speech(validators: Iterable = None):
 
 
 def _make_attribute_board_year(validators: Iterable = None):
-    return IntAttribute('board_year', 'Hallitusvuosi', 'Hallitusvuosi', validators=validators)
+    return StringAttribute('board_year', 'Hallitusvuosi', 'Hallitusvuosi', 50, validators=validators)
 
 
 participant_attributes = [
