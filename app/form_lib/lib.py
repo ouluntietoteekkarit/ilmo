@@ -271,7 +271,6 @@ class BaseTypeBuilder(ABC):
             ATTRIBUTE_NAME_PRIVACY_CONSENT: hasattr(base_type, ATTRIBUTE_NAME_PRIVACY_CONSENT)
         }
 
-
     def _do_build(self, base_type: Type[Generic[T]], required: Dict[str, bool]) -> Type[Generic[T]]:
         for field in self._fields:
             field.attach_to(base_type)

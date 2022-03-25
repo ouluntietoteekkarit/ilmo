@@ -135,4 +135,4 @@ _types = make_types(participant_attributes, participant_attributes, other_attrib
 
 _event = Event('OTY:n Pakopelipäivä', datetime(2020, 11, 5, 12, 00, 00), datetime(2020, 11, 9, 23, 59, 59),
                [Quota.default_quota(20, 0)], _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)

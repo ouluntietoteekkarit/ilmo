@@ -35,7 +35,7 @@ def send_email(msg: str, subject: str, recipient: EmailRecipient):
     # MEMO: HTML escaping here prevents use of HTML layout in the email
     subject = _encode_word(subject, _EMAIL_ENCODING)
     content_type = 'text/html; charset={}'.format(_EMAIL_ENCODING)
-    msg = html.escape(msg)
+    msg = '<pre>' + html.escape(msg) + '</pre>'
     cmd = "echo {} | mail  --content-type={} --append=From:{} --subject={} {}".format(
         shlex.quote(msg),
         shlex.quote(content_type),

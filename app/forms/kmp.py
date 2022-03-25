@@ -91,4 +91,4 @@ _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_na
 
 _event = Event('OTiT KMP', datetime(2021, 11, 19, 13, 37, 37),
                datetime(2021, 12, 3, 2, 00, 00), [Quota.default_quota(15, 15)], _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)

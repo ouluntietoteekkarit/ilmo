@@ -133,7 +133,7 @@ other_attributes = [
 ]
 _types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
 
-_event = Event('Humanöörisitsit', datetime(2021, 2, 21, 12, 00, 00),
-               datetime(2023, 3, 6, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
+_event = Event('Humanöörisitsit', datetime(2022, 2, 21, 12, 00, 00),
+               datetime(2022, 3, 6, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
 _module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
