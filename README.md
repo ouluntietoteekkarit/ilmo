@@ -16,20 +16,22 @@ gunicorn --workers=1 --worker-connections=400 --bind=0.0.0.0:62733 wsgi:server -
 ```
 
 ## Adding new forms
-Add a new event form python script to the forms folder. The file must have .py file extension. The name of the 
+Add a new event form python script to the _app/forms_ folder. The file must have .py file extension. The name of the 
 script file is used for creating URL paths, database tables and for the application's internal form identification. 
+Usually file systems only allow unique file names in a single directory so this should enforce the uniqueness of 
+form names.
 
-Create a new folder in templates folder with the same name as the form script, excluding any possible file extension.
+Create a new folder in _app/templates_ folder with the same name as the form script, excluding any possible file extension.
 In this folder, create a file with name index.html. This file will contain the form's HTML template.
 
 Third and last file that must be added is the privacy statement pdf. The file must have same name as the form's script 
-file and it must be a pdf file with .pdf file extension. The file must be stored in static/privacy_statements folder.
+file and it must be a pdf file with .pdf file extension. The file must be stored in _app/static/privacy_statements_ folder.
 
 ### Form scripts
 A form script is a normal python module and contains all the backend code that a form needs. It must expose a single 
 public function called get&#95;module&#95;info. get&#95;module&#95;info is used to obtain the form's information so 
 that it can be registered to Flask. The method must return a singleton instance of ModuleInfo as some of this object's 
-information is filled in by the Flask server and is used by the form itself.
+information is filled in by the Flask and is used by the form itself.
 
 The script should declare a variable called _form_name. The value of _form_name must be the script's name without 
 path or file extensions. There's a helper function to achieve this and the declaration should look like this: 
@@ -37,12 +39,12 @@ path or file extensions. There's a helper function to achieve this and the decla
 to allow easier copy-paste creation of new forms. Using the script file's name in this manner also ensures that all 
 the forms have a unique name value as most file systems do not allow items of same name under a single folder.
 
-The form script must define one class: &#95;Controller. The &#95;Controller must inherit FormController. A barebones 
-controller that overrides _get_email_msg can handle most of the common case. If more flexibility is required, other 
-methods can be overridden as well.
+The form script must define one class: &#95;Controller. The &#95;Controller must inherit/extend FormController. A 
+barebones controller that overrides _get_email_msg can handle most of the common cases. If more flexibility is required, 
+other methods can be overridden as well.
 
 All form scripts aim to define identically named, enclosed classes to keep them consistent. It is possible to use 
-different class names but there is little reason to do so.
+different class names but there is little reason to do so because they are never exposed outside their defining module.
 
 The form script must also define arrays of attributes that will define the HTML form and database model for the data
 that the form will collect. Utitlity functions for commonly used attributes exist. Each form has three parts; required 
@@ -51,6 +53,11 @@ always required. Optional participants are not necessary. Other attributes are u
 information. These attribute arrays are fed to make_types function which will generate proper form and database classes 
 from them dynamically. The details of these classes are unimportant and they are exposed to the _Controller through 
 interface-like classes.
+
+To make form script creation easier, a stripped down base script exists in _app/form_lib/base_form_script.py_ file. The 
+contents of this file can be copied to the newly created form python script file and errornous parts of the script may 
+be replaced with the event's information. Another option is to copy some existing event script file's contents and 
+modify them to have the new event's information.
 
 
 ### Form HTML template

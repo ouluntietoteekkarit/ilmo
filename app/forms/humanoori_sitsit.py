@@ -8,6 +8,9 @@ from wtforms.validators import InputRequired
 from app.email import make_greet_line
 from app.form_lib.common_attributes import make_attribute_lastname, make_attribute_firstname, make_attribute_email, \
     make_attribute_quota, make_attribute_privacy_consent, make_attribute_name_consent, make_attribute_allergies
+from app.form_lib.drinks import make_attribute_usual_sitsi_drink, make_attribute_usual_sitsi_liquor, \
+    make_attribute_usual_sitsi_wine, get_usual_sitsi_wines, get_usual_sitsi_liquors, get_usual_sitsi_drinks, \
+    make_enum_usual_sitsi_drink, make_enum_usual_sitsi_liquor, make_enum_usual_sitsi_wine
 from app.form_lib.form_controller import FormController, Event
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.lib import StringAttribute, EnumAttribute, Quota, BaseParticipant
@@ -52,36 +55,6 @@ Jos tulee kysyttävää, voit olla sähköpostitse yhteydessä joensuu@otit.fi
 
 _form_name = make_form_name(__file__)
 
-_DRINK_ALCOHOLIC = 'Alkoholillinen'
-_DRINK_BEER = 'Olut'
-_DRINK_CIDER = 'Siideri'
-_DRINK_NON_ALCOHOLIC = 'Alkoholiton'
-_DRINK_RED_WINE = 'Punaviini'
-_DRINK_WHITE_WINE = 'Valkoviini'
-
-
-def _get_drinks() -> List[str]:
-    return [
-        _DRINK_BEER,
-        _DRINK_CIDER,
-        _DRINK_NON_ALCOHOLIC
-    ]
-
-
-def _get_liquors() -> List[str]:
-    return [
-        _DRINK_ALCOHOLIC,
-        _DRINK_NON_ALCOHOLIC
-    ]
-
-
-def _get_wines() -> List[str]:
-    return [
-        _DRINK_RED_WINE,
-        _DRINK_WHITE_WINE,
-        _DRINK_NON_ALCOHOLIC
-    ]
-
 
 def _get_quotas() -> List[Quota]:
     return [
@@ -91,26 +64,14 @@ def _get_quotas() -> List[Quota]:
     ]
 
 
-def _make_attribute_drink(drink_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('drink', 'Juoma', 'Juoma', drink_enum, validators=validators)
-
-
-def _make_attribute_liquor(liquor_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('liquor', 'Viinakaato', 'Viinakaato', liquor_enum, validators=validators)
-
-
-def _make_attribute_wine(wine_enum: Type[Enum], validators: Iterable = None):
-    return EnumAttribute('wine', 'Viini', 'Viini', wine_enum, validators=validators)
-
-
-def _make_attribute_searing_preference(validators: Iterable = None):
+def _make_attribute_seating_preference(validators: Iterable = None):
     return StringAttribute('seating_preference', 'Pyötäseuratoive', 'Pyötäseuratoive', 100, validators=validators)
 
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
-_DrinkEnum = choices_to_enum(_form_name, 'drink', _get_drinks())
-_LiquorEnum = choices_to_enum(_form_name, 'liquor', _get_liquors())
-_WineEnum = choices_to_enum(_form_name, 'wine', _get_wines())
+_DrinkEnum = make_enum_usual_sitsi_drink(_form_name)
+_LiquorEnum = make_enum_usual_sitsi_liquor(_form_name)
+_WineEnum = make_enum_usual_sitsi_wine(_form_name)
 
 participant_attributes = [
     make_attribute_firstname(validators=[InputRequired()]),
@@ -118,11 +79,11 @@ participant_attributes = [
     make_attribute_email(validators=[InputRequired()]),
 ] + [
     make_attribute_quota(_QuotaEnum, validators=[InputRequired()]),
-    _make_attribute_drink(_DrinkEnum, validators=[InputRequired()]),
-    _make_attribute_liquor(_LiquorEnum, validators=[InputRequired()]),
-    _make_attribute_wine(_WineEnum, validators=[InputRequired()]),
+    make_attribute_usual_sitsi_drink(_DrinkEnum, validators=[InputRequired()]),
+    make_attribute_usual_sitsi_liquor(_LiquorEnum, validators=[InputRequired()]),
+    make_attribute_usual_sitsi_wine(_WineEnum, validators=[InputRequired()]),
     make_attribute_allergies(),
-    _make_attribute_searing_preference()
+    _make_attribute_seating_preference()
 ]
 
 optional_participant_attributes = participant_attributes
