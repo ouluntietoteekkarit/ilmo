@@ -6,7 +6,9 @@ from typing import List, Dict, Collection, Iterable, Type
 from wtforms.validators import InputRequired, Optional
 
 from app.email import make_greet_line
-from app.form_lib.form_controller import FormController, Event, Quota
+from app.form_lib.form_controller import FormController
+from app.form_lib.quota import Quota
+from app.form_lib.event import Event
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_name_consent, make_attribute_privacy_consent, make_attribute_allergies
@@ -78,5 +80,5 @@ _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_na
 
 _event = Event('Grand OTiT', datetime(2022, 2, 25, 13, 37, 00),
                datetime(2022, 5, 15, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
 

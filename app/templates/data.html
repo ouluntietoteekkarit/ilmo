@@ -60,7 +60,7 @@
         </a>
     </div>
     <div class="p-3">
-        {{ macros.participant_count_by_quota(registrations, event) }}
+        {{ macros.participant_count(registrations, event) }}
         {{ participant_table(registrations.get_entries(), event, table_info) }}
     </div>
 {% endblock %}

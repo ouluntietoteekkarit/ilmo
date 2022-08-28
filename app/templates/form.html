@@ -26,7 +26,7 @@
     {%- if event.get_list_participant_name() -%}
         <div class="container p-3">
             <hr />
-            {{ macros.participant_count_by_quota(registrations, event) }}
+            {{ macros.participant_count(registrations, event) }}
             {%- block participant_list -%}
                 {{ macros.participant_list(registrations.get_entries(), event) }}
             {%- endblock -%}

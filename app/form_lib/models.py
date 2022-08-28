@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from datetime import datetime
 from enum import Enum
-from typing import List, Tuple, Iterable, Type, Union, Callable, Any, Dict, Collection, TypeVar
+from typing import Tuple, Iterable, Type, Union, Callable, Any, Collection
 
 from app import db
 from .lib import BaseParticipant, BaseOtherAttributes, BaseRegistration, BaseAttachableAttribute, BaseFormComponent, \

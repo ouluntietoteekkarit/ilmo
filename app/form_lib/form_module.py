@@ -7,7 +7,8 @@ from .util import TypeInfo
 from .form_controller import FormContext
 
 if TYPE_CHECKING:
-    from .form_controller import FormController, Event, DataTableInfo
+    from .form_controller import FormController, DataTableInfo
+    from .event import Event
 
 
 class ModuleInfo:

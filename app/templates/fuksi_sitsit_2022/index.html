@@ -12,11 +12,13 @@
 
 {%- block event_info -%}
 	<p>Lämpimän juhlalliset tervetulotoivotukset teille arvon fuksit ja fuksinmieliset!
-	On taas tullut aika juhlistaa uuden vuosikurssin opiskelijoiden mahtavaa alan valintaa
-	perinteisillä fuksisitseillä. Sitsit ovat akateeminen pöytäjuhla, jolla on pitkä historia
+	On tullut aika taas juhlistaa uuden vuosikurssin opiskelijoiden mahtavaa alan valintaa
+	perinteisillä fuksisitseillä. Sitsit ovat akateemin pöytäjuhla, jolla on pitkä historia
 	teekkariperinteissä ja fuksisitsit ovat paras tapa tutustua tähän perinteeseen. Sitsit
 	ovat juhlallinen tilaisuus joten pukukoodina toimii cocktail. Onkin siis aika kaivaa yo-puku
-	naftaliinista ja tulla sitsaamaan!</p>
+	naftaliinista ja tulla sitsaamaan! Nämä sitsit ovat ilmaiset tämän vuoden fukseille ja
+	pienryhmänohjaajille. Muille sitsaajille sitsit maksavat 20 euroa. Maksuohjeet tulevat
+	sähköpostissa ilmoitusvahvistuksen mukana.</p>
 
 	<h4>tl;dr</h4>
 	<ul>
@@ -42,7 +44,7 @@
 	{%- call macros.registration_form_routine(form) -%}
 		{{ participant_form(form.required_participants[0]) }}
 		<br />
-		{{ macros.form_field(form_get_other_attributes().show_name_consent) }}
-		{{ macros.form_field(form_get_other_attributes().privacy_consent) }}
+		{{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+		{{ macros.form_field(form.get_other_attributes().privacy_consent) }}
 	{%- endcall -%}
 {%- endblock -%}
