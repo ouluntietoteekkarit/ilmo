@@ -11,9 +11,11 @@ from app.form_lib.common_attributes import make_attribute_lastname, make_attribu
 from app.form_lib.drinks import make_attribute_usual_sitsi_drink, make_attribute_usual_sitsi_liquor, \
     make_attribute_usual_sitsi_wine, get_usual_sitsi_wines, get_usual_sitsi_liquors, get_usual_sitsi_drinks, \
     make_enum_usual_sitsi_drink, make_enum_usual_sitsi_liquor, make_enum_usual_sitsi_wine
-from app.form_lib.form_controller import FormController, Event
+from app.form_lib.form_controller import FormController
+from app.form_lib.event import Event
 from app.form_lib.form_module import ModuleInfo, make_form_name
-from app.form_lib.lib import StringAttribute, EnumAttribute, Quota, BaseParticipant
+from app.form_lib.lib import StringAttribute, EnumAttribute, BaseParticipant
+from app.form_lib.quota import Quota
 from app.form_lib.guilds import GUILD_OTIT, GUILD_PROSE, GUILD_COMMUNICA
 from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
@@ -96,5 +98,5 @@ _types = make_types(participant_attributes, optional_participant_attributes, oth
 
 _event = Event('Humanöörisitsit', datetime(2022, 2, 21, 12, 00, 00),
                datetime(2022, 3, 6, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
 

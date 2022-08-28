@@ -7,7 +7,8 @@ from typing import Collection, Iterable, Type, List, Tuple, Callable
 from app.form_lib.form_controller import DataTableInfo
 from app.form_lib.forms import FormTypeFactory, RegistrationForm
 from app.form_lib.guilds import Guild
-from app.form_lib.lib import BaseAttribute, Quota, AttributeFactory
+from app.form_lib.lib import BaseAttribute, AttributeFactory
+from app.form_lib.quota import Quota
 from app.form_lib.models import DbTypeFactory, RegistrationModel
 
 

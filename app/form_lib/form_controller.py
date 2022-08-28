@@ -7,7 +7,9 @@ from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collec
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
-from .lib import Quota, BaseParticipant
+from .event import Event
+from .lib import BaseParticipant
+from .quota import Quota
 
 if TYPE_CHECKING:
     from .form_module import ModuleInfo
@@ -62,14 +64,15 @@ class EventRegistrations:
 
         return total_count
 
-    def _count_participants_by_quota(self, event_quotas: Dict[str, Quota], entries: Collection[RegistrationModel]) -> Dict[str, Tuple[int, int]]:
+    def _count_participants_by_quota(self, event_quotas: Dict[str, Quota],
+                                     entries: Collection[RegistrationModel]) -> Dict[str, QuotaCounts]:
         registration_quotas = {}
         for name, quota in event_quotas.items():
-            registration_quotas[quota.get_name()] = (0, quota.get_max_quota())
+            registration_quotas[quota.get_name()] = QuotaCounts(0, quota.get_max_quota())
 
         for entry in entries:
             for quota in entry.get_quota_counts():
-                registration_quotas[quota.get_name()][0] += quota.get_quota()
+                registration_quotas[quota.get_name()].set_quota_count(registration_quotas[quota.get_name()].get_quota_count() + 1)
 
         return registration_quotas
 
@@ -79,11 +82,14 @@ class EventRegistrations:
     def get_participant_count(self) -> int:
         return self._participant_count
 
-    def get_registration_quotas(self) -> Dict[str, Tuple[int, int]]:
+    def get_registration_quotas(self) -> Dict[str, QuotaCounts]:
         return self._registration_quotas
 
     def add_new_registration(self, entry: RegistrationModel) -> None:
         self._participant_count += entry.get_participant_count()
+        for quota in entry.get_quota_counts():
+            self._registration_quotas[quota.get_name()].set_quota_count(self._registration_quotas[quota.get_name()].get_quota_count() + 1)
+
         self._entries.append(entry)
 
 
@@ -278,7 +284,12 @@ class FormController(ABC):
         if nowtime > event.get_registration_end_time():
             return 'Ilmoittautuminen on päättynyt'
 
-        msg = self._check_quotas(event.get_quotas(), registration_quotas, form.get_quota_counts())
+        form_quota_counts = form.get_quota_counts()
+        msg = self._check_quota_registration_times(nowtime, event.get_quotas(), form_quota_counts)
+        if len(msg) != 0:
+            return msg
+
+        msg = self._check_quota_counts(event.get_quotas(), registration_quotas, form_quota_counts)
         if len(msg) != 0:
             return msg
 
@@ -304,9 +315,26 @@ class FormController(ABC):
 
         return valid
 
-    def _check_quotas(self, event_quotas: Dict[str, Quota],
-                      registration_quotas: Dict[str, int],
-                      form_quotas: Iterable[Quota]) -> str:
+    def _check_quota_registration_times(self, nowtime, event_quotas: Dict[str, Quota], form_quotas: Iterable[Quota]) -> str:
+        time_violation_messages = []
+        for form_quota in form_quotas:
+            quota = event_quotas.get(form_quota.get_name())
+            start = quota.get_quota_registration_start()
+            end = quota.get_quota_registration_end()
+            if start is not None and start > nowtime:
+                time_violation_messages.append("Ilmoittautuminen ei ole alkanut kiintiölle " + quota.get_name())
+            if end is not None and end < nowtime:
+                time_violation_messages.append("Ilmoittautuminen on päättynyt kiintiölle " + quota.get_name())
+
+        if len(time_violation_messages) > 0:
+            return '\n'.join(time_violation_messages)
+
+        return ""
+
+
+    def _check_quota_counts(self, event_quotas: Dict[str, Quota],
+                            registration_quotas: Dict[str, int],
+                            form_quotas: Iterable[Quota]) -> str:
         """
         Ensure that no quota has been exceeded.
         MEMO: Modifies contents of registration_quotas
@@ -322,7 +350,7 @@ class FormController(ABC):
                     return 'Ilmoittautuminen on jo täynnä kiintiön {} osalta.'.format(name)
                 return 'Ilmoittautuminen on jo täynnä.'
 
-        return ''
+        return ""
 
     def _fetch_registration_info(self) -> Tuple[Collection[RegistrationModel], Dict[str, int]]:
         event_quotas = self._context.get_event().get_quotas()
@@ -491,46 +519,19 @@ class DataTableInfo:
                     for attribute in self.get_other_attributes_getters()]
 
 
-class Event(object):
-    """
-    A readonly class containing event's information.
-    """
+class QuotaCounts:
+    def __init__(self, quota_count: int, max_quota_count: int):
+        self._quota_count = quota_count
+        self._max_quota_count = max_quota_count
 
-    def __init__(self, title: str, start_time: datetime,
-                 end_time: datetime, quotas: Iterable[Quota],
-                 list_participant_names: bool):
-        self._title = title
-        self._start_time = start_time
-        self._end_time = end_time
-        self._list_participant_names = list_participant_names
-        self._participant_limit = 0
-        self._max_participant_limit = 0
-        self._quotas = {}
-        for quota in quotas:
-            self._quotas[quota.get_name()] = quota
-            self._participant_limit += quota.get_quota()
-            self._max_participant_limit += quota.get_max_quota()
+    def get_quota_count(self) -> int:
+        return self._quota_count
 
-    def get_title(self) -> str:
-        return self._title
+    def get_max_quota_count(self) -> int:
+        return self._max_quota_count
 
-    def get_registration_start_time(self) -> datetime:
-        return self._start_time
-
-    def get_registration_end_time(self) -> datetime:
-        return self._end_time
-
-    def get_quotas(self) -> Dict[str, Quota]:
-        return self._quotas
-
-    def get_participant_limit(self) -> int:
-        return self._participant_limit
-
-    def get_max_limit(self) -> int:
-        return self._max_participant_limit
-
-    def get_list_participant_name(self) -> bool:
-        return self._list_participant_names
+    def set_quota_count(self, value: int) -> None:
+        self._quota_count = value
 
 
 def _export_to_csv(form_name: str,

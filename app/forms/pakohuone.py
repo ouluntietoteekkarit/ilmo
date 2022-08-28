@@ -10,8 +10,10 @@ from app.form_lib.common_attributes import make_attribute_firstname, make_attrib
     make_attribute_phone_number, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.forms import RegistrationForm
-from app.form_lib.lib import Quota, EnumAttribute, BaseParticipant
-from app.form_lib.form_controller import FormController, Event, EventRegistrations
+from app.form_lib.lib import EnumAttribute, BaseParticipant
+from app.form_lib.quota import Quota
+from app.form_lib.form_controller import FormController, EventRegistrations
+from app.form_lib.event import Event
 from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types, choices_to_enum
 

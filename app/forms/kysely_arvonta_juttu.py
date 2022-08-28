@@ -6,9 +6,11 @@ from typing import Any
 from app.email import make_greet_line, make_signature_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_privacy_consent
-from app.form_lib.form_controller import FormController, Event, EventRegistrations
+from app.form_lib.form_controller import FormController, EventRegistrations
+from app.form_lib.event import Event
 from app.form_lib.forms import RegistrationForm
-from app.form_lib.lib import Quota, BaseParticipant
+from app.form_lib.lib import BaseParticipant
+from app.form_lib.quota import Quota
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types

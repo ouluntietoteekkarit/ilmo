@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Union, Callable, Any, Type, Dict, Iterable, Iterator, Collection, TypeVar, Generic, Tuple
 
 # MEMO: System and well-known attributes.
+from app.form_lib.quota import Quota
 
 ATTRIBUTE_NAME_FIRSTNAME = 'firstname'
 ATTRIBUTE_NAME_LASTNAME = 'lastname'
@@ -34,6 +36,7 @@ class BaseParticipant(BaseFormComponent):
     MEMO: The getter naming must match that of the overriding
           getters that are created dynamically.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -64,12 +67,14 @@ class BaseParticipant(BaseFormComponent):
 
 class BaseOtherAttributes(BaseFormComponent):
     """Interface-like/mixin class for form's attribute models."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
 class BaseRegistration(BaseFormComponent):
     """Interface-like/mixin class for form's data models."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._is_in_reserve = False
@@ -155,10 +160,11 @@ class TypeFactory(ABC):
             optional_has_quota = optional_has_quota or attribute.get_attribute() == ATTRIBUTE_NAME_QUOTA
 
         if required_has_quota != optional_has_quota:
-            raise Exception("Either both required and optional participant must have quota or neither must have it. This is to ensure correctness of form processing logic with sensible default values in place.")
+            raise Exception(
+                "Either both required and optional participant must have quota or neither must have it. This is to ensure correctness of form processing logic with sensible default values in place.")
 
     def _check_email_presense(self, required_participant_attributes: Collection[BaseAttribute],
-                          other_attributes: Collection[BaseAttribute]):
+                              other_attributes: Collection[BaseAttribute]):
         has_email = False
         for attribute in required_participant_attributes:
             has_email = has_email or attribute.get_attribute() == ATTRIBUTE_NAME_EMAIL
@@ -167,7 +173,8 @@ class TypeFactory(ABC):
             has_email = has_email or attribute.get_attribute() == ATTRIBUTE_NAME_EMAIL
 
         if not has_email:
-            raise Exception("Either required participant or form's other attributes must have an email attribute. This is so that registration email can be sent out.")
+            raise Exception(
+                "Either required participant or form's other attributes must have an email attribute. This is so that registration email can be sent out.")
 
     @abstractmethod
     def make_type(self) -> Tuple[Type[BaseRegistration], Callable[[int, int], BaseRegistration]]:
@@ -424,33 +431,6 @@ class ObjectAttribute(BaseAttribute):
         return self._object_type
 
 
-class Quota:
-    def __init__(self, name: str, quota: int, reserve_quota: int = 0):
-        self._name = name
-        self._quota = quota
-        self._reserve_quota = reserve_quota
-
-    def get_name(self) -> str:
-        return self._name
-
-    def get_quota(self) -> int:
-        return self._quota
-
-    def get_reserve_quota(self) -> int:
-        return self._reserve_quota
-
-    def get_max_quota(self) -> int:
-        return self._quota + self._reserve_quota
-
-    @staticmethod
-    def default_quota_name() -> str:
-        return '_'
-
-    @staticmethod
-    def default_quota(quota: int, reserve_quota: int) -> Quota:
-        return Quota(Quota.default_quota_name(), quota, reserve_quota)
-
-
 def attributes_to_fields(factory: AttributeFactory,
                          attributes: Iterable[BaseAttribute]) -> Iterator[BaseAttachableAttribute]:
     for attribute in attributes:
@@ -470,4 +450,3 @@ def attributes_to_fields(factory: AttributeFactory,
             yield factory.make_enum_attribute(attribute)
         else:
             raise Exception("Invalid attribute parameter type. " + str(type(attribute)))
-

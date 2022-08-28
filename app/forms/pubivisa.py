@@ -8,8 +8,10 @@ from app.form_lib.common_attributes import make_attribute_firstname, make_attrib
     make_attribute_binding_registration_consent, make_attribute_privacy_consent
 from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.guilds import *
-from app.form_lib.form_controller import FormController, Event
-from app.form_lib.lib import Quota, StringAttribute, BaseParticipant
+from app.form_lib.form_controller import FormController
+from app.form_lib.event import Event
+from app.form_lib.lib import StringAttribute, BaseParticipant
+from app.form_lib.quota import Quota
 from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types, choices_to_enum, get_guild_choices
 
