@@ -48,11 +48,11 @@
 {%- endmacro -%}
 
 {% macro registration_begins(event) %}
-	<h5>Ilmoittautuminen alkaa {{ format_datetime(event.get_start_time()) }}</h5>
+	<h5>Ilmoittautuminen alkaa {{ format_datetime(event.get_registration_start_time()) }}</h5>
 {% endmacro %}
 
 {% macro registration_ends(event) %}
-	<h5>Ilmoittautuminen päättyy {{ format_datetime(event.get_end_time()) }}</h5>
+	<h5>Ilmoittautuminen päättyy {{ format_datetime(event.get_registration_end_time()) }}</h5>
 {% endmacro %}
 
 {% macro registration_ended(event) %}
@@ -97,4 +97,11 @@
 
 {%- macro participant_count(registrations, event) -%}
 	<h2>Osallistujat {{ registrations.get_participant_count() }}/{{ event.get_participant_limit() }}</h2>
+{%- endmacro -%}
+
+{%- macro participant_count_by_quota(registrations, event) -%}
+	<h2>Osallistujat</h2>
+	{%- for quotaName, quotaCounts in registrations.get_registration_quotas().items() -%}
+		<span style="padding-right: 10px;"><b>{{ quotaName }}</b>{{ ' ' ~ quotaCounts[0] ~ '/' ~ quotaCounts[1] }}</span>
+	{%- endfor -%}
 {%- endmacro -%}

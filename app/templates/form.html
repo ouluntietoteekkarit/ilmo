@@ -9,7 +9,7 @@
     </div>
     <div class="container p-3">
         <hr />
-        {%- if event.get_start_time() < nowtime < event.get_end_time() -%}
+        {%- if event.get_registration_start_time() < nowtime < event.get_registration_end_time() -%}
             <div>
                 {{ macros.registration_ends(event) }}
                 <h5>* merkityt kohdat ovat pakollisia</h5>
@@ -17,7 +17,7 @@
             {% block registration_form %}
                 {{ macros.basic_registration_form(form) }}
             {% endblock %}
-        {%- elif nowtime < event.get_start_time() -%}
+        {%- elif nowtime < event.get_registration_start_time() -%}
             {{ macros.registration_begins(event) }}
         {%- else -%}
             {{ macros.registration_ended(event) }}
@@ -26,7 +26,7 @@
     {%- if event.get_list_participant_name() -%}
         <div class="container p-3">
             <hr />
-            {{ macros.participant_count(registrations, event) }}
+            {{ macros.participant_count_by_quota(registrations, event) }}
             {%- block participant_list -%}
                 {{ macros.participant_list(registrations.get_entries(), event) }}
             {%- endblock -%}

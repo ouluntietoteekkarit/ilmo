@@ -46,9 +46,11 @@ class EventRegistrations:
     A class to hold dynamic registration data
     """
 
-    def __init__(self, entries: List[RegistrationModel]):
+    def __init__(self, event_quotas: Dict[str, Quota], entries: List[RegistrationModel]):
         self._entries = entries
+        self._event_quotas = event_quotas
         self._participant_count = self._count_total_participants(self._entries)
+        self._registration_quotas = self._count_participants_by_quota(self._event_quotas, self._entries)
 
     def _count_total_participants(self, entries: Collection[RegistrationModel]) -> int:
         """
@@ -60,11 +62,25 @@ class EventRegistrations:
 
         return total_count
 
+    def _count_participants_by_quota(self, event_quotas: Dict[str, Quota], entries: Collection[RegistrationModel]) -> Dict[str, Tuple[int, int]]:
+        registration_quotas = {}
+        for name, quota in event_quotas.items():
+            registration_quotas[quota.get_name()] = (0, quota.get_max_quota())
+
+        for entry in entries:
+            for quota in entry.get_quota_counts():
+                registration_quotas[quota.get_name()][0] += quota.get_quota()
+
+        return registration_quotas
+
     def get_entries(self) -> Collection:
         return self._entries
 
     def get_participant_count(self) -> int:
         return self._participant_count
+
+    def get_registration_quotas(self) -> Dict[str, Tuple[int, int]]:
+        return self._registration_quotas
 
     def add_new_registration(self, entry: RegistrationModel) -> None:
         self._participant_count += entry.get_participant_count()
@@ -83,7 +99,7 @@ class FormController(ABC):
         Can be overridden in inheriting class to alter the behaviour.
         """
         (entries, registration_quotas) = self._fetch_registration_info()
-        registrations = EventRegistrations(entries)
+        registrations = EventRegistrations(self._context.get_event().get_quotas(), entries)
         form = self._context.get_form_type()()
         return self._render_index_view(registrations, form, datetime.now())
 
@@ -213,8 +229,8 @@ class FormController(ABC):
         nowtime = datetime.now()
         (entries, registration_quotas) = self._fetch_registration_info()
 
-        registrations = EventRegistrations(entries)
         event_quotas = event.get_quotas()
+        registrations = EventRegistrations(event_quotas, entries)
 
         error_msg = self._check_form_submit(registrations, registration_quotas, form, nowtime)
         if len(error_msg) != 0:
@@ -256,10 +272,10 @@ class FormController(ABC):
         if not self._validate_form(form):
             return 'Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot'
 
-        if nowtime < event.get_start_time():
+        if nowtime < event.get_registration_start_time():
             return 'Ilmoittautuminen ei ole alkanut'
 
-        if nowtime > event.get_end_time():
+        if nowtime > event.get_registration_end_time():
             return 'Ilmoittautuminen on päättynyt'
 
         msg = self._check_quotas(event.get_quotas(), registration_quotas, form.get_quota_counts())
@@ -371,7 +387,7 @@ class FormController(ABC):
         A helper method to render a data view template.
         """
         (entries, registration_quotas) = self._fetch_registration_info()
-        registrations = EventRegistrations(entries)
+        registrations = EventRegistrations(self._context.get_event().get_quotas(), entries)
         return render_template('data.html',
                                event=self._context.get_event(),
                                registrations=registrations,
@@ -498,10 +514,10 @@ class Event(object):
     def get_title(self) -> str:
         return self._title
 
-    def get_start_time(self) -> datetime:
+    def get_registration_start_time(self) -> datetime:
         return self._start_time
 
-    def get_end_time(self) -> datetime:
+    def get_registration_end_time(self) -> datetime:
         return self._end_time
 
     def get_quotas(self) -> Dict[str, Quota]:
