@@ -1,13 +1,16 @@
 from __future__ import annotations
+
+import copy
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from flask import send_from_directory, abort, render_template, flash
-from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, List, Dict, Collection
+from typing import Any, Type, TYPE_CHECKING, Iterable, Tuple, Dict, Collection
 from app import db
 from app.sqlite_to_csv import export_to_csv
 from app.email import send_email, EmailRecipient
 from .event import Event
+from .eventregistrations import EventRegistrations
 from .lib import BaseParticipant
 from .quota import Quota
 
@@ -43,56 +46,6 @@ class FormContext:
         return self._data_table_info
 
 
-class EventRegistrations:
-    """
-    A class to hold dynamic registration data
-    """
-
-    def __init__(self, event_quotas: Dict[str, Quota], entries: List[RegistrationModel]):
-        self._entries = entries
-        self._event_quotas = event_quotas
-        self._participant_count = self._count_total_participants(self._entries)
-        self._registration_quotas = self._count_participants_by_quota(self._event_quotas, self._entries)
-
-    def _count_total_participants(self, entries: Collection[RegistrationModel]) -> int:
-        """
-        A method to count the number of event participants.
-        """
-        total_count = 0
-        for m in entries:
-            total_count += m.get_participant_count()
-
-        return total_count
-
-    def _count_participants_by_quota(self, event_quotas: Dict[str, Quota],
-                                     entries: Collection[RegistrationModel]) -> Dict[str, QuotaCounts]:
-        registration_quotas = {}
-        for name, quota in event_quotas.items():
-            registration_quotas[quota.get_name()] = QuotaCounts(0, quota.get_max_quota())
-
-        for entry in entries:
-            for quota in entry.get_quota_counts():
-                registration_quotas[quota.get_name()].set_quota_count(registration_quotas[quota.get_name()].get_quota_count() + 1)
-
-        return registration_quotas
-
-    def get_entries(self) -> Collection:
-        return self._entries
-
-    def get_participant_count(self) -> int:
-        return self._participant_count
-
-    def get_registration_quotas(self) -> Dict[str, QuotaCounts]:
-        return self._registration_quotas
-
-    def add_new_registration(self, entry: RegistrationModel) -> None:
-        self._participant_count += entry.get_participant_count()
-        for quota in entry.get_quota_counts():
-            self._registration_quotas[quota.get_name()].set_quota_count(self._registration_quotas[quota.get_name()].get_quota_count() + 1)
-
-        self._entries.append(entry)
-
-
 class FormController(ABC):
 
     def __init__(self, module_info: ModuleInfo):
@@ -104,8 +57,9 @@ class FormController(ABC):
         Render the requested form for this event.
         Can be overridden in inheriting class to alter the behaviour.
         """
-        (entries, registration_quotas) = self._fetch_registration_info()
-        registrations = EventRegistrations(self._context.get_event().get_quotas(), entries)
+        event_quotas = copy.deepcopy(self._context.get_event().get_quotas())
+        entries = self._fetch_registration_info(event_quotas)
+        registrations = EventRegistrations(event_quotas, entries)
         form = self._context.get_form_type()()
         return self._render_index_view(registrations, form, datetime.now())
 
@@ -117,17 +71,23 @@ class FormController(ABC):
         methods that are used during the post routine should be
         preferred for overriding.
         """
-        return self._post_routine(self._context.get_form_type()())
+        event_quotas = self._get_quota_copy()
+        return self._post_routine(event_quotas, self._context.get_form_type()())
 
     def get_data_request_handler(self, request) -> Any:
-        return self._render_data_view()
+        event_quotas = self._get_quota_copy()
+        return self._render_data_view(event_quotas)
 
     def get_data_csv_request_handler(self, request) -> Any:
-        (entries, _) = self._fetch_registration_info()
+        event_quotas = self._get_quota_copy()
+        entries = self._fetch_registration_info(event_quotas)
         form_name = self._module_info.get_form_name()
         return _export_to_csv(form_name, self._context.get_data_table_info(), entries)
 
-    def _matching_identity(self, firstname0, firstname1, lastname0, lastname1, email0, email1):
+    def _get_quota_copy(self) -> Dict[str, Quota]:
+        return copy.deepcopy(self._context.get_event().get_quotas())
+
+    def _matching_identity(self, firstname0, firstname1, lastname0, lastname1, email0, email1) -> bool:
         return (firstname0 != '' and lastname0 != '' and email0 != '' and
                 firstname0 == firstname1 and lastname0 == lastname1 and email0 == email1)
 
@@ -170,17 +130,6 @@ class FormController(ABC):
 
         return False, ''
 
-    def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[RegistrationModel]) -> Dict[str, int]:
-        """
-        A method to count the number of event participants per quota.
-        """
-        registration_quotas = dict.fromkeys(event_quotas.keys(), 0)
-        for entry in entries:
-            for quota in entry.get_quota_counts():
-                registration_quotas[quota.get_name()] += quota.get_quota()
-
-        return registration_quotas
-
     def _get_email_recipients(self, model: RegistrationModel) -> Collection[BaseParticipant]:
         """
         A method to get all email recipients to whom an email
@@ -204,6 +153,77 @@ class FormController(ABC):
     @abstractmethod
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         pass
+
+    def _post_routine(self, event_quotas: Dict[str, Quota], form: RegistrationForm) -> Any:
+        # MEMO: This routine is prone to data race since it does not use transactions
+        nowtime: datetime = datetime.now()
+        entries = self._fetch_registration_info(event_quotas)
+        registrations = EventRegistrations(event_quotas, entries)
+
+        error_msg = self._check_form_submit(registrations, form, event_quotas, nowtime)
+        if len(error_msg) != 0:
+            flash(error_msg)
+            return self._render_index_view(registrations, form, nowtime)
+
+        model = self._form_to_model(form, nowtime)
+        error_msg = self._insert_model(model)
+        if len(error_msg) != 0:
+            flash(error_msg)
+            return self._render_index_view(registrations, form, nowtime)
+
+        model.set_is_in_reserve(self._calculate_reserve_status(model, event_quotas))
+
+        self._send_emails(model)
+        flash(_make_success_msg(model.get_is_in_reserve()))
+        registrations.add_new_registration(model)
+        return self._post_routine_output(registrations, form, nowtime)
+
+    def _post_routine_output(self, registrations, form: RegistrationForm, nowtime) -> Any:
+        """
+        A method that handles post request output rendering.
+        Can be overridden in inheriting classes to alter behaviour.
+        """
+        return self._render_index_view(registrations, form, nowtime)
+
+    def _check_form_submit(self, registrations: EventRegistrations,
+                           form: RegistrationForm, event_quotas: Dict[str, Quota], nowtime: datetime) -> str:
+        """
+        Checks that the submitted form is correctly filled
+        and that all registration conditions are met.
+        Can be overridden in inheriting classes to alter behaviour.
+        Overriding methods should call this method first.
+
+        Empty string is returned if everything checks.
+        """
+        event = self._context.get_event()
+
+        if not self._validate_form(form):
+            return 'Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot'
+
+        if nowtime < event.get_registration_start_time():
+            return 'Ilmoittautuminen ei ole alkanut'
+
+        if nowtime > event.get_registration_end_time():
+            return 'Ilmoittautuminen on päättynyt'
+
+        form_quota_counts = form.get_quota_counts()
+        msg = self._check_quota_registration_times(nowtime, event_quotas, form_quota_counts)
+        if len(msg) != 0:
+            return msg
+
+        msg = self._check_quota_counts(event_quotas, form_quota_counts)
+        if len(msg) != 0:
+            return msg
+
+        (found, msg) = self._find_from_entries(registrations.get_entries(), form)
+        if found:
+            return msg or 'Olet jo ilmoittautunut'
+
+        (found, msg) = self._find_in_self(form)
+        if found:
+            return msg
+
+        return ""
 
     def _form_to_model(self, form: RegistrationForm, nowtime: datetime) -> RegistrationModel:
         """
@@ -229,80 +249,6 @@ class FormController(ABC):
 
         return model
 
-    def _post_routine(self, form: RegistrationForm) -> Any:
-        # MEMO: This routine is prone to data race since it does not use transactions
-        event = self._context.get_event()
-        nowtime = datetime.now()
-        (entries, registration_quotas) = self._fetch_registration_info()
-
-        event_quotas = event.get_quotas()
-        registrations = EventRegistrations(event_quotas, entries)
-
-        error_msg = self._check_form_submit(registrations, registration_quotas, form, nowtime)
-        if len(error_msg) != 0:
-            flash(error_msg)
-            return self._render_index_view(registrations, form, nowtime)
-
-        model = self._form_to_model(form, nowtime)
-        error_msg = self._insert_model(model)
-        if len(error_msg) != 0:
-            flash(error_msg)
-            return self._render_index_view(registrations, form, nowtime)
-
-        model.set_is_in_reserve(self._calculate_reserve_status(model, registration_quotas, event_quotas))
-
-        self._send_emails(model)
-        flash(_make_success_msg(model.get_is_in_reserve()))
-        registrations.add_new_registration(model)
-        return self._post_routine_output(registrations, form, nowtime)
-
-    def _post_routine_output(self, registrations, form: RegistrationForm, nowtime) -> Any:
-        """
-        A method that handles post request output rendering.
-        Can be overridden in inheriting classes to alter behaviour.
-        """
-        return self._render_index_view(registrations, form, nowtime)
-
-    def _check_form_submit(self, registrations: EventRegistrations, registration_quotas: Dict[str, int],
-                           form: RegistrationForm, nowtime) -> str:
-        """
-        Checks that the submitted form is correctly filled
-        and that all registration conditions are met.
-        Can be overridden in inheriting classes to alter behaviour.
-        Overriding methods should call this method first.
-
-        Empty string is returned if everything checks.
-        """
-        event = self._context.get_event()
-
-        if not self._validate_form(form):
-            return 'Ilmoittautuminen epäonnistui, tarkista syöttämäsi tiedot'
-
-        if nowtime < event.get_registration_start_time():
-            return 'Ilmoittautuminen ei ole alkanut'
-
-        if nowtime > event.get_registration_end_time():
-            return 'Ilmoittautuminen on päättynyt'
-
-        form_quota_counts = form.get_quota_counts()
-        msg = self._check_quota_registration_times(nowtime, event.get_quotas(), form_quota_counts)
-        if len(msg) != 0:
-            return msg
-
-        msg = self._check_quota_counts(event.get_quotas(), registration_quotas, form_quota_counts)
-        if len(msg) != 0:
-            return msg
-
-        (found, msg) = self._find_from_entries(registrations.get_entries(), form)
-        if found:
-            return msg or 'Olet jo ilmoittautunut'
-
-        (found, msg) = self._find_in_self(form)
-        if found:
-            return msg
-
-        return ""
-
     def _validate_form(self, form: RegistrationForm) -> bool:
         valid = form.get_required_participants().validate(form)
         other_attributes = form.get_other_attributes()
@@ -315,10 +261,15 @@ class FormController(ABC):
 
         return valid
 
-    def _check_quota_registration_times(self, nowtime, event_quotas: Dict[str, Quota], form_quotas: Iterable[Quota]) -> str:
+    def _check_quota_registration_times(self, nowtime: datetime,
+                                        event_quotas: Dict[str, Quota], form_quotas: Iterable[Quota]) -> str:
         time_violation_messages = []
         for form_quota in form_quotas:
-            quota = event_quotas.get(form_quota.get_name())
+            name = form_quota.get_name()
+            if name not in event_quotas.keys():
+                return "Kelvoton arvo."
+
+            quota = event_quotas[name]
             start = quota.get_quota_registration_start()
             end = quota.get_quota_registration_end()
             if start is not None and start > nowtime:
@@ -333,47 +284,53 @@ class FormController(ABC):
 
 
     def _check_quota_counts(self, event_quotas: Dict[str, Quota],
-                            registration_quotas: Dict[str, int],
                             form_quotas: Iterable[Quota]) -> str:
         """
         Ensure that no quota has been exceeded.
-        MEMO: Modifies contents of registration_quotas
         """
         for form_quota in form_quotas:
             name = form_quota.get_name()
-            if name not in registration_quotas.keys():
+            if name not in event_quotas.keys():
                 return "Kelvoton arvo."
 
-            registration_quotas[name] += form_quota.get_quota()
-            if registration_quotas[name] > event_quotas[name].get_max_quota():
+            event_quota = event_quotas[name]
+            registration_count = event_quota.get_registrations() + form_quota.get_quota()
+            if registration_count > event_quotas[name].get_max_quota():
                 if name != Quota.default_quota_name():
                     return 'Ilmoittautuminen on jo täynnä kiintiön {} osalta.'.format(name)
                 return 'Ilmoittautuminen on jo täynnä.'
 
         return ""
 
-    def _fetch_registration_info(self) -> Tuple[Collection[RegistrationModel], Dict[str, int]]:
-        event_quotas = self._context.get_event().get_quotas()
+    def _fetch_registration_info(self, event_quotas: Dict[str, Quota]) -> Collection[RegistrationModel]:
         entries: Collection[RegistrationModel] = self._context.get_model_type().query.all()
-        registration_quotas = self._count_registration_quotas(event_quotas, entries)
-        self._calculate_reserve_statuses(entries, registration_quotas, event_quotas)
-        return entries, registration_quotas
+        self._count_registration_quotas(event_quotas, entries)
+        self._calculate_reserve_statuses(entries, event_quotas)
+        return entries
+
+    def _count_registration_quotas(self, event_quotas: Dict[str, Quota], entries: Collection[RegistrationModel]) -> None:
+        """
+        A method to count the number of event participants per quota.
+        MEMO: Modifies event_quotas
+        """
+        for entry in entries:
+            for quota in entry.get_quota_counts():
+                event_quota = event_quotas[quota.get_name()]
+                event_quota.set_registrations(event_quota.get_registrations() + quota.get_quota())
 
     def _calculate_reserve_statuses(self, entries: Iterable[RegistrationModel],
-                                    registration_quotas: Dict[str, int],
                                     event_quotas: Dict[str, Quota]) -> None:
         for entry in entries:
-            entry.set_is_in_reserve(self._calculate_reserve_status(entry, registration_quotas, event_quotas))
+            entry.set_is_in_reserve(self._calculate_reserve_status(entry, event_quotas))
 
     def _calculate_reserve_status(self, entry: RegistrationModel,
-                                  registration_quotas: Dict[str, int],
                                   event_quotas: Dict[str, Quota]) -> bool:
         # MEMO: If any registration participant is on reserve space, the whole registration
         #       is considered to be on reserve.
         reserve = False
         for quota_count in entry.get_quota_counts():
             quota_name = quota_count.get_name()
-            reserve = reserve or registration_quotas[quota_name] >= event_quotas[quota_name].get_quota()
+            reserve = reserve or event_quotas[quota_name].get_registrations() >= event_quotas[quota_name].get_quota()
 
         return reserve
 
@@ -410,12 +367,12 @@ class FormController(ABC):
                                    'module_info': module_info,
                                    **extra_template_args})
 
-    def _render_data_view(self) -> Any:
+    def _render_data_view(self, event_quotas: Dict[str, Quota]) -> Any:
         """
         A helper method to render a data view template.
         """
-        (entries, registration_quotas) = self._fetch_registration_info()
-        registrations = EventRegistrations(self._context.get_event().get_quotas(), entries)
+        entries = self._fetch_registration_info(event_quotas)
+        registrations = EventRegistrations(event_quotas, entries)
         return render_template('data.html',
                                event=self._context.get_event(),
                                registrations=registrations,
@@ -517,21 +474,6 @@ class DataTableInfo:
                                        self._max_optional_participants)
         yield from [str(getattr(entry.get_other_attributes(), attribute)())
                     for attribute in self.get_other_attributes_getters()]
-
-
-class QuotaCounts:
-    def __init__(self, quota_count: int, max_quota_count: int):
-        self._quota_count = quota_count
-        self._max_quota_count = max_quota_count
-
-    def get_quota_count(self) -> int:
-        return self._quota_count
-
-    def get_max_quota_count(self) -> int:
-        return self._max_quota_count
-
-    def set_quota_count(self, value: int) -> None:
-        self._quota_count = value
 
 
 def _export_to_csv(form_name: str,

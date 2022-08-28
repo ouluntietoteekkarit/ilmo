@@ -1,6 +1,7 @@
 from datetime import datetime
 from app.email import EmailRecipient, make_greet_line, make_signature_line
-from app.form_lib.form_controller import FormController, FormContext, DataTableInfo, EventRegistrations
+from app.form_lib.form_controller import FormController, FormContext, DataTableInfo
+from app.form_lib.eventregistrations import EventRegistrations
 from app.form_lib.event import Event
 from app.form_lib.lib import BaseParticipant
 from app.form_lib.quota import Quota

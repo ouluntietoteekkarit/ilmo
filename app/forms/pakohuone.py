@@ -3,7 +3,7 @@ from enum import Enum
 
 from datetime import datetime
 import json
-from typing import Any, List, Type, Iterable
+from typing import Any, List, Type, Iterable, Dict
 
 from app.email import make_greet_line, make_signature_line, make_fullname
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
@@ -12,7 +12,8 @@ from app.form_lib.form_module import ModuleInfo, make_form_name
 from app.form_lib.forms import RegistrationForm
 from app.form_lib.lib import EnumAttribute, BaseParticipant
 from app.form_lib.quota import Quota
-from app.form_lib.form_controller import FormController, EventRegistrations
+from app.form_lib.form_controller import FormController
+from app.form_lib.eventregistrations import EventRegistrations
 from app.form_lib.event import Event
 from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types, choices_to_enum
@@ -27,8 +28,8 @@ def get_module_info() -> ModuleInfo:
 class _Controller(FormController):
 
     def _check_form_submit(self, registrations: EventRegistrations,
-                           registration_quotas, form: RegistrationForm, nowtime: int) -> str:
-        error_msg = super()._check_form_submit(registrations, registration_quotas, form, nowtime)
+                           form: RegistrationForm, event_quotas: Dict[str, Quota], nowtime: int) -> str:
+        error_msg = super()._check_form_submit(registrations, form, event_quotas, nowtime)
         if len(error_msg) != 0:
             return error_msg
 
@@ -43,7 +44,8 @@ class _Controller(FormController):
 
         return error_msg
 
-    def _render_index_view(self, registrations: EventRegistrations, form: _Form, nowtime, **extra_template_args) -> Any:
+    def _render_index_view(self, registrations: EventRegistrations,
+                           form: RegistrationForm, nowtime, **extra_template_args) -> Any:
         varatut = []
         for entry in registrations.get_entries():
             varatut.append((entry.time, entry.room1800, entry.room1930))
@@ -51,7 +53,6 @@ class _Controller(FormController):
             'varatut': json.dumps(varatut),
             **extra_template_args})
 
-    # MEMO: "Evil" Covariant parameter
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         firstname = recipient.get_firstname()
         lastname = recipient.get_lastname()

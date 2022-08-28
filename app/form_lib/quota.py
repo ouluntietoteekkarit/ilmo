@@ -13,6 +13,7 @@ class Quota:
         self._reserve_quota = reserve_quota
         self._registration_start = registration_start
         self._registration_end = registration_end
+        self._registrations = 0
 
     def get_name(self) -> str:
         return self._name
@@ -31,6 +32,12 @@ class Quota:
 
     def get_quota_registration_end(self) -> Union[datetime, None]:
         return self._registration_end
+
+    def get_registrations(self) -> int:
+        return self._registrations
+
+    def set_registrations(self, value: int) -> None:
+        self._registrations = value
 
     @staticmethod
     def default_quota_name() -> str:

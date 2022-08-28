@@ -91,17 +91,8 @@ class BaseRegistration(BaseFormComponent):
     def get_show_name_consent(self) -> bool:
         return False
 
-    def get_participant_count(self) -> int:
-        count = 0
-        for p in self.get_required_participants():
-            count += int(p.is_filled())
-
-        for p in self.get_optional_participants():
-            count += int(p.is_filled())
-
-        return count
-
     def get_quota_counts(self) -> List[Quota]:
+        # MEMO: Abuses Quota class to return quota name and participant count
         quotas = []
         for p in self.get_required_participants():
             if p.is_filled():

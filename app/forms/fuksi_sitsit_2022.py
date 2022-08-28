@@ -36,7 +36,7 @@ class OtherQuota(Quota):
         self._fuksiQuota = fuksiQuota
 
     def get_max_quota(self) -> int:
-        return self._fuksiQuota.get_max_quota() - self._fuksiQuota.()
+        return self._fuksiQuota.get_max_quota() - self._fuksiQuota.get_registrations()
 
 
 class _Controller(FormController):
