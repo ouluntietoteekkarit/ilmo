@@ -1,0 +1,78 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/humanoori_background.jpg') }}");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
+
+        div.container {
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
+{%- endblock -%}
+
+
+{%- block event_info -%}
+    <p>OTiTin, Prosen ja Communican yhteiset humanöörisitsit ovat täällä taas! <br />
+    Sitsit pidetään Walhallassa maanantaina 23.2.2023 klo 18:00 alkaen. Tulkaahan ajoissa paikalle!<br />
+    Tämän vuoden teema on "juoksut / räyhäkkäät", joten pukekaa päällenne haalarit ja kuumimmat liekeillä varustetut tamineet, nopeimmat lasit tai muuta railakkaan räyhkeää rekvisiittaa. <br />
+    Jatkoilla lämpenee sauna, joten sinne OPMx2.
+    </p>
+    <h3>Maksuohjeet:</h3>
+    <ul>
+        <li>Tilinumero: FI03 4744 3020 0116 87</li>
+        <li>Saaja: Oulun Tietoteekkarit ry</li>
+        <li>Summa: 20€ (40€ jos avec)</li>
+        <li>Viesti: Oma nimi (+ avec) Humanöörisitsit</li>
+        <li>Eräpäivä: 23.2.2023</li>
+    </ul>
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.quota) }}
+    {{ macros.form_field(form.drink) }}
+    {{ macros.form_field(form.liquor) }}
+    {{ macros.form_field(form.wine) }}
+    {{ macros.form_field(form.allergies) }}
+    {{ macros.form_field(form.seating_preference) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {%- call macros.registration_optional_participant() -%}
+            <legend>Avecin tiedot</legend>
+            {{ participant_form(form.get_optional_participants()[0]) }}
+        {%- endcall -%}
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
+
+{%- block participant_list -%}
+    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        <p>
+        {%- set participant = entry.get_required_participants()[0] -%}
+        {{ participant.firstname }} {{ participant.lastname }}
+
+        {%- set avec = entry.get_optional_participants()[0] if entry.get_optional_participants()|length > 0 -%}
+        {%- if avec and avec.firstname and avec.lastname %}
+            & {{ avec.firstname }} {{ avec.lastname }}
+        {%- endif -%}
+
+        {% if is_in_reserve %}
+            {{ " (Varasijalla)" }}
+        {% endif %}
+        </p>
+    {%- endcall -%}
+{%- endblock -%}
