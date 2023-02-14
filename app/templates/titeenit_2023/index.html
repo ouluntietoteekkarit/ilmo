@@ -1,0 +1,69 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/bus3_.jpg') }}");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
+
+        div.container {
+            max-width: 900px;
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block extra_js -%}
+    <script>
+        function main(){
+            var quotaNode = document.getElementById('quota');
+            var accomodationForm = document.getElementById('accomodation_form')
+            if (!quotaNode || !accomodationForm) {
+                return;
+            }
+            quotaNode.onchange = function () {
+                var show = this.value === this.children[0].value ? '' : 'none';
+                accomodationForm.style.display = show;
+            };
+            quotaNode.onchange();
+        }
+        main ();
+    </script>
+{%- endblock -%}
+
+{%- block event_info -%}
+<p>Rakkaat kiltalaiset, TiTeenien taistot/KMP tulee!</p>
+<p>TiTeenien taistot järjestetään 17.3.2023 - 19.3.2023 Turussa, jonne meidät kuljettaa tuttu luotettava ratsumme, bussi! </p>
+<p> Osallistumisen hinta OTiTlaisille on X€ (ainakin 60€), johon sisältyy ruokailu, majoitus, titeenigaala ja meno-paluukuljetus.</p>
+<p> Osallistumisen hinta SIKkiläisille on Y€ (ainakin 35€), johon sisältyy <b>vain</b> meno-paluukuljetus ja lämmintä kättä. </p>
+<p> <b>Tarkemmat maksutiedot tiedotetaan myöhemmin.</b></p>
+<p>Jos tulee kysyttävää voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi.</p>
+{% endblock %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {% set p = form.get_required_participants()[0] %}
+        <h4>Henkilötiedot</h4>
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
+        {{ macros.form_field(p.phone_tg) }}
+        {{ macros.form_field(p.quota) }}
+        {{ macros.form_field(p.departure_location) }}
+        {{ macros.form_field(p.is_scared) }}
+        <br />
+        <div id="accomodation_form">
+            <h4>Majoitustiedot</h4>
+            {{ macros.form_field(p.allergies) }}
+            {{ macros.form_field(p.accommodation) }}
+        </div>
+        <br/>
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
+    {%- endcall -%}
+{% endblock %}
