@@ -321,8 +321,7 @@ class FormController(ABC):
     def _calculate_reserve_statuses(self, entries: Iterable[RegistrationModel],
                                     event_quotas: Dict[str, Quota]) -> None:
 
-        print("calculate all reserve statuses");
-
+        
         # keep track of how many non-reserve spots are left
         # quota_name : quota count
         quota_limits: Dict[str, int] = {}
