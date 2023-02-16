@@ -100,7 +100,7 @@ other_attributes = [
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
 
 _event = Event('OTiT KMP/Titeenit',
-               datetime(2023, 2, 16, 0, 0, 0),
+               datetime(2023, 2, 16, 16, 0, 0),
                datetime(2023, 2, 26, 23, 59, 59),
                _get_quotas(),
                _types.asks_name_consent())
