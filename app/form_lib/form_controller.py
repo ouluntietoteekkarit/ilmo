@@ -320,16 +320,68 @@ class FormController(ABC):
 
     def _calculate_reserve_statuses(self, entries: Iterable[RegistrationModel],
                                     event_quotas: Dict[str, Quota]) -> None:
-        for entry in entries:
-            entry.set_is_in_reserve(self._calculate_reserve_status(entry, event_quotas))
 
+        print("calculate all reserve statuses");
+
+        # keep track of how many non-reserve spots are left
+        # quota_name : quota count
+        quota_limits: Dict[str, int] = {}
+        for quota_name in event_quotas:
+            quota_limits[quota_name] = event_quotas[quota_name].get_quota()
+            
+        for entry in entries:
+            entry.set_is_in_reserve(self._calculate_reserve_status_for_entry(entry, event_quotas, quota_limits))
+
+    def _calculate_reserve_status_for_entry(self, \
+                                            entry : RegistrationModel, \
+                                            event_quotas: Dict[str, Quota], \
+                                            quota_limits: Dict[str, int]):
+        """
+        called from _calculate_reserve_statuses
+        """
+        
+        reserve = False
+
+        # @NOTE 2023:
+        # quota_count : Quota
+        # Entries can occupy multible quotas if there are options for avec etc.
+        #
+        # Still, it seems that quota_count is a Quota object with only name filled in
+        # quota := 1, and reserve := 0.
+        # Not really sure why entries don't just hold a name to the quota they occupy
+
+        for quota_count in entry.get_quota_counts():
+            quota_name = quota_count.get_name()
+
+            quota_limits[quota_name] -= 1;
+
+            if quota_limits[quota_name] < 0:
+                reserve = True
+            
+            #reserve = reserve or event_quotas[quota_name].get_registrations() >= event_quotas[quota_name].get_quota()
+
+        return reserve
+
+        
     def _calculate_reserve_status(self, entry: RegistrationModel,
                                   event_quotas: Dict[str, Quota]) -> bool:
         # MEMO: If any registration participant is on reserve space, the whole registration
         #       is considered to be on reserve.
+
+        
+        # @NOTE 2023:
+        # quota_count : Quota
+        # Entries can occupy multible quotas if there are options for avec etc.
+        # 
+        # Still, it seems that quota_count is a Quota object with only name filled in
+        # quota := 1, and reserve := 0.
+        # Not really sure why entries don't just hold a name to the quota they occupy
+
         reserve = False
+
         for quota_count in entry.get_quota_counts():
             quota_name = quota_count.get_name()
+            
             reserve = reserve or event_quotas[quota_name].get_registrations() >= event_quotas[quota_name].get_quota()
 
         return reserve

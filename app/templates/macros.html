@@ -98,6 +98,6 @@
 {%- macro participant_count(registrations, event) -%}
 	<h2>Osallistujat</h2>
 	{%- for quotaName, quotaCounts in registrations.get_event_quotas().items() -%}
-		<span style="padding-right: 10px;"><b>{{ quotaName }}</b>{{ ' ' ~ quotaCounts.get_registrations() ~ '/' ~ quotaCounts.get_max_quota() }}</span>
+		<span style="padding-right: 10px;"><b>{{ quotaName }}</b>{{ ' ' ~ quotaCounts.get_registrations() ~ ' / (' ~ quotaCounts.get_quota() ~ ' + ' ~ quotaCounts.get_reserve_quota() ~')' }}</span>
 	{%- endfor -%}
 {%- endmacro -%}
