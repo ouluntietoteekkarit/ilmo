@@ -38,7 +38,18 @@ class Quota:
 
     def set_registrations(self, value: int) -> None:
         self._registrations = value
-
+        
+    def __str__(self):
+        result = "Quota:\n"
+        result += f"name: {self.get_name()}\n"
+        result += f"quota: {self.get_quota()}\n"
+        result += f"reserve: {self.get_reserve_quota()}\n"
+        result += f"max: {self.get_max_quota()}\n"
+        result += f"start: {self.get_quota_registration_start()}\n"
+        result += f"end: {self.get_quota_registration_end()}\n"
+        result += f"registrations: {self.get_registrations()}\n"
+        return result    
+        
     @staticmethod
     def default_quota_name() -> str:
         return '_'
