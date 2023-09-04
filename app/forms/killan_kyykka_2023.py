@@ -78,4 +78,4 @@ _types = make_types(participant_attributes, optional_participant_attributes, oth
 
 _event = Event('Killan kyykkä 2023', datetime(2023, 1, 1, 12, 00, 00),
                datetime(2023, 2, 4, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
