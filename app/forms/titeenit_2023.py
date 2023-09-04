@@ -105,5 +105,5 @@ _event = Event('OTiT KMP/Titeenit',
                _get_quotas(),
                _types.asks_name_consent())
 
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
 
