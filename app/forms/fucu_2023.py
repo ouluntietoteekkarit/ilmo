@@ -36,7 +36,7 @@ class _Controller(FormController):
                 "\nOlet ilmoittautunut OTiTin Fuksicursiolle. Olet varasijalla.",
                 "Jos fuculle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-                "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi"
+                "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @esari2"
             ])
         else:
             return ' '.join([
@@ -46,7 +46,7 @@ class _Controller(FormController):
                 "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
                 "\nLähtöpaikka: ", departure_location, "\nKiintiö: ", quota,
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-                "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi"
+                "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @esari2"
             ])
 
 
@@ -55,6 +55,7 @@ _form_name = make_form_name(__file__)
 _PARTICIPANT_FUKSI = 'Fuksi'
 _PARTICIPANT_TUTOR = 'Tutor'
 _PARTICIPANT_BOARD_MEMBER = 'Hallitus'
+_PARTICIPANT_KULTTUURISIHTEERI = 'Kulttuurisihteeri'
 _PARTICIPANT_OTHER = 'Muu'
 
 _DEPARTURE_BUS_STOP_UNI = 'Yliopisto'
@@ -75,9 +76,10 @@ def _get_departure_stops() -> List[str]:
 def _get_quotas() -> List[Quota]:
     return [
         Quota(_PARTICIPANT_FUKSI, 100, 20),
-        Quota(_PARTICIPANT_TUTOR, 15, 20),
-        Quota(_PARTICIPANT_BOARD_MEMBER, 11, 20),
-        Quota(_PARTICIPANT_OTHER, 0, 50)
+        Quota(_PARTICIPANT_TUTOR, 15, 0),
+        Quota(_PARTICIPANT_BOARD_MEMBER, 10, 0),
+        Quota(_PARTICIPANT_KULTTUURISIHTEERI, 1, 0),
+        Quota(_PARTICIPANT_OTHER, 0, 100)
     ]
 
 _DepartureLocationEnum = choices_to_enum(_form_name, 'departure_location', _get_departure_stops())
