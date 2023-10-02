@@ -93,7 +93,7 @@ other_attributes = [
 ]
 _types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
 
-_start_time = datetime(2023, 10, 2, 12, 00, 00);
+_start_time = datetime(2023, 10, 2, 15, 00, 00);
 _end_time = datetime(2023, 10, 10, 23, 59, 59);
 
 _event = Event('Kalsarikänni-sitsit 2023', _start_time, _end_time, _get_quotas(), _types.asks_name_consent())
