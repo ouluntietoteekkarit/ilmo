@@ -1,0 +1,58 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles -%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static',filename='img/fucu/fucu_2.png') }}");
+            background-position: center;
+            background-size: 150%;
+            background-repeat: repeat;
+        }
+
+        div.container.p-3 {
+            max-width: 800px;
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <p><strong>Fukseille ilmainen, muille maksaa 20 euroa.</strong></p>
+    <p>Perjantaina 13.10.2023 kello 9:00 alkaen</p>
+    <span>Lähtöajat:</span>
+    <ul>
+        <li>Yliopisto 09:00</li>
+        <li>Tuiran bussipysäkki (Merikoskenkatu) 09:15</li>
+        <li>Linja-autoasema 09:30</li>
+    </ul>
+    <p><strong>Ole hyvissä ajoin paikalla! Bussi ei voi odottaa myöhästyjiä</strong></p>
+    <p>Paluu Ouluun lauantaina noin 06:00 - 07:00</p>
+    <br/>
+    <h3>Maksuohjeet:</h3>
+    <ul>
+        <li>Tilinumero: FI03 4744 3020 0116 87</li>
+        <li>Saaja: Oulun Tietoteekkarit ry</li>
+        <li>Summa: 20€</li>
+        <li>Viesti: Oma nimi + fucu</li>
+        <li>Eräpäivä: 13.10.2023</li>
+    </ul>
+
+{%- endblock -%}
+
+{%- block registration_form -%}
+    {% call macros.registration_form_routine(form) %}
+        {% set p = form.get_required_participants()[0] %}
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
+        {{ macros.form_field(p.phone_number) }}
+        {{ macros.form_field(p.departure_location) }}
+        {{ macros.form_field(p.quota) }}
+
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
