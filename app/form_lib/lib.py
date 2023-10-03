@@ -56,6 +56,9 @@ class BaseParticipant(BaseFormComponent):
     def get_phone_number(self) -> str:
         raise Exception("Not implemented. Form likely does not ask for this attribute.")
 
+    def get_telegram(self) -> str:
+        raise Exception("Not implemented. Form likely does not ask for this attribute.")
+
     def get_departure_location(self) -> str:
         raise Exception("Not implemented. Form likely does not ask for this attribute.")
 
