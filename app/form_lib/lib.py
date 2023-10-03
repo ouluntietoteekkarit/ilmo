@@ -14,6 +14,7 @@ ATTRIBUTE_NAME_QUOTA = 'quota'
 ATTRIBUTE_NAME_PHONE_NUMBER = 'phone_number'
 ATTRIBUTE_NAME_DEPARTURE_LOCATION = 'departure_location'
 ATTRIBUTE_NAME_ALLERGIES = 'allergies'
+ATTRIBUTE_NAME_TELEGRAM = 'telegram'
 ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS = 'required_participants'
 ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS = 'optional_participants'
 ATTRIBUTE_NAME_OTHER_ATTRIBUTES = 'other_attributes'
@@ -53,6 +54,9 @@ class BaseParticipant(BaseFormComponent):
         return Quota.default_quota_name()
 
     def get_phone_number(self) -> str:
+        raise Exception("Not implemented. Form likely does not ask for this attribute.")
+
+    def get_telegram(self) -> str:
         raise Exception("Not implemented. Form likely does not ask for this attribute.")
 
     def get_departure_location(self) -> str:

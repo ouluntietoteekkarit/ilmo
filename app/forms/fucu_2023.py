@@ -12,7 +12,7 @@ from app.form_lib.models import RegistrationModel
 from app.form_lib.util import make_types, choices_to_enum, get_quota_choices
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
     make_attribute_phone_number, make_attribute_departure_location, make_attribute_quota, make_attribute_name_consent, \
-    make_attribute_privacy_consent
+    make_attribute_privacy_consent, make_attribute_telegram
 
 
 # P U B L I C   M O D U L E   I N T E R F A C E   S T A R T
@@ -28,6 +28,7 @@ class _Controller(FormController):
         lastname = recipient.get_lastname()
         email = recipient.get_email()
         phone_number = recipient.get_phone_number()
+        telegram = recipient.get_telegram()
         departure_location = recipient.get_departure_location()
         quota = recipient.get_quota()
         if reserve:
@@ -45,6 +46,7 @@ class _Controller(FormController):
                 "\n\nNimi: ", firstname, " ", lastname,
                 "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
                 "\nLähtöpaikka: ", departure_location, "\nKiintiö: ", quota,
+                "\nTelegram: ", telegram, "\n",
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
                 "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @esari2"
             ])
@@ -91,6 +93,7 @@ participant_attributes = [
     make_attribute_email(),
 ] + [
     make_attribute_phone_number(),
+    make_attribute_telegram(),
     make_attribute_departure_location(_DepartureLocationEnum),
     make_attribute_quota(_QuotaEnum)
 ]
@@ -103,6 +106,6 @@ other_attributes = [
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
 
 _event = Event('OTiTin Fuksicursio 2023',  _registration_start, _registration_end, _get_quotas(), _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
 
