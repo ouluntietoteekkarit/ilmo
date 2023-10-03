@@ -10,7 +10,7 @@ from app.form_lib.lib import BaseAttribute, StringAttribute, ATTRIBUTE_NAME_FIRS
     ATTRIBUTE_NAME_QUOTA, BoolAttribute, ATTRIBUTE_NAME_NAME_CONSENT, ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT, \
     ATTRIBUTE_NAME_PRIVACY_CONSENT, BaseParticipant, ListAttribute, ATTRIBUTE_NAME_REQUIRED_PARTICIPANTS, \
     ATTRIBUTE_NAME_OPTIONAL_PARTICIPANTS, BaseOtherAttributes, ObjectAttribute, ATTRIBUTE_NAME_OTHER_ATTRIBUTES, \
-    ATTRIBUTE_NAME_ALLERGIES
+    ATTRIBUTE_NAME_ALLERGIES, ATTRIBUTE_NAME_TELEGRAM
 
 
 def make_attribute_firstname(**extra_args: Dict[str, Any]) -> BaseAttribute:
@@ -20,6 +20,8 @@ def make_attribute_firstname(**extra_args: Dict[str, Any]) -> BaseAttribute:
 def make_attribute_lastname(**extra_args: Dict[str, Any]) -> BaseAttribute:
     return StringAttribute(ATTRIBUTE_NAME_LASTNAME, 'Sukunimi', 'Sukunimi', 50, **extra_args)
 
+def make_attribute_telegram(**extra_args: Dict[str, Any]) -> BaseAttribute:
+    return StringAttribute(ATTRIBUTE_NAME_TELEGRAM, 'Telegram', 'Telegram', 50, **extra_args)
 
 def make_attribute_email(**extra_args: Dict[str, Any]) -> BaseAttribute:
     extra_args.setdefault('validators', [])
