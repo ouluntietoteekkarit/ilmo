@@ -97,5 +97,5 @@ _start_time = datetime(2023, 10, 2, 15, 00, 00);
 _end_time = datetime(2023, 10, 10, 23, 59, 59);
 
 _event = Event('Kalsarikänni-sitsit 2023', _start_time, _end_time, _get_quotas(), _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
 
