@@ -57,7 +57,7 @@ Jos tulee kysyttävää, voit olla sähköpostitse yhteydessä soteministeri@oti
 
 _form_name = make_form_name(__file__)
 
-_registration_start = datetime(2023, 10, 5, 12, 0, 0)
+_registration_start = datetime(2023, 11, 5, 12, 0, 0)
 _registration_end = datetime(2023, 11, 12, 23, 59, 59)
 
 def _get_quotas() -> List[Quota]:
