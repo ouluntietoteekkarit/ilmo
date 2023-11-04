@@ -27,6 +27,12 @@ def get_usual_sitsi_wines() -> List[str]:
         DRINK_NON_ALCOHOLIC
     ]
 
+def get_usual_humanisti_sitsi_wines() -> List[str]:
+    return [
+        DRINK_ALCOHOLIC,
+        DRINK_NON_ALCOHOLIC
+    ]
+
 
 def get_usual_sitsi_liquors() -> List[str]:
     return [
@@ -42,6 +48,9 @@ def make_enum_usual_sitsi_drink(form_name: str) -> Type[Enum]:
 def make_enum_usual_sitsi_wine(form_name: str) -> Type[Enum]:
     return choices_to_enum(form_name, 'wine', get_usual_sitsi_wines())
 
+def make_enum_usual_humanisti_sitsi_wine(form_name: str) -> Type[Enum]:
+    return choices_to_enum(form_name, 'wine2', get_usual_humanisti_sitsi_wines())
+
 
 def make_enum_usual_sitsi_liquor(form_name: str) -> Type[Enum]:
     return choices_to_enum(form_name, 'liquor', get_usual_sitsi_liquors())
@@ -54,6 +63,8 @@ def make_attribute_usual_sitsi_drink(drink_enum: Type[Enum], validators: Iterabl
 def make_attribute_usual_sitsi_wine(wine_enum: Type[Enum], validators: Iterable = None):
     return EnumAttribute('wine', 'Viini', 'Viini', wine_enum, validators=validators)
 
+def make_attribute_usual_humanisti_sitsi_wine(wine_enum: Type[Enum], validators: Iterable = None):
+    return EnumAttribute('wine', 'Viini', 'Viini', wine_enum, validators=validators)
 
 def make_attribute_usual_sitsi_liquor(liquor_enum: Type[Enum], validators: Iterable = None):
     return EnumAttribute('liquor', 'Viinakaato', 'Viinakaato', liquor_enum, validators=validators)
