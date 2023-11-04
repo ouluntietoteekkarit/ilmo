@@ -9,8 +9,8 @@ from app.email import make_greet_line
 from app.form_lib.common_attributes import make_attribute_lastname, make_attribute_firstname, make_attribute_email, \
     make_attribute_quota, make_attribute_privacy_consent, make_attribute_name_consent, make_attribute_allergies
 from app.form_lib.drinks import make_attribute_usual_sitsi_drink, make_attribute_usual_sitsi_liquor, \
-    make_attribute_usual_sitsi_wine, get_usual_sitsi_wines, get_usual_sitsi_liquors, get_usual_sitsi_drinks, \
-    make_enum_usual_sitsi_drink, make_enum_usual_sitsi_liquor, make_enum_usual_sitsi_wine
+    make_attribute_usual_humanisti_sitsi_wine, get_usual_humanisti_sitsi_wines, get_usual_sitsi_liquors, get_usual_sitsi_drinks, \
+    make_enum_usual_sitsi_drink, make_enum_usual_sitsi_liquor, make_enum_usual_humanisti_sitsi_wine
 from app.form_lib.form_controller import FormController
 from app.form_lib.event import Event
 from app.form_lib.form_module import ModuleInfo, make_form_name
@@ -74,7 +74,8 @@ def _make_attribute_seating_preference(validators: Iterable = None):
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
 _DrinkEnum = make_enum_usual_sitsi_drink(_form_name)
 _LiquorEnum = make_enum_usual_sitsi_liquor(_form_name)
-_WineEnum = make_enum_usual_sitsi_wine(_form_name)
+_WineEnum = make_enum_usual_humanisti_sitsi_wine(_form_name)
+
 
 participant_attributes = [
     make_attribute_firstname(validators=[InputRequired()]),
@@ -84,7 +85,7 @@ participant_attributes = [
     make_attribute_quota(_QuotaEnum, validators=[InputRequired()]),
     make_attribute_usual_sitsi_drink(_DrinkEnum, validators=[InputRequired()]),
     make_attribute_usual_sitsi_liquor(_LiquorEnum, validators=[InputRequired()]),
-    make_attribute_usual_sitsi_wine(_WineEnum, validators=[InputRequired()]),
+    make_attribute_usual_humanisti_sitsi_wine(_WineEnum, validators=[InputRequired()]),
     make_attribute_allergies(),
     _make_attribute_seating_preference()
 ]
