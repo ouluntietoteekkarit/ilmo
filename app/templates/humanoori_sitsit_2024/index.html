@@ -1,0 +1,72 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/humanoori_background.jpg') }}");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
+
+        div.container {
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
+{%- endblock -%}
+
+
+    {%- block event_info -%}
+
+    <p>OTiTin, Prosen ja Communican yhteiset humanöörisitsit ovat jälleen täällä! <br />
+    Sitsit pidetään Walhallassa torstaina 20.2.2024 klo 18:00 alkaen.<br />
+      Tänä vuonna mennään nurinkurin-teemalla. Päälle haalarit ja oma toteutus roolivaihtoon<br />
+      <br/>
+      <i>Näyttääkö silmääsi oman ainejärjestön jäsenet samalta harmaalta massalta päivästä toiseen? Tekisikö välillä mieli repäistä ja päästä kokeilemaan aivan erilaista habitusta? Nyt siihen tarjoutuu mahdollisuus! Tänä vuonna Humanööreillä humanistit pääsevät astumaan insinöörien saappaisiin, kun taas insinöörit pääsevät määrittelemään, kuuluuko humanistisuuteen Marimekko vaiko sittenkin baskeri. Mitkä ylipäätään ovat oman ainejärjestön tunnusmerkit tai stereotyyppiset olemukset? Nyt se päästään näkemään, kun roolit lähtee vaihtoon ja illan aikana kaikki onkin aivan nurinkurin!</i>
+        <br/><br/>Jatkoilla lämpenee sauna, joten OPMx2.
+    </p>
+    <h3>Maksuohjeet:</h3>
+    <ul>
+        <li>Tilinumero: FI90 1107 3000 4170 18</li>
+        <li>Saaja: Oulun Yliopiston Prosessikilta ry</li>
+        <li>Summa: 19 €</li>
+        <li>Viite: 22 400 086</li>
+        <li>Eräpäivä: 20.2.2024</li>
+    </ul>
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.quota) }}
+    {{ macros.form_field(form.drink) }}
+    {{ macros.form_field(form.liquor) }}
+    {{ macros.form_field(form.wine) }}
+    {{ macros.form_field(form.allergies) }}
+    {{ macros.form_field(form.seating_preference) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
+
+{%- block participant_list -%}
+    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        <p>
+        {%- set participant = entry.get_required_participants()[0] -%}
+        {{ participant.firstname }} {{ participant.lastname }}
+
+        {% if is_in_reserve %}
+            {{ " (Varasijalla)" }}
+        {% endif %}
+        </p>
+    {%- endcall -%}
+{%- endblock -%}
