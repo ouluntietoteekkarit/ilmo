@@ -97,5 +97,5 @@ other_attributes = [
 _types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
 
 _event = Event('Humanöörisitsit', _r_start, _r_end, _get_quotas(), _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
 
