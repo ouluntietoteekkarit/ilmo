@@ -1,0 +1,116 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+
+        div.container {
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <p>SIK, OTiT, Blanko ja OLTO järjestävät Tieto- ja sähkötekniikan tiedekunnan opetuksenkehittämisseminaarin (OKS) torstaina 21.3. Yliopistolla (12:00-15:00) ja Proffasitsit Teekkaritalolla (18:00-).
+    <br/>Sitseille voi osallistua ainoastaan, jos osallistuu seminaariin.
+    <br/>
+    <br/><b>TL;DR:</b>
+    <br/><b>Mitä:</b> Opetuksenkehittämisseminaari ja proffasitsit.
+    <br/><b>Milloin:</b> 21.3. päivällä ja illalla
+    <br/><b>Miksi:</b> Opetushenkilökunnan kanssa pöhiseminen ja sitsaaminen on kivaa (ja opetuksen kehittäminen on tärkeää).
+    <br/><b>Hinta:</b> ilmainen seminaariin osallistujille
+    <br/><b>Pukukoodi:</b> päivällä vapaa, illalla cocktail
+    <br/>
+    <br/>
+    Jatkoilla lämpenee sauna, joten sinne OPMx2.
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.quota) }}
+
+    <script>
+      function optional_field_toggle() {
+          var selected_val = document.getElementById('{{ form.quota.id }}').value;
+
+          var optional_fields = [
+              [document.getElementById('{{ form.drink.id }}'), "Olut", "", true],
+              [document.getElementById('{{ form.liquor.id }}'),"Alkoholillinen", "", true],
+              [document.getElementById('{{ form.wine.id }}'),"Punaviini", "", true],
+              [document.getElementById('{{ form.allergies.id }}'),"", "", false],
+          ];
+
+          var optional_labels = [
+              document.querySelector('label[for="{{ form.drink.id }}"]'),
+              document.querySelector('label[for="{{ form.liquor.id }}"]'),
+              document.querySelector('label[for="{{ form.wine.id }}"]'),
+              document.querySelector('label[for="{{ form.allergies.id }}"]'),
+          ];
+
+          var is_required = selected_val === "Seminaari + sitsit"
+
+          optional_fields.forEach(function(field) {
+              if (is_required) {
+                  if (field[3]) {
+                      field[0].setAttribute('required', 'required')
+                      field[0].setAttribute('data-is-required', '')
+                  }
+                  field[0].value = field[2]
+                  field[0].style.display = 'block'
+              } else {
+                  if (field[3]) {
+                      field[0].removeAttribute('required')
+                      field[0].removeAttribute('data-is-required')
+                  }
+                  field[0].value = field[1]
+                  field[0].style.display = 'none'
+              }
+          });
+
+          optional_labels.forEach(function(label) {
+              if (is_required) {
+                  label.style.display = 'block'
+                  label.setAttribute('label-required', '')
+              } else {
+                  label.style.display = 'none'
+                  label.removeAttribute('label-required')
+
+              }
+          });
+      } /* optional_field_update() */
+
+      window.onload = optional_field_toggle
+      document.getElementById('{{ form.quota.id }}').addEventListener('change', optional_field_toggle)
+
+    </script>
+
+    {{ macros.form_field(form.drink) }}
+    {{ macros.form_field(form.liquor) }}
+    {{ macros.form_field(form.wine) }}
+    {{ macros.form_field(form.allergies) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
+
+{%- block participant_list -%}
+    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        <p>
+        {%- set participant = entry.get_required_participants()[0] -%}
+        {{ participant.firstname }} {{ participant.lastname }}
+
+        {% if is_in_reserve %}
+            {{ " (Varasijalla)" }}
+        {% endif %}
+        </p>
+    {%- endcall -%}
+{%- endblock -%}
