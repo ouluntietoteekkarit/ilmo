@@ -33,15 +33,14 @@ class _Controller(FormController):
             return ' '.join([
                 make_greet_line(recipient),
                 "\nOlet ilmoittautunut opetuskehitysseminaariin. Olet varasijalla.",
-                "Jos sitseille jää syystä tai toisesta vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
+                "Jos syystä tai toisesta vapaita paikkoja jää jäljelle, niin sinuun voidaan olla yhteydessä. ",
                 "\n\nJos tulee kysyttävää, voit olla sähköpostitse yhteydessä pepeministeri@otit.fi."
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
         else:
             return ' '.join([
                 make_greet_line(recipient),
-                "\nOlet ilmoittautunut opetuskehitysseminaariin. Sitsit järjestetään teekkaritalolla klo 18 alkaen"
-                "\nSitsien jatkoja varten mukaan OMPx2."
+                "\nOlet ilmoittautunut opetuskehitysseminaariin."
                 "\nJos tulee kysyttävää, voit olla sähköpostitse yhteydessä pepeministeri@otit.fi."
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
@@ -54,9 +53,6 @@ def _get_quotas() -> List[Quota]:
         Quota("Seminaari", 200, 0),
         Quota("Seminaari + sitsit", 50, 0),
     ]
-
-def _make_attribute_seating_preference(validators: Iterable = None):
-    return StringAttribute('seating_preference', 'Pyötäseuratoive', 'Pyötäseuratoive', 100, validators=validators)
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
 _DrinkEnum = make_enum_usual_sitsi_drink(_form_name)
@@ -73,7 +69,6 @@ participant_attributes = [
     make_attribute_usual_sitsi_liquor(_LiquorEnum),
     make_attribute_usual_sitsi_wine(_WineEnum),
     make_attribute_allergies(),
-    _make_attribute_seating_preference()
 ]
 
 optional_participant_attributes = participant_attributes
@@ -82,9 +77,9 @@ other_attributes = [
     make_attribute_name_consent(),
     make_attribute_privacy_consent("", validators=[InputRequired()])
 ]
-_types = make_types(participant_attributes, optional_participant_attributes, other_attributes, 1, 1, _form_name)
+_types = make_types(participant_attributes, [], other_attributes, 1, 1, _form_name)
 
-_event = Event('OKS 2024', datetime(2023, 2, 1, 12, 00, 00),
-               datetime(2024, 3, 15, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
+_event = Event('OKS 2024', datetime(2023, 3, 1, 12, 00, 00),
+               datetime(2024, 3, 9, 23, 59, 59), _get_quotas(), _types.asks_name_consent())
 _module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 

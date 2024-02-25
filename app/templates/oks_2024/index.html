@@ -12,16 +12,13 @@
 {%- endblock -%}
 
 {%- block event_info -%}
-    <p>SIK, OTiT, Blanko ja OLTO järjestävät Tieto- ja sähkötekniikan
-    tiedekunnan opetuksenkehittämisseminaarin (OKS) torstaina 21.3.
-    Yliopistolla (12:00-15:00) ja Proffasitsit Teekkaritalolla (18:00-).
-    <br/>Sitseille voi osallistua ainoastaan, jos osallistuu
-    seminaariin.
+    <p>SIK, OTiT, Blanko ja OLTO järjestävät Tieto- ja sähkötekniikan tiedekunnan opetuksenkehittämisseminaarin (OKS) torstaina 21.3. Yliopistolla (12:00-15:00) ja Proffasitsit Teekkaritalolla (18:00-).
+    <br/>Sitseille voi osallistua ainoastaan, jos osallistuu seminaariin.
     <br/>
     <br/><b>TL;DR:</b>
     <br/><b>Mitä:</b> Opetuksenkehittämisseminaari ja proffasitsit.
     <br/><b>Milloin:</b> 21.3. päivällä ja illalla
-    <br/><b>Miksi:</b> Opetushenkilökunnan kanssa pöhiseminen ja sitsaaminen on kivaa. ja opetuksen kehittäminen on tärkeää)
+    <br/><b>Miksi:</b> Opetushenkilökunnan kanssa pöhiseminen ja sitsaaminen on kivaa (ja opetuksen kehittäminen on tärkeää).
     <br/><b>Hinta:</b> ilmainen seminaariin osallistujille
     <br/><b>Pukukoodi:</b> päivällä vapaa, illalla cocktail
     <br/>
@@ -44,7 +41,6 @@
               [document.getElementById('{{ form.liquor.id }}'),"Alkoholillinen", "", true],
               [document.getElementById('{{ form.wine.id }}'),"Punaviini", "", true],
               [document.getElementById('{{ form.allergies.id }}'),"", "", false],
-              [document.getElementById('{{ form.seating_preference.id }}'),"", "", false],
           ];
 
           var optional_labels = [
@@ -52,7 +48,6 @@
               document.querySelector('label[for="{{ form.liquor.id }}"]'),
               document.querySelector('label[for="{{ form.wine.id }}"]'),
               document.querySelector('label[for="{{ form.allergies.id }}"]'),
-              document.querySelector('label[for="{{ form.seating_preference.id }}"]'),
           ];
 
           var is_required = selected_val === "Seminaari + sitsit"
@@ -96,7 +91,6 @@
     {{ macros.form_field(form.liquor) }}
     {{ macros.form_field(form.wine) }}
     {{ macros.form_field(form.allergies) }}
-    {{ macros.form_field(form.seating_preference) }}
 {% endmacro %}
 
 {%- block registration_form -%}
