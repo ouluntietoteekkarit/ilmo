@@ -2,6 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import List, Dict, Collection, Iterable, Type
+from wtforms.validators import InputRequired
 
 from app.email import make_greet_line
 from app.form_lib.form_controller import FormController
@@ -45,15 +46,15 @@ _form_name = make_form_name(__file__)
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
 
 participant_attributes = [
-    make_attribute_firstname(),
-    make_attribute_lastname(),
-    make_attribute_email(),
-    make_attribute_quota(_QuotaEnum),
+    make_attribute_firstname(validators=[InputRequired()]),
+    make_attribute_lastname(validators=[InputRequired()]),
+    make_attribute_email(validators=[InputRequired()]),
+    make_attribute_quota(_QuotaEnum, validators=[InputRequired()]),
 ]
 
 other_attributes = [
     make_attribute_name_consent(),
-    make_attribute_privacy_consent()
+    make_attribute_privacy_consent("", validators=[InputRequired()])
 ]
 
 _types = make_types(participant_attributes, [] , other_attributes, 1, 0, _form_name)
@@ -65,4 +66,6 @@ _event = Event('Titeenit',
                _types.asks_name_consent())
 
 _module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+
+
 
