@@ -1,0 +1,312 @@
+{#  This file was part of Flask-Bootstrap and was modified under the terms of
+ its BSD License. Copyright (c) 2013, Marc Brinkmann. All rights reserved. #}
+
+{% macro _render_errors(form_group_classes, form_type, horizontal_columns, errors) %}
+	{%- for error in errors -%}
+		{%- call _hz_form_wrap(form_group_classes, horizontal_columns, form_type, False) -%}
+			<div class="invalid-feedback d-block">{{ error }}</div>
+		{%- endcall -%}
+	{%- endfor -%}
+{%- endmacro -%}
+
+{% macro _field_errors(field, classes, extra_classes) %}
+	{%- if field.errors -%}
+		{{ field(class="%s %s is-invalid"|format(classes, extra_classes), **kwargs)|safe }}
+	{%- else -%}
+		{{ field(class="%s %s"|format(classes, extra_classes), **kwargs)|safe }}
+	{%- endif -%}
+{%- endmacro -%}
+
+{% macro _render_description_errors(form_group_classes, form_type, horizontal_columns, field) %}
+	{%- if field.errors -%}
+		{{ _render_errors(form_group_classes, form_type, horizontal_columns, field.errors) }}
+	{%- elif field.description -%}
+		{%- call _hz_form_wrap(form_group_classes, horizontal_columns, form_type, false) -%}
+			<small class="form-text text-muted">{{ field.description|safe }}</small>
+		{%- endcall -%}
+	{%- endif -%}
+{%- endmacro -%}
+
+{% macro _render_label(field, label_class) %}
+	{%- if field.flags.required -%}
+		{%- do kwargs.update({
+			'data-is-required': true,
+			'label-required': true
+		}) -%}
+	{%- endif -%}
+	{{ field.label(class=label_class, **kwargs)|safe }}
+{% endmacro %}
+
+{% macro render_hidden_errors(form_group_classes, form_type, horizontal_columns, form) %}
+	{%- if form.errors -%}
+		{%- for fieldname, errors in form.errors.items() -%}
+			{%- if bootstrap_is_hidden_field(form[fieldname]) -%}
+				{{ _render_errors(form_group_classes, form_type, horizontal_columns, errors) }}
+			{%- endif -%}
+		{%- endfor -%}
+	{%- endif -%}
+{%- endmacro -%}
+
+{%- macro _hz_form_wrap(form_group_classes, horizontal_columns, form_type, add_group=False) -%}
+	{%- if form_type == "horizontal" -%}
+		{%- if add_group -%}<div class="{{ form_group_classes }} row">{%- endif -%}
+			<div class="offset-{{ horizontal_columns[0] }}-{{ horizontal_columns[1] }} col-{{ horizontal_columns[0] }}-{{ horizontal_columns[2] }}">
+				{{ caller() }}
+			</div>
+		{%- if add_group -%}</div>{%- endif -%}
+	{%- else -%}
+		{{ caller() }}
+	{%- endif -%}
+{%- endmacro -%}
+
+{%- macro _render_checkbox(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) -%}
+	{%- set field_kwargs = kwargs -%}
+	{%- call _hz_form_wrap(form_group_classes, horizontal_columns, form_type, True) -%}
+		{%- if field.type == 'SwitchField' -%}
+			{%- do field_kwargs.update({'role': 'switch'}) -%}
+		{%- endif -%}
+		<div class="{{ form_group_classes }} form-check
+		{%- if field.type == 'SwitchField' -%} form-switch{%- endif -%}
+		{%- if form_type == "inline" -%} form-check-inline{%- endif -%}">
+			{{ _field_errors(field, "form-check-input", extra_classes, **field_kwargs) }}
+			{{ _render_label(field, "form-check-label", for=field.id) }}
+			{{ _render_description_errors(form_group_classes, form_type, horizontal_columns, field) }}
+		</div>
+	{%- endcall -%}
+{%- endmacro -%}
+
+{% macro _render_radiofield(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
+	{# TODO: Most of this crap should be done inside widgets #}
+	{% set label_classes, input_div_classes = "form-label", "form-check" %}
+	{% set field_wrap_open, field_wrap_close = "", "" %}
+
+	{%- if form_type == 'inline' -%}
+		{%- set label_classes, input_div_classes = " visually-hidden", input_div_classes ~ " form-check-inline" -%}
+	{%- elif form_type == 'horizontal' -%}
+		{%- set label_classes = "col-form-label col-%s-%s"|format(horizontal_columns[0], horizontal_columns[1]) -%}
+		{%- set form_group_classes = form_group_classes ~ " row" -%}
+		{%- set field_wrap_open -%}<div class="col-{{ horizontal_columns[0] }}-{{ horizontal_columns[2] }}">{%- endset -%}
+		{%- set field_wrap_close -%}</div>{%- endset -%}
+	{%- endif -%}
+
+	<div class="{{ form_group_classes }}">
+		{{ _render_label(field, label_classes) }}
+		{{ field_wrap_open }}
+		{%- for item in field -%}
+			<div class="{{ input_div_classes }}">
+				{{ item(class="form-check-input")|safe }}
+				{{ item.label(class="form-check-label", for=item.id)|safe }}
+			</div>
+		{%- endfor -%}
+		{{ field_wrap_close }}
+	</div>
+	{{ _render_description_errors(form_group_classes, form_type, horizontal_columns, field) }}
+{%- endmacro -%}
+
+{% macro _render_submitfield(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
+	{# deal with jinja scoping issues? #}
+	{%- set field_kwargs = kwargs -%}
+	{# note: same issue as above - should check widget, not field type #}
+	{%- call _hz_form_wrap(form_group_classes, horizontal_columns, form_type, True) -%}
+		{%- set default_button_style = button_style or config.BOOTSTRAP_BTN_STYLE -%}
+		{%- set default_button_size = button_size or config.BOOTSTRAP_BTN_SIZE -%}
+		{{ field(class='btn btn-%s btn-%s%s' % (button_map.get(field.name, default_button_style), default_button_size, extra_classes), **field_kwargs) }}
+	{%- endcall -%}
+{%- endmacro -%}
+
+{% macro _render_formfield(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
+	{# note: FormFields are tricky to get right and complex setups requiring
+   these are probably beyond the scope of what this macro tries to do.
+   the code below ensures that things don't break horribly if we run into
+   one, but does not try too hard to get things pretty. #}
+	<fieldset>
+		<legend>{{ _render_label(field, "form-label") }}</legend>
+		{%- for subfield in field -%}
+			{%- if not bootstrap_is_hidden_field(subfield) -%}
+				{{ render_field(subfield, form_type=form_type, horizontal_columns=horizontal_columns, button_map=button_map) }}
+			{%- endif -%}
+		{%- endfor -%}
+	</fieldset>
+{%- endmacro -%}
+
+{% macro _render_inline_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
+	{{ _render_label(field, "visually-hidden") }}
+	{%- if field.type in ['DecimalRangeField', 'IntegerRangeField'] %}
+		{{ _field_errors(field, "form-range", extra_classes, **kwargs) }}
+	{%- elif field.type == 'SelectField' -%}
+		{{ _field_errors(field, "form-select mb-2 mr-sm-2 mb-sm-0", extra_classes, **kwargs) }}
+	{%- else -%}
+		{{ _field_errors(field, "form-control mb-2 mr-sm-2 mb-sm-0", extra_classes, **kwargs) }}
+	{%- endif %}
+{%- endmacro -%}
+
+{% macro _render_horizontal_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
+	{{ _render_label(field, "col-form-label" + (" col-%s-%s" % horizontal_columns[0:2])) }}
+	<div class="col-{{ horizontal_columns[0] }}-{{ horizontal_columns[2] }}">
+	{%- if field.type in ['DecimalRangeField', 'IntegerRangeField'] %}
+		{{ _field_errors(field, "form-range", extra_classes, **kwargs) }}
+	{%- elif field.type == 'SelectField' -%}
+		{{ _field_errors(field, "form-select", extra_classes, **kawrgs) }}
+	{%- else -%}
+		{{ _field_errors(field, "form-control", extra_classes, **kwargs) }}
+	{%- endif %}
+	</div>
+	{{ _render_description_errors(form_group_classes, form_type, horizontal_columns, field) }}
+{%- endmacro -%}
+
+{% macro _render_basic_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) %}
+	{{ _render_label(field, "form-label") }}
+	{%- if field.type in ['DecimalRangeField', 'IntegerRangeField'] -%}
+		{{ _field_errors(field, "form-range", extra_classes, **kwargs) }}
+	{%- elif field.type == 'SelectField' -%}
+		{{ _field_errors(field, "form-select", extra_classes, **kwargs) }}
+	{%- else -%}
+		{{ _field_errors(field, "form-control", extra_classes, **kwargs) }}
+	{%- endif %}
+	{{ _render_description_errors(form_group_classes, form_type, horizontal_columns, field) }}
+{%- endmacro -%}
+
+{% macro render_field(field,
+					form_type="basic",
+					horizontal_columns=('lg', 2, 10),
+					button_map={},
+					button_style='',
+					button_size='',
+					form_group_classes='') %}
+
+	{%- set form_group_classes = form_group_classes or config.BOOTSTRAP_FORM_GROUP_CLASSES -%}
+	{# combine render_kw class or class/class_ argument with Bootstrap classes #}
+	{%- set render_kw_class = ' ' + field.render_kw.class if field.render_kw.class else '' -%}
+	{%- set class = kwargs.pop('class', '') or kwargs.pop('class_', '') -%}
+	{%- if class -%}
+		{# override render_kw class when class/class_ presents as keyword argument #}
+		{% set render_kw_class = '' %}
+		{% set class = ' ' + class %}
+	{%- endif -%}
+	{%- set extra_classes = render_kw_class + class -%}
+
+	{%- if field.widget.input_type == 'checkbox' -%}      {{ _render_checkbox(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) }}
+	{%- elif field.type == 'RadioField' -%}               {{ _render_radiofield(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) }}
+	{%- elif field.type == 'SubmitField' -%}              {{ _render_submitfield(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) }}
+	{%- elif field.type == 'CSRFTokenField' -%}           {{ field()|safe }}
+	{%- elif field.type == 'HiddenField' -%}              {{ field()|safe }}
+	{%- elif field.type in ['FormField', 'FieldList'] -%} {{ _render_formfield(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) }}
+	{%- else -%}
+		<div class="{{ form_group_classes }}{%- if form_type == "horizontal" %} row{% endif -%}">
+			{%- if form_type == "inline" -%}              {{ _render_inline_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) }}
+			{%- elif form_type == "horizontal" -%}        {{ _render_horizontal_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) }}
+			{%- else -%}                                  {{ _render_basic_field(field, form_type, horizontal_columns, button_map, button_style, button_size, form_group_classes, extra_classes) }}
+			{%- endif -%}
+		</div>
+	{%- endif -%}
+{%- endmacro -%}
+
+{# valid form types are "basic", "inline" and "horizontal" #}
+{% macro render_form(form,
+					action="",
+					method="post",
+					extra_classes=None,
+					role="form",
+					form_type="basic",
+					horizontal_columns=('lg', 2, 10),
+					enctype=None,
+					button_map={},
+					button_style="",
+					button_size="",
+					id="",
+					novalidate=False,
+					render_kw={},
+					form_group_classes='',
+					form_inline_classes='') %}
+	{#-
+action="" is what we want, from http://www.ietf.org/rfc/rfc2396.txt:
+
+4.2. Same-document References
+
+   A URI reference that does not contain a URI is a reference to the
+   current document.  In other words, an empty URI reference within a
+   document is interpreted as a reference to the start of that document,
+   and a reference containing only a fragment identifier is a reference
+   to the identified fragment of that document.  Traversal of such a
+   reference should not result in an additional retrieval action.
+   However, if the URI reference occurs in a context that is always
+   intended to result in a new request, as in the case of HTML's FORM
+   element, then an empty URI reference represents the base URI of the
+   current document and should be replaced by that URI when transformed
+   into a request.
+
+ -#}
+	{#- if any file fields are inside the form and enctype is automatic, adjust
+	if file fields are found. could really use the equalto test of jinja2
+	here, but latter is not available until 2.8
+
+	warning: the code below is guaranteed to make you cry =(
+#}
+	{%- set form_inline_classes = form_inline_classes or config.BOOTSTRAP_FORM_INLINE_CLASSES %}
+	{%- set _enctype = [] %}
+	{%- if enctype is none -%}
+		{%- for field in form %}
+			{%- if field.type in ['FileField', 'MultipleFileField'] %}
+				{#- for loops come with a fairly watertight scope, so this list-hack is
+		  used to be able to set values outside of it #}
+				{%- do _enctype.append('multipart/form-data') -%}
+			{%- endif %}
+		{%- endfor %}
+	{%- else %}
+		{% do _enctype.append(enctype) %}
+	{%- endif %}
+	{%- if form_type == "inline" %}{% set form_group_classes = 'col-12' %}{%- endif %}
+	<form{%- if action != None %} action="{{ action }}"{% endif -%}
+			{%- if id %} id="{{ id }}"{% endif -%}
+			{%- if method %} method="{{ method }}"{%- endif -%}
+			class="form
+{%- if extra_classes %} {{ extra_classes }}{% endif -%}{%- if form_type == "inline" %} {{ form_inline_classes }}{% endif -%}"
+			{%- if _enctype[0] %} enctype="{{ _enctype[0] }}"{% endif -%}
+			{%- if role %} role="{{ role }}"{% endif -%}
+			{%- if novalidate %} novalidate{% endif -%}
+			{%- if render_kw %} {{ render_kw|xmlattr }}{% endif -%}>
+		{{ form.hidden_tag() }}
+		{{ render_hidden_errors(form_group_classes, form_type, horizontal_columns, form) }}
+		{%- for field in form %}
+			{% if not bootstrap_is_hidden_field(field) -%}
+				{{ render_field(field,
+					form_type=form_type,
+					horizontal_columns=horizontal_columns,
+					button_map=button_map,
+					button_style=button_style,
+					button_size=button_size,
+					form_group_classes=form_group_classes) }}
+			{%- endif %}
+		{%- endfor %}
+	</form>
+{%- endmacro %}
+
+{% macro render_form_row(fields,
+	row_class='row',
+	col_class_default='col',
+	col_map={},
+	button_map={},
+	button_style='',
+	button_size='',
+	form_group_classes='',
+	form_type='basic',
+	horizontal_columns=('lg', 2, 10)) %}
+<div class="{{ row_class }}">
+  {% for field in fields %}
+	{% if field.name in col_map %}
+	  {% set col_class = col_map[field.name] %}
+	{%- else -%}
+	  {% set col_class = col_class_default %}
+	{%- endif -%}
+	<div class="{{ col_class }}">
+	  {{ render_field(field,
+		  button_map=button_map,
+		  button_style=button_style,
+		  button_size=button_size,
+		  form_group_classes=form_group_classes,
+		  form_type=form_type,
+		  horizontal_columns=horizontal_columns) }}
+	</div>
+  {% endfor %}
+</div>
+{%- endmacro -%}

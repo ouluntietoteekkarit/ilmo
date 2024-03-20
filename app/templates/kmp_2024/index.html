@@ -1,0 +1,39 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+<style>
+  body {
+      background-image: url("{{ url_for('static', filename='img/bus3_.jpg') }}");
+      background-repeat: no-repeat;
+      background-size: 100%;
+  }
+
+  div.container {
+      max-width: 900px;
+      background-color: white;
+      opacity: 0.9;
+  }
+</style>
+{%- endblock -%}
+
+{%- block event_info -%}
+{% endblock %}
+
+{%- block registration_form -%}
+{%- call macros.registration_form_routine(form) -%}
+{% set p = form.get_required_participants()[0] %}
+<h4>Henkilötiedot</h4>
+{{ macros.form_field(p.firstname) }}
+{{ macros.form_field(p.lastname) }}
+{{ macros.form_field(p.email) }}
+{{ macros.form_field(p.phone_number) }}
+{{ macros.form_field(p.telegram) }}
+{{ macros.form_field(p.quota) }}
+{{ macros.form_field(p.departure_location) }}
+
+{% set other = form.get_other_attributes() %}
+{{ macros.form_field(other.show_name_consent) }}
+{{ macros.form_field(other.privacy_consent) }}
+{%- endcall -%}
+{% endblock %}
