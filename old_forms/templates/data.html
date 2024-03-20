@@ -1,0 +1,66 @@
+{% extends "header.html" %}
+{% import "macros.html" as macros %}
+
+
+{% macro participant_table_header(table_info) %}
+    <thead>
+    <tr>
+        <th>#</th>
+        {%- for header in table_info.make_header_row() -%}
+            <th>{{ header }}</th>
+        {%- endfor -%}
+    </tr>
+    </thead>
+{% endmacro %}
+
+
+{% macro participant_table_row(entry, table_info) %}
+    {%- for cell in table_info.model_to_row(entry) -%}
+        <td>{{ cell }}</td>
+    {%- endfor -%}
+{% endmacro %}
+
+
+{% macro participant_table_rows(entries, event) %}
+    {%- for entry in entries -%}
+        <tr>{{- caller(entry, loop.index) -}}</tr>
+    {%- endfor -%}
+{% endmacro %}
+
+
+{% macro participant_table_body(participants, event, table_info) %}
+    <tbody>
+        {%- call(entry, index) participant_table_rows(participants, event) -%}
+            {% if entry.get_is_in_reserve() %}
+                <td>{{ index }}. (Varasijalla)</td>
+            {% else %}
+                <td>{{ index }}.</td>
+            {% endif %}
+            {{ participant_table_row(entry, table_info) }}
+        {%- endcall -%}
+    </tbody>
+{% endmacro %}
+
+
+{% macro participant_table(entries, event, table_info) %}
+    <table class="table" rules="all">
+        {{ participant_table_header(table_info) }}
+        {{ participant_table_body(entries, event, table_info) }}
+    </table>
+{% endmacro %}
+
+
+{% block content %}
+    <div class="container p-3">
+        <h1>{{ event.get_title() }}</h1>
+        <h3>Osallistuja data</h3>
+
+        <a href="{{ url_for(module_info.get_endpoint_get_data_csv()) }}">
+            <button class="btn btn-info">Lataa data CSV tiedostona</button>
+        </a>
+    </div>
+    <div class="p-3">
+        {{ macros.participant_count(registrations, event) }}
+        {{ participant_table(registrations.get_entries(), event, table_info) }}
+    </div>
+{% endblock %}

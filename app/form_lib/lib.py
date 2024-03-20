@@ -41,6 +41,11 @@ class BaseParticipant(BaseFormComponent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def is_filled(self) -> bool:
+        return bool(self.get_firstname() and self.get_lastname())
+
+"""
+    I don't think we actually need these
     def get_firstname(self) -> str:
         raise Exception("Not implemented")
 
@@ -56,18 +61,13 @@ class BaseParticipant(BaseFormComponent):
     def get_phone_number(self) -> str:
         raise Exception("Not implemented. Form likely does not ask for this attribute.")
 
-    def get_telegram(self) -> str:
-        raise Exception("Not implemented. Form likely does not ask for this attribute.")
-
     def get_departure_location(self) -> str:
         raise Exception("Not implemented. Form likely does not ask for this attribute.")
 
     def get_allergies(self) -> str:
         raise Exception("Not implemented. Form likely does not ask for this attribute.")
 
-    def is_filled(self) -> bool:
-        return bool(self.get_firstname() and self.get_lastname())
-
+"""
 
 class BaseOtherAttributes(BaseFormComponent):
     """Interface-like/mixin class for form's attribute models."""
