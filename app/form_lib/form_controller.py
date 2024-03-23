@@ -537,7 +537,18 @@ def _export_to_csv(form_name: str,
     csv_path = export_to_csv(form_name, table_info, entries)
     (folder, file) = os.path.split(csv_path)
     try:
-        return send_from_directory(directory=folder, filename=file, as_attachment=True)
+        return send_from_directory(directory=folder, path=file, as_attachment=True)
     except FileNotFoundError as e:
         print(e)
         abort(404)
+    except TypeError as e:
+        try:
+            """
+            -24, hpeteri:
+            filename is renamed to path in some flask
+            change. I know that this is a stupid way to fix this...
+            """
+            return send_from_directory(directory=folder, filename=file, as_attachment=True)
+        except FileNotFoundError as e:
+            print(e)
+            abort(404)

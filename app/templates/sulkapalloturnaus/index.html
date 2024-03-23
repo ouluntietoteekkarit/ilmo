@@ -1,0 +1,57 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+<style>
+  body {
+      background-image: url("{{ url_for('static', filename='img/badminton.jpg') }}");
+      background-repeat: no-repeat;
+      background-size: 100%;
+  }
+
+  div.container {
+      max-width: 900px;
+      background-color: white;
+      opacity: 0.9;
+  }
+</style>
+{%- endblock -%}
+
+{%- block event_info -%}
+<p>Killan historiallinen sulkapalloturnaus:
+Oulun normaalikoulu, Koskela (Tullimiehentie 8)
+8.4.2024 klo. 17->
+Lähtökohtaisesti pelataan nelinpelejä, mutta jos ilmoittautuminen on vähäistä, voidaan muuttaa pari peleihin.
+  Mukaan ei tarvitse muuta kuin sisäpelikengät (ja liikunta vaatteet tietty). Jos maila löytyy, on se todennäköisesti parempi kuin koululta lainattu, mutta koulun mailat ovat myös käytössä.</p>
+</br>
+<p> Jos tulee kysyttävää, voit olla yhteydessä urheiluministeri@otit.fi tai tg:ssä @jukeboxxxi</p>
+{% endblock %}
+
+{%- block registration_form -%}
+{%- call macros.registration_form_routine(form) -%}
+{% set p = form.get_required_participants()[0] %}
+<h4>Henkilötiedot</h4>
+{{ macros.form_field(p.firstname) }}
+{{ macros.form_field(p.lastname) }}
+{{ macros.form_field(p.irc_name) }}
+{{ macros.form_field(p.email) }}
+{{ macros.form_field(p.quota) }}
+
+
+{%- call macros.registration_optional_participant() -%}
+<legend>Parin tiedot</legend>
+{% set p = form.get_optional_participants()[0] %}
+{{ macros.form_field(p.firstname) }}
+{{ macros.form_field(p.lastname) }}
+{{ macros.form_field(p.irc_name) }}
+{{ macros.form_field(p.email) }}
+{{ macros.form_field(p.quota) }}
+{%- endcall -%}
+
+{% set other = form.get_other_attributes() %}
+{{ macros.form_field(other.show_name_consent) }}
+{{ macros.form_field(other.privacy_consent) }}
+{%- endcall -%}
+{% endblock %}
+
+
