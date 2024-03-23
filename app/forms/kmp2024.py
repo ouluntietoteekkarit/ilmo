@@ -3,6 +3,8 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Dict, Collection, Iterable, Type
 
+from wtforms.validators import InputRequired, Email
+
 from app.email import make_greet_line
 from app.form_lib.form_controller import FormController
 from app.form_lib.quota import Quota
@@ -24,10 +26,10 @@ def get_module_info() -> ModuleInfo:
 
 _form_name = make_form_name(__file__)
 
-_event_name = "Testi :)" #""OTiT KMP"
+_event_name = "KMP -24"
 _is_enabled = True
-_start_date = datetime(2024, 2, 25, 13, 37, 00)
-_end_date   = datetime(2025, 2, 25, 13, 37, 00)
+_start_date = datetime(2024, 3, 25, 13, 37, 00)
+_end_date   = datetime(2025, 3, 31, 23, 59, 00)
 
 class _Controller(FormController):
 
@@ -60,7 +62,6 @@ class _Controller(FormController):
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
             ])
 
-        print(result)
         return result
 
 def _get_quotas() -> List[Quota]:
@@ -79,18 +80,18 @@ _QuotaEnum = choices_to_enum(_form_name,
                              get_quota_choices(_get_quotas()))
 
 participant_attributes = [
-    make_attribute_firstname(),
-    make_attribute_lastname(),
-    make_attribute_phone_number(),
-    make_attribute_telegram(),
-    make_attribute_email(),
-    make_attribute_departure_location(_DepartureEnum),
-    make_attribute_quota(_QuotaEnum),
+    make_attribute_firstname(validators=[InputRequired()]),
+    make_attribute_lastname(validators=[InputRequired()]),
+    make_attribute_phone_number(validators=[InputRequired()]),
+    make_attribute_telegram(validators=[InputRequired()]),
+    make_attribute_email(validators=[InputRequired(), Email()]),
+    make_attribute_departure_location(_DepartureEnum, validators=[InputRequired()]),
+    make_attribute_quota(_QuotaEnum, validators=[InputRequired()]),
 ]
 
 other_attributes = [
     make_attribute_name_consent(),
-    make_attribute_privacy_consent()
+    make_attribute_privacy_consent(validators=[InputRequired()])
 ]
 
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
