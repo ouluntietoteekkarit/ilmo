@@ -28,16 +28,17 @@
 
     <h4>tl;dr</h4>
     <ul>
-        <li>Mitä: fuksisitsit</li>
-        <li>Milloin: Tiistai 17.9. klo 18.</li>
-        <li>Missä: Walhallassa</li>
-        <li>Pukukoodi: cocktail + teekkarilakki. Tummat farkut käy myös</li>
+        <li>Mitä/What: fuksisitsit / freshmansittning</li>
+        <li>Milloin/When: Tiistai 17.9. klo 18 / Tuesday 17.9. at 18</li>
+        <li>Missä/Where: Walhallassa / at Walhalla (Jaalakuja 1)</li>
+        <li>Pukukoodi/Dresscode: cocktail + teekkarilakki. Tummat farkut käy myös / cocktail + teekkaricap. Black jeans are also okay</li>
     </ul>
+
 {%- endblock -%}
 
 {% macro participant_form(form) %}
     {{ macros.form_field(form.firstname) }}
-    {{ macros.form_field(form.lastname) }}
+{{ macros.form_field(form.lastname) }}
     {{ macros.form_field(form.email) }}
     {{ macros.form_field(form.quota) }}
     {{ macros.form_field(form.drink) }}
