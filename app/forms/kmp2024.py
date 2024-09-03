@@ -27,7 +27,7 @@ def get_module_info() -> ModuleInfo:
 _form_name = make_form_name(__file__)
 
 _event_name = "KMP -24"
-_is_enabled = True
+_is_enabled = False
 _start_date = datetime(2024, 3, 25, 13, 37, 00)
 _end_date   = datetime(2025, 3, 31, 23, 59, 00)
 
