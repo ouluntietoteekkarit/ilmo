@@ -34,6 +34,8 @@ csrf = CSRFProtect()
 server = Flask(__name__)
 Bootstrap(server)
 server.config.from_object(Config)
+app_context = server.app_context()
+app_context.push()
 
 db = SQLAlchemy(server)
 migrate = Migrate(server, db)
