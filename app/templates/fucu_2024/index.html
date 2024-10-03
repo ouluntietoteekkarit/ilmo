@@ -1,0 +1,105 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles -%}
+<style>
+  body {
+      background-image: url("{{ url_for('static',filename='img/bus.jpg') }}");
+      background-position: center;
+      background-size: 150%;
+      background-repeat: span;
+  }
+
+  div.container.p-3 {
+      max-width: 800px;
+      background-color: white;
+      opacity: 0.9;
+  }
+</style>
+{%- endblock -%}
+
+{%- block event_info -%}
+<p>
+<h2>Suomeksi</h2>
+Parin viikon päästä perjantaina 25.10. OTiT lähtee reissuun kohteeseen X (kohde selviää reissaajille matkalla) fuksicursion eli tuttavallisemmin fucun merkeissä.
+
+<br/>
+<br/>
+Uteliaimmat varmaankin ihmettelevät, että mikä se fucu sitten on? Fucu on ensimmäisen vuoden opiskelijoille tarkoitettu excursio eli opiskelijareissu (usein) ulkopaikkakunnalle. Fucun tarkoituksena onkin tutustuttaa tähän opiskelijapiireistä tuttuun excukulttuuriin.
+
+<br/>
+<br/>
+Tänä vuonna fucu lähtee perjantaina 25.10. klo 8.00 yliopiston X-ovelta ja palaamme takaisin samaiseen pisteeseen lauantai-iltaan mennessä. Matkan varrella käymme myös tutustumassa muutamaan alamme yritykseen. Matkalle kannattaa varata reissumielen lisäksi lämpöistä vaatetta, jotta mahdolliset yllätykset säässä ei pistä ketuttamaan. Illalla kuitenkin lämpeää sauna eli myös OPMx2 mukaan on kannattavaa. Nappaa mukaan myös majoituskamppeet, sillä yövymme kohteessa lattiamajoituksessa!
+
+<br/>
+<br/>
+Fukseille reissulta on mahdollista tienata kokonaiset 4 fuksipistettä: kolme excursiosta ja yksi fuksilakin käytöstä! Muistakaa siis ottaa teekkari- tai fuksilakit mukaan. Lakit laitetaan kuitenkin päähän vasta Oulun ulkopuolella!
+
+<br/>
+<br/>
+Mitähän tällainen matka sitten kustantaa? Fukseille 5 euroa eli pieni ja mitätön summa kahden päivän seikkailusta! Kaikille muille reissu maksaa 25 euroa.
+
+<b>Ilmoittautuminen on sitova</b>
+<br/>
+<br/>
+<h3>Maksuohjeet:</h3>
+<ul>
+  <li>Tilinumero: FI03 4744 3020 0116 87</li>
+  <li>Saaja: Oulun Tietoteekkarit ry</li>
+  <li>Summa: Fuksit 5€, Muut 25€ </li>
+  <li>Viesti: nimi + Fucu</li>
+  <li>Eräpäivä: 15.11.2024</li>
+</ul>
+<br/>
+<h2>In English</h2>
+In couple of weeks on Friday 25.10. OTiT will travel to destination X (travellers will find out later what destination) for our very own freshman excursion or so called “fucu”.
+
+<br/>
+<br/>
+Some of you might be wondering what is fucu? Fucu is and excursion ergo a student trip (often) to another city directed for first-year students. The main idea is to give our freshmen an idea what is our excursion culture.
+
+<br/>
+<br/>
+This year fucu heads off on Friday 25.10. at 8.00 from University X-door and we will return to the same spot on Saturday evening. We will be acquainted with a couple of our field’s companies during this trip. You should take some warm clothes with you just so weather doesn’t surprise you. In the evening there will be a sauna so grab your towel and drinks with you. You should also pack your sleeping bag and pad because we will spend the night in floor accommodations.
+
+<br/>
+<br/>
+For freshmen it is possible to earn 4 freshman points to your passes: three from attending an excursion and one for using your freshman cap! So, remember to pack your teekkari- or freshman caps. But remember, the caps can be put on only once we’re outside of Oulu!
+
+<br/>
+<br/>
+So what will it cost to go on this type of trip? For freshmen it’s only 5 euros, so a very small sum for a two-day-adventure! For everyone else it’s 25 euros.
+
+<br/>
+<br/>
+<b>Registration is binding</b>
+
+<br/>
+<br/>
+<h3>Payment Info:</h3>
+<ul>
+  <li>Account number: FI03 4744 3020 0116 87</li>
+  <li>Recipient: Oulun Tietoteekkarit ry</li>
+  <li>Amount: Freshmen 5€, Others 25€ </li>
+  <li>Message: name + Fucu</li>
+  <li>Due Date: 15.11.2024</li>
+</ul>
+</p>
+{%- endblock -%}
+
+{%- block registration_form -%}
+{% call macros.registration_form_routine(form) %}
+{% set p = form.get_required_participants()[0] %}
+{{ macros.form_field(p.firstname) }}
+{{ macros.form_field(p.lastname) }}
+{{ macros.form_field(p.email) }}
+{{ macros.form_field(p.phone_number) }}
+{{ macros.form_field(p.telegram) }}
+{{ macros.form_field(p.departure_location) }}
+{{ macros.form_field(p.quota) }}
+
+{% set other = form.get_other_attributes() %}
+{{ macros.form_field(other.show_name_consent) }}
+{{ macros.form_field(other.privacy_consent) }}
+{%- endcall -%}
+{%- endblock -%}

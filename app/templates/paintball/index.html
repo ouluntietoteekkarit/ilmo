@@ -1,0 +1,45 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+<style>
+  body {
+      background-image: url("{{ url_for('static', filename='img/mib_paintball.jpg') }}");
+      background-repeat: no-repeat;
+      background-size: 100%;
+  }
+
+  div.container {
+      max-width: 900px;
+      background-color: white;
+      opacity: 0.9;
+  }
+</style>
+{%- endblock -%}
+
+{%- block event_info -%}
+<p>Be prepared to pay 30€ at the venue. The package includes a semi-automatic marker (gun), a 200-round magazine, air pressure, a mask with a dual lens, camouflage overalls, gloves and 500 balls. The game will take about 2 hours.
+
+<ul>
+  <li><b>Time:</b> 19.10.2024 at 14.00</li>
+  <li><b>Place:</b> Oulu Action Park – Rusko</li>
+  <li><b>Price:</b> 30€ (paid at the venue)</li>
+</ul>
+<b>Registration is binding</b>
+</p>
+{% endblock %}
+
+{%- block registration_form -%}
+{%- call macros.registration_form_routine(form) -%}
+{% set p = form.get_required_participants()[0] %}
+<h4>Henkilötiedot</h4>
+{{ macros.form_field(p.firstname) }}
+{{ macros.form_field(p.lastname) }}
+{{ macros.form_field(p.email) }}
+{{ macros.form_field(p.quota) }}
+
+{% set other = form.get_other_attributes() %}
+{{ macros.form_field(other.show_name_consent) }}
+{{ macros.form_field(other.privacy_consent) }}
+{%- endcall -%}
+{% endblock %}
