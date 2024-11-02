@@ -45,8 +45,8 @@ class _Controller(FormController):
         if reserve:
             result = ' '.join([
                 make_greet_line(recipient),
-                "\nOlet ilmoittautunut Fragment LAN -tapahtumaan. Olet varasijalla. ",
-                "Jos KMP:lle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
+                "\nOlet ilmoittautunut Fragment LAN -tapahtumaan. Konepaikkavarauksesi on varasijalla. ",
+                "Ylimääräisten konepaikkojen vapautuessa sinuun voidaan olla yhteydessä sähköpostitse. ",
                 "\n\nTähän sähköpostiin ei voi vastata."
             ])
         else:
@@ -55,7 +55,8 @@ class _Controller(FormController):
                 "\nOlet varannut konepaikan Fragment LAN -tapahtumaan. Tässä vielä syöttämäsi tiedot: ",
                 "\n\nNimi: ", firstname, lastname,
                 "\nSähköposti: ", email,
-                "\n\nJos tulee kysyttävää, voit olla yhteydessä sähköpostitse taru@otit.fi, tai Telegramissa @AKoponen."
+                "\n\nMuista seurata tapahtuman nettisivuja (fragmentlan.fi) sekä liittyä tapahtuman viralliselle Discord-palvelimelle (fragmentlan.fi/discord)."
+                "\nJos tulee kysyttävää, voit olla yhteydessä Discord-palvelimella, sähköpostitse taru@otit.fi tai Telegramissa @AKoponen."
                 "\n\nTähän sähköpostiin ei voi vastata."
             ])
 
