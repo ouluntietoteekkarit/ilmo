@@ -7,6 +7,8 @@ GUILD_PROSE = 'PROSE'
 GUILD_OPTIEM = 'OPTIEM'
 GUILD_ARK = 'ARK'
 GUILD_COMMUNICA = 'COMMUNICA'
+GUILD_OLTO = 'OLTO'
+GUILD_BLANKO = 'BLANKO'
 
 class Guild(object):
 
@@ -25,5 +27,6 @@ def get_all_guilds():
         Guild(GUILD_KONE),
         Guild(GUILD_PROSE),
         Guild(GUILD_OPTIEM),
-        Guild(GUILD_ARK)
+        Guild(GUILD_ARK),
+        Guild(GUILD_OLTO)
     ]

@@ -1,7 +1,7 @@
 {% import "better_wtf.html" as wtf %}
 
 {%- macro format_datetime(datetime) -%}
-	{{ datetime.strftime('%d.%m.%Y %H:%M') }}
+	{{ datetime.strftime('%d.%m.%Y klo %H:%M') }}
 {%- endmacro -%}
 
 {%- macro registration_form_routine(form) -%}

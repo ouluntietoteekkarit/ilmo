@@ -13,11 +13,12 @@ class Event(object):
 
     def __init__(self, title: str, start_time: datetime,
                  end_time: datetime, quotas: Iterable[Quota],
-                 list_participant_names: bool):
+                 list_participant_names: bool, hide_title=False):
         self._title = title
         self._start_time = start_time
         self._end_time = end_time
         self._list_participant_names = list_participant_names
+        self._hide_title = hide_title
         self._participant_limit = 0
         self._max_participant_limit = 0
         self._quotas = {}
@@ -28,6 +29,9 @@ class Event(object):
 
     def get_title(self) -> str:
         return self._title
+
+    def hide_title(self) -> bool:
+        return self._hide_title
 
     def get_registration_start_time(self) -> datetime:
         return self._start_time

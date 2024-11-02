@@ -1,57 +1,78 @@
 {%- extends "form.html" -%}
 {%- import "macros.html" as macros -%}
 
-{%- block extra_styles-%}
-<style>
-  body {
-      background-image: url("{{ url_for('static', filename='img/bus3_.jpg') }}");
-      background-repeat: no-repeat;
-      background-size: 100%;
-  }
+{%- block extra_styles -%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/fragment_bg.webp') }}");
+            background-size: cover;
+        }
 
-  div.container {
-      max-width: 900px;
-      background-color: white;
-      opacity: 0.9;
-  }
-</style>
+        div.container {
+            max-width: 900px;
+            background-color: var(--bs-body-bg);
+            opacity: 0.975;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+
+
+    </style>
 {%- endblock -%}
 
 {%- block event_info -%}
-<p>Legendaarinen Fragment LAN -tapahtuma tekee paluun OTiT:in, SIK:in, Blanko:n ja OLTO:n toimesta!
-Lanit järjestetään viikonloppuna Oulun yliopistolla 15.11.2024 - 17.11.2024. Osallistumismaksu on 7€, joka kattaa yhden pistokkeen tapahtumapaikalla (oma jatkojohto mukaan) ja virallisen haalarimerkin</p>
-<br/>
-Tapahtuma on suunnattu Tieto- ja sähkötekniikan tutkinto-opiskelijoille.
-<br/>
-<b>Ilmoittautuminen on sitova</b>
-<br/>
-<h3>Maksuohjeet:</h3>
-<ul>
-  <li>Tilinumero: FI03 4744 3020 0116 87</li>
-  <li>Saaja: Oulun Tietoteekkarit ry</li>
-  <li>Summa: 7€ </li>
-  <li>Viesti: Oma nimi + Fragment</li>
-  <li>Eräpäivä: 15.11.2024</li>
-</ul>
+    <img src="{{ url_for('static', filename='img/fragment_logo.png') }}" alt="logo" class="p-1 w-100" style="filter: drop-shadow(0.5rem 0.5rem 2px rgba(0, 0, 0, 0.125));)" />
+    <p class="text-center">
+        <span class="fs-2 fw-bold">Fragment LAN 2024</span>
+    </p>
+    <p class="text-center">Legendaarinen Fragment -lanitapahtuma tekee paluun OTiT:n, Blankon, SIK:n ja OLTO:n toimesta!<br>
+        Lanit järjestetään pe 15.11. klo 17 - su 17.11. klo 17 Oulun yliopiston Tellus Backstagella.<br><br>
+
+        <b>Mitkä ihmeen lanit?</b><br>LAN partyissä, eli tuttavallisemmin "laneilla", peli- ja tietokoneharrastajat kokoontuvat pelaamaan ja
+        viettämään aikaa yhdessä. Laneilla voit verkostoitua, oppia uutta, osallistua turnauksiin ja tutustua
+        tietokoneiden sekä lauta- ja konsolipelien maailmaan. Lanit eivät siis ole vain ruudun tuijottamista, vaan yhteinen kokemus,
+        jossa pääset tapaamaan kavereitasi ja muita samanhenkisiä ihmisiä, nauttien tietysti aidosta lanitunnelmasta!<br><br>
+
+        <b>Laneille osallistuminen</b><br>Fragmenteille voit osallistua joko maksutta kävijänä, tai osallistumismaksun maksamalla konepaikan kera.<br>
+        Osallistumismaksu (5 €) kattaa konepaikan, haalarimerkin, kahvia, snackseja sekä osallistumisoikeuden BYOC-turnauksiin.
+        Konepaikka koostuu pöytäpaikasta (n. 100x60cm) ja tuolista, <span class="text-decoration-underline fw-bold">yhdestä</span> sähköpistokkeesta sekä 1Gbps nettiyhteydestä.
+        Paikkoja on saatavilla rajoitetusti, joten varaa omasi ajoissa!
+        <br><br>
+        Lisätietoa viikonlopusta löydät lanien viralliselta Discord-palvelimelta osoitteesta <a href="https://fragmentlan.fi/discord">fragmentlan.fi/discord</a>.<br>
+        Vinkkinä: muista ottaa mukaasi ainakin oma jatkojohto, sekä vähintään 10 metriä pitkä verkkokaapeli RJ45-liittimillä.
+        <br><br>
+        <span>Tapahtuma on päihteetön, ja suunnattu tieto- ja sähkötekniikan tiedekunnan tutkinto-opiskelijoille.</span><br><span class="fw-bold">Ilmoittautuminen on sitova.</span>
+    </p>
+    <h4>Maksuohjeet</h4>
+    <ul>
+        <li>Tilinumero: FI03 4744 3020 0116 87</li>
+        <li>Saaja: Oulun Tietoteekkarit ry</li>
+        <li>Summa: 5,00 €</li>
+        <li>Viesti: Oma nimi + Fragment 2024</li>
+        <li>Eräpäivä: 15.11.2024 (kuitti esitettävä tapahtumaan saapuessa)</li>
+    </ul>
 
 {% endblock %}
 
 {%- block registration_form -%}
-{%- call macros.registration_form_routine(form) -%}
-{% set p = form.get_required_participants()[0] %}
-<h4>Henkilötiedot</h4>
-{{ macros.form_field(p.firstname) }}
-{{ macros.form_field(p.lastname) }}
-{{ macros.form_field(p.email) }}
-{{ macros.form_field(p.quota) }}
+    {%- call macros.registration_form_routine(form) -%}
+        {% set p = form.get_required_participants()[0] %}
+        <h4>Konepaikan varaaminen</h4>
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
 
-{% set other = form.get_other_attributes() %}
-{{ macros.form_field(other.show_name_consent) }}
-{{ macros.form_field(other.privacy_consent) }}
-{%- endcall -%}
+        <div class="hackerman.exe">
+	        <label class="form-label" data-is-required="" for="required_participants-0-quota" label-required="">Kiintiö</label>
+            <input class="form-control" data-is-required="" id="required_participants-0-quota" name="required_participants-0-quota" value="Konepaikka" readonly>
+	    </div>
+        {{ macros.form_field(p.guild) }}
+
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
+    {%- endcall -%}
 {% endblock %}
-
-
-
-
-
