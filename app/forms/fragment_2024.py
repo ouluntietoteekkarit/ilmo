@@ -30,7 +30,7 @@ _form_name = make_form_name(__file__)
 
 _event_name = "Fragment LAN 2024"
 _is_enabled = True
-_start_date = datetime(2023, 11, 2, 13, 37, 00)
+_start_date = datetime(2024, 11, 2, 13, 37, 00)
 _end_date = datetime(2024, 11, 10, 23, 59, 59)
 
 
