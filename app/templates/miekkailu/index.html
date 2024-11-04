@@ -1,0 +1,53 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+<style>
+  body {
+      background-image: url("{{ url_for('static', filename='img/mib_fencing.jpg') }}");
+      background-repeat: no-repeat;
+      background-size: 100%;
+  }
+
+  div.container {
+      max-width: 900px;
+      background-color: var(--bs-body-bg);
+      opacity: 0.9;
+  }
+</style>
+{%- endblock -%}
+
+{%- block event_info -%}
+<p>Price: 15€ paid at the venue (if there is more than 10 participants)
+<br/>
+The price includes about 2h introduction to fencing. We go through little history, equipment and rules with a professional. And in the end we fence against each other.
+<br/><br/>
+You need to take with you:
+ <br/>- T-shirt
+ <br/>- Long sports pants
+ <br/>- Indoor sports shoes
+ <br/>- Water bottle
+
+<ul>
+  <li><b>Time:</b> 12.11.2024 at 17.00</li>
+  <li><b>Place:</b> Alasintie 3–7</li>
+  <li><b>Price:</b> 15€ (paid at the venue)</li>
+</ul>
+<b>Registration is binding</b>
+</p>
+{% endblock %}
+
+{%- block registration_form -%}
+{%- call macros.registration_form_routine(form) -%}
+{% set p = form.get_required_participants()[0] %}
+<h4>Henkilötiedot</h4>
+{{ macros.form_field(p.firstname) }}
+{{ macros.form_field(p.lastname) }}
+{{ macros.form_field(p.email) }}
+{{ macros.form_field(p.quota) }}
+
+{% set other = form.get_other_attributes() %}
+{{ macros.form_field(other.show_name_consent) }}
+{{ macros.form_field(other.privacy_consent) }}
+{%- endcall -%}
+{% endblock %}

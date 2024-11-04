@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Dict, Collection, Iterable, Type
 
-from wtforms.validators import InputRequired, Email
+from wtforms.validators import InputRequired, Email, Length
 
 from app.email import make_greet_line
 from app.form_lib.form_controller import FormController
@@ -25,10 +25,10 @@ def get_module_info() -> ModuleInfo:
 
 _form_name = make_form_name(__file__)
 
-_event_name = "OTiT paintball"
-_is_enabled = False
-_start_date = datetime(2024, 10, 5, 13, 37, 00)
-_end_date   = datetime(2024, 10, 13, 23, 59, 00)
+_event_name = "OTiT fencing"
+_is_enabled = True
+_start_date = datetime(2024, 11, 6, 13, 37, 00)
+_end_date   = datetime(2024, 11, 11, 23, 59, 00)
 
 class _Controller(FormController):
 
@@ -41,14 +41,14 @@ class _Controller(FormController):
         if reserve:
             result = ' '.join([
                 make_greet_line(recipient),
-                "\nYou have registered for OTiT paintball event. You are on the waiting list.",
+                "\nYou have registered for OTiT fencing event. You are on the waiting list.",
                 "If spots become available due to cancellations, you may be contacted. ",
 
             ])
         else:
             result = ' '.join([
                 make_greet_line(recipient),
-                "\nYou have registered for OTiT paintball event. Here is the information you provided.",
+                "\nYou have registered for OTiT fencing event. Here is the information you provided.",
                 "\n\nName: ", firstname, lastname,
                 "\nEmail: ", email,
                 "\n\nIf you have any questions, please contact us via email at urheiluministeri@otit.fi.",
@@ -59,7 +59,7 @@ class _Controller(FormController):
 
 def _get_quotas() -> List[Quota]:
     return [
-        Quota('OTiT', 17, 10),
+        Quota('OTiT', 13, 10),
     ]
 
 _QuotaEnum = choices_to_enum(_form_name,
@@ -67,8 +67,8 @@ _QuotaEnum = choices_to_enum(_form_name,
                              get_quota_choices(_get_quotas()))
 
 participant_attributes = [
-    make_attribute_firstname(validators=[InputRequired()]),
-    make_attribute_lastname(validators=[InputRequired()]),
+    make_attribute_firstname(validators=[InputRequired(), Length(max=20)]),
+    make_attribute_lastname(validators=[InputRequired(), Length(max=30)]),
     make_attribute_email(validators=[InputRequired(), Email()]),
     make_attribute_quota(_QuotaEnum, validators=[InputRequired()]),
 ]
