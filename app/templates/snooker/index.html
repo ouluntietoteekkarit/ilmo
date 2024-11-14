@@ -1,0 +1,46 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+<style>
+  body {
+      background-image: url("{{ url_for('static', filename='img/mib_snooker.jpg') }}");
+      background-repeat: no-repeat;
+      background-size: 100%;
+  }
+
+  div.container {
+      max-width: 900px;
+      background-color: var(--bs-body-bg);
+      opacity: 0.9;
+  }
+</style>
+{%- endblock -%}
+
+{%- block event_info -%}
+<p>
+TL;DR
+<ul>
+  <li><b>What:</b> OTiT Snooker Tournament</li>
+  <li><b>Where:</b> City Billiards (Ylioppilaantie 4c, 90130 Oulu)</li>
+  <li><b>When:</b> Tuesday November 26 from 6 PM onwards</li>
+  <li><b>Why:</b> Because OTiT OTiT and snooker!</li>
+</ul>
+<b>Registration is binding</b>
+</p>
+{% endblock %}
+
+{%- block registration_form -%}
+{%- call macros.registration_form_routine(form) -%}
+{% set p = form.get_required_participants()[0] %}
+<h4>Henkilötiedot</h4>
+{{ macros.form_field(p.firstname) }}
+{{ macros.form_field(p.lastname) }}
+{{ macros.form_field(p.email) }}
+{{ macros.form_field(p.quota) }}
+
+{% set other = form.get_other_attributes() %}
+{{ macros.form_field(other.show_name_consent) }}
+{{ macros.form_field(other.privacy_consent) }}
+{%- endcall -%}
+{% endblock %}
