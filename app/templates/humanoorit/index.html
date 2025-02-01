@@ -1,0 +1,73 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/humanoori_background.jpg') }}");
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }
+
+        * {
+            color: black;
+        }
+
+        div.container {
+            background-color: white;
+            opacity: 0.9;
+        }
+    </style>
+{%- endblock -%}
+
+
+    {%- block event_info -%}
+
+<p>Helmikuu lähestyy, mikä tarkoittaa perinteisen jengin kokoamista kasaan. Communica, Prose ja Otit järjestävät jälleen yhteiset Humanööri-sitsit. 🤩🎉  Sitsikansa päästetään irti Walhallassa keskiviikkona 19.2. klo. 18. <br/> <br/>
+  Onko haaveenasi ollut aina olla maailmanmestari? Tai onko lähiaikoina tullut oltua jonkun laastari?🏆🩹 Tämän vuoden Humanööreillä voit tuoda nämä puolet itsestäsi esiin! Jos elämäsi parasta aikaa on ollut eskari, laita saparot päähän ja marssi sitsaamaan pehmolelun kanssa. Jos taas olet erityisen ylpeä teekkariuudestasi, niin tule toki sitsaamaan omana itsenäsi (joku saattaa kylläkin pitää tätä hieman laiskana pukeutumissuorituksena🫣) Valjasta siis sisäinen luovuutesi ja näytä koko sitsikansalle millainen ari juuri sinä olet! 🧑🏼‍🎨🏌️<br/><br/>
+  Sitsien jälkeen lämpenee sauna ja palju, joten otathan myös uikkarit ja pyyhkeen sekä OPM🍾
+    </p>
+    <h3>Maksuohjeet:</h3>
+    <ul>
+        <li>Tilinumero: FI52 5741 3620 5641 27</li>
+        <li>Saaja: Communica ry</li>
+        <li>Summa: 22 €</li>
+        <li>Viesti: Oma nimi + Humanöörit</li>
+        <li>Eräpäivä: 19.2.2025</li>
+    </ul>
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.quota) }}
+    {{ macros.form_field(form.drink) }}
+    {{ macros.form_field(form.liquor) }}
+    {{ macros.form_field(form.wine) }}
+    {{ macros.form_field(form.allergies) }}
+    {{ macros.form_field(form.seating_preference) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
+
+{%- block participant_list -%}
+    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        <p>
+        {%- set participant = entry.get_required_participants()[0] -%}
+        {{ participant.firstname }} {{ participant.lastname }}
+
+        {% if is_in_reserve %}
+            {{ " (Varasijalla)" }}
+        {% endif %}
+        </p>
+    {%- endcall -%}
+{%- endblock -%}
