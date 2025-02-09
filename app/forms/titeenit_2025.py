@@ -37,74 +37,78 @@ class _Controller(FormController):
 
         if reserve:
             return f"""Tervehdys, {firstname} {lastname}!
-            
-            Olet ilmoittautunut OTiT:n Titeeni-KMP:lle kohti lappeen Rantoja. Olet varasijalla.
-            Jos KMP:lle jää jostain syystä vapaita paikkoja, sinuun ollaan yhteydessä.
-            
-            Tässä vielä ilmoittamasi tiedot:
-            Etunimi: {firstname}
-            Sukunimi: {lastname}
-            Sähköposti: {email}
-            Puhelinnumero: {phone}
-            Telegram: {tg}
-            Lähtöpaikka: {departure}
-            Allergiat: {allergies}
-            
-            Jos tulee kysyttävää, voit lähettää viestiä sähköpostitse kulttuuriministeri@otit.fi tai Telegramissa @jukeboxxxi.
-            Tämä on automaattinen sähköposti, älä vastaa tähän viestiin.
-            -----
-            Greetings, {firstname} {lastname}!
-            
-            You have signed up for OTiT's Titeeni-KMP excursion towards lappeen Ranta. You are on the waiting list.
-            If there are any free spots for the excursion, you will be contacted.
-            
-            Here are the details you provided:
-            First name: {firstname}
-            Last name: {lastname}
-            Email: {email}
-            Phone number: {phone}
-            Telegram: {tg}
-            Departure location: {departure}
-            Allergies: {allergies}
-            
-            If you have any questions, you can send an email to kulttuuriministeri@otit.fi or contact @jukeboxxxi on Telegram.
-            This is an automated email, do not reply to this message."""
+
+Olet ilmoittautunut OTiT:n Titeeni-KMP:lle kohti lappeen Rantoja. Olet varasijalla.
+Jos KMP:lle jää jostain syystä vapaita paikkoja, sinuun ollaan yhteydessä.
+
+Tässä vielä ilmoittamasi tiedot:
+Etunimi: {firstname}
+Sukunimi: {lastname}
+Sähköposti: {email}
+Puhelinnumero: {phone}
+Telegram: {tg}
+Lähtöpaikka: {departure}
+Allergiat: {allergies}
+
+Jos tulee kysyttävää, voit lähettää viestiä sähköpostitse kulttuuriministeri@otit.fi tai Telegramissa @jukeboxxxi.
+Tämä on automaattinen sähköposti, älä vastaa tähän viestiin.
+-----
+Greetings, {firstname} {lastname}!
+
+You have signed up for OTiT's Titeeni-KMP excursion towards lappeen Ranta. You are on the waiting list.
+If there are any free spots remaining for the excursion, you will be contacted.
+
+Here are the details you provided:
+First name: {firstname}
+Last name: {lastname}
+Email: {email}
+Phone number: {phone}
+Telegram: {tg}
+Departure location: {departure}
+Allergies: {allergies}
+
+If you have any questions, you can send an email to kulttuuriministeri@otit.fi or contact @jukeboxxxi on Telegram.
+This is an automated email, do not reply to this message."""
         else:
-            return f"""Tervehdys, {firstname} {lastname}!
-            Olet ilmoittautunut OTiT:n Titeeni-KMP:lle kohti lappeen Rantoja. Reissuun lähdetään perjantaina 14.3.2025.
-            Excun aikataulu, maksuohjeet ja muut tiedot tarkentuvat myöhemmin.
-            
-            Tässä vielä ilmoittamasi tiedot:
-            Etunimi: {firstname}
-            Sukunimi: {lastname}
-            Sähköposti: {email}
-            Puhelinnumero: {phone}
-            Telegram: {tg}
-            Lähtöpaikka: {departure}
-            Allergiat: {allergies}
-            
-            Maksutiedot tiedotetaan myöhemmin.
-            
-            Jos tulee kysyttävää, voit lähettää viestiä sähköpostitse kulttuuriministeri@otit.fi tai Telegramissa @jukeboxxxi.
-            
-            Tämä on automaattinen sähköposti, älä vastaa tähän viestiin.
-            -----
-            Greetings, {firstname} {lastname}!
-            
-            You have signed up for OTiT's Titeeni-KMP excursion towards lappeen Ranta. The trip will start on Friday, 14th of March, 2025.
-            The schedule, payment instructions and other details for the excursion will be provided later.
-            
-            Here are the details you provided:
-            First name: {firstname}
-            Last name: {lastname}
-            Email: {email}
-            Phone number: {phone}
-            Telegram: {tg}
-            Departure location: {departure}
-            Allergies: {allergies}
-            
-            If you have any questions, you can send an email to kulttuuriministeri@otit.fi or contact @jukeboxxxi on Telegram.
-            This is an automated email, do not reply to this message. """
+            return f"""Tervehdys, {firstname}!
+
+Olet ilmoittautunut OTiT:n Titeeni-KMP:lle kohti lappeen Rantoja. Reissuun lähdetään perjantaina 14.3.2025.
+Excun aikataulu, maksuohjeet ja muut tiedot tarkentuvat myöhemmin.
+
+Tässä vielä ilmoittamasi tiedot:
+Etunimi: {firstname}
+Sukunimi: {lastname}
+Sähköposti: {email}
+Puhelinnumero: {phone}
+Telegram: {tg}
+Lähtöpaikka: {departure}
+Allergiat: {allergies}
+
+Muista liittyä reissun Telegram-ryhmään: https://t.me/+7_4d4PNEOFRjMzY8
+
+Jos tulee kysyttävää, kysy reissun ryhmässä, lähetä sähköpostia kulttuuriministeri@otit.fi tai viestiä Telegramissa @jukeboxxxi.
+Tämä on automaattinen sähköposti, älä vastaa tähän viestiin.
+
+-----
+
+Greetings, {firstname}!
+
+You have signed up for OTiT's Titeeni-KMP excursion towards lappeen Ranta. The trip will start on Friday, 14th of March, 2025.
+The schedule, payment instructions and other details for the excursion will be provided later.
+
+Here are the details you provided:
+First name: {firstname}
+Last name: {lastname}
+Email: {email}
+Phone number: {phone}
+Telegram: {tg}
+Departure location: {departure}
+Allergies: {allergies}
+
+Remember to join the excursion's Telegram group: https://t.me/+7_4d4PNEOFRjMzY8
+
+If you have any questions, ask in the group, send an email to kulttuuriministeri@otit.fi or contact @jukeboxxxi on Telegram.
+This is an automated email, do not reply to this message."""
 
 
 def _make_attribute_scared():
