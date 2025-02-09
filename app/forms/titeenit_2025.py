@@ -118,7 +118,7 @@ def _make_attribute_weight(validators: Iterable = None):
 
 def _get_quotas() -> List[Quota]:
     return [
-        Quota(GUILD_OTIT, 48, 10),
+        Quota(GUILD_OTIT, 49, 10),
         Quota("Muu (Others)", 8, 10),
     ]
 
