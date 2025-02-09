@@ -14,7 +14,8 @@
         {%- if event.get_registration_start_time() < nowtime < event.get_registration_end_time() -%}
             <div class="mb-3">
                 {{ macros.registration_ends(event) }}
-                <span class="fst-italic">Tähdellä merkityt kohdat ovat pakollisia.</span>
+                <span class="fst-italic">Tähdellä merkityt kohdat ovat pakollisia.</span><br>
+                <span class="fst-italic">Fields marked with an asterisk are mandatory.</span>
             </div>
             {% block registration_form %}
                 {{ macros.basic_registration_form(form) }}

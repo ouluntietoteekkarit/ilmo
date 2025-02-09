@@ -48,20 +48,20 @@
 {%- endmacro -%}
 
 {% macro registration_begins(event) %}
-	<h5>Ilmoittautuminen alkaa {{ format_datetime(event.get_registration_start_time()) }}</h5>
+	<h5>Ilmoittautuminen alkaa | Registration opens on {{ format_datetime(event.get_registration_start_time()) }}</h5>
 {% endmacro %}
 
 {% macro registration_ends(event) %}
-	<h5>Ilmoittautuminen päättyy {{ format_datetime(event.get_registration_end_time()) }}</h5>
+	<h5>Ilmoittautuminen päättyy | Registration ends on {{ format_datetime(event.get_registration_end_time()) }}</h5>
 {% endmacro %}
 
 {% macro registration_ended(event) %}
-	<h5>Ilmoittautuminen on päättynyt</h5>
+	<h5>Ilmoittautuminen on päättynyt | Registration has ended</h5>
 {% endmacro %}
 
 {% macro privacy_statement(module_info) %}
 	{%- set filename = 'privacy_statements/' ~ module_info.get_form_name() ~ '.pdf' -%}
-	<a href="{{ url_for('static',filename=filename) }}">Tietosuojaseloste</a>
+	<a href="{{ url_for('static',filename=filename) }}">Tietosuojaseloste | Privacy policy</a>
 {% endmacro %}
 
 {%- macro participant_list_routine(entries, event) -%}
@@ -96,7 +96,7 @@
 {%- endmacro -%}
 
 {%- macro participant_count(registrations, event) -%}
-	<h2>Osallistujat</h2>
+	<h2>Osallistujat | Participants</h2>
 	{%- for quotaName, quotaCounts in registrations.get_event_quotas().items() -%}
 		<span style="padding-right: 10px;"><b>{{ quotaName }}</b>{{ ' ' ~ quotaCounts.get_registrations() ~ ' / ' ~ quotaCounts.get_quota() }}</span>
 	{%- endfor -%}
