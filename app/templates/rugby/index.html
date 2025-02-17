@@ -1,0 +1,53 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles -%}
+    <style>
+        div.container {
+            max-width: 900px;
+            background-color: rgba(97, 35, 0, 0.11);
+            opacity: 0.975;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <img src="{{ url_for('static', filename='img/rugby.jpg') }}" style="max-width: 100%; max-height: 50%" alt="banner">
+    <h1 class="text-center py-2 my-2">Rugby trial session</h1>
+    <p>
+        Vuoden ensimmäinen lajikokeilu lähestyy ja on taas aika kokeilla jotain uutta ja vauhdikasta!
+        Tällä kertaa pääsemme tutustumaan rugbyyn Oulu Rugby Clubin johdolla.
+        Luvassa on hauska ja intensiivinen lajikokeilu, joka sopii kaikille, eikä aiempaa kokemusta tarvita.<br><br>
+        📍 <b>Missä?</b> Ouluhalli, Ouluhallintie 20, 90130 Oulu<br>
+        📅 <b>Milloin?</b> Maanantaina 10.3. klo 20.00<br>
+        💰 <b>Hinta?</b> Ilmainen kiltalaisille<br>
+    </p>
+    <p>
+        It's time to try something new and exciting! This time, we’ll get a chance to play rugby
+        under the guidance of the Oulu Rugby Club. No previous experience is required.<br><br>
+        📍 <b>Where?</b> Ouluhalli, Ouluhallintie 20, 90130 Oulu<br>
+        📅 <b>When?</b> Monday, March 10th at 8:00 PM<br>
+        💰 <b>Cost?</b> Free for guild members<br>
+    </p>
+{% endblock %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {% set p = form.get_required_participants()[0] %}
+        <h4>Henkilötiedot | Personal information</h4>
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
+        {{ macros.form_field(p.telegram) }}
+        {{ macros.form_field(p.quota) }}
+
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
+    {%- endcall -%}
+{% endblock %}
