@@ -32,7 +32,7 @@ _form_name = make_form_name(__file__)
 _event_name = "Osuuspankin yritysvierailu"
 _is_enabled = True
 _start_date = datetime(2025, 3, 24, 14, 00, 00)
-_end_date = datetime(2025, 3, 30, 23, 59, 59)
+_end_date = datetime(2025, 3, 31, 23, 59, 59)
 
 
 class _Controller(FormController):
@@ -42,6 +42,7 @@ class _Controller(FormController):
         lastname = recipient.get_lastname()
         email = recipient.get_email()
         telegram = recipient.get_telegram()
+        allergies = recipient.get_allergies()
 
         if reserve:
             result = ' '.join([
@@ -56,7 +57,8 @@ class _Controller(FormController):
                 "\nOlet ilmoittautunut Osuuspankin yritysvierailulle 8.4.2025. Tässä vielä syöttämäsi tiedot: ",
                 "\n\nNimi: ", firstname, lastname,
                 "\nSähköposti: ", email,
-                "\nTelegram: ", email,
+                "\nTelegram: ", telegram,
+                "\nAllergiat: ", allergies,
                 "\n\nJos sairastut tai olet muutoin estynyt osallistumasta vierailulle, ilmoitathan asiasta pikimmiten,",
                 "jotta paikkasi voidaan vapauttaa varasijalla olevalle."
                 "\nKysymyksistä tai poissaoloilmoituksista voit olla yhteydessä sähköpostitse taru@otit.fi tai Telegramissa @AKoponen."
@@ -79,9 +81,9 @@ _QuotaEnum = choices_to_enum(_form_name,
                              get_quota_choices(_get_quotas()))
 
 participant_attributes = [
-    make_attribute_firstname(validators=[InputRequired(), Length(max=20)]),
+    make_attribute_firstname(validators={"validators": [InputRequired(), Length(max=20)]}),
     make_attribute_lastname(validators=[InputRequired(), Length(max=30)]),
-    make_attribute_email(validators=[InputRequired(), Email()]),
+    make_attribute_email(validators=[InputRequired()]),
     make_attribute_telegram(validators=[InputRequired()]),
     make_attribute_allergies(),
     make_attribute_quota(_QuotaEnum, validators=[InputRequired()])
