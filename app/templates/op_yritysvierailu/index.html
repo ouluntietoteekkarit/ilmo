@@ -1,0 +1,71 @@
+ {%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles -%}
+    <style>
+        body {
+            <!-- background-image: url("{{ url_for('static', filename='img/fragment_bg.webp') }}"); -->
+            background-size: cover;
+        }
+
+        div.container {
+            max-width: 900px;
+            background-color: var(--bs-body-bg);
+            opacity: 0.975;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+
+
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <img src="{{ url_for('static', filename='img/op_group.svg') }}" alt="logo" class="p-1 w-100" style="filter: drop-shadow(0.5rem 0.5rem 2px rgba(0, 0, 0, 0.125));)" />
+    <p class="text-center">
+        <span class="fs-2 fw-bold">Osuuspankin yritysvierailu</span>
+    </p>
+    <p class="text-center">Tervetuloa Osuuspankin yritysvierailulle tiistaina 8.4. klo 16.30 alkaen!<br>
+        Vierailu järjestetään OP Ryhmän tuotekehitysyksikössä Kontinkankaan Technopoliksessa, osoittessa Kiviharjunlenkki 1D.<br><br>
+
+        <b>Mitkä ihmeen lanit?</b><br>LAN partyissä, eli tuttavallisemmin "laneilla", peli- ja tietokoneharrastajat kokoontuvat pelaamaan ja
+        viettämään aikaa yhdessä. Laneilla voit verkostoitua, oppia uutta, osallistua turnauksiin ja tutustua
+        tietokoneiden sekä lauta- ja konsolipelien maailmaan. Lanit eivät siis ole vain ruudun tuijottamista, vaan yhteinen kokemus,
+        jossa pääset tapaamaan kavereitasi ja muita samanhenkisiä ihmisiä, nauttien tietysti aidosta lanitunnelmasta!<br><br>
+
+        <b>Laneille osallistuminen</b><br>Fragmenteille voit osallistua joko maksutta kävijänä, tai osallistumismaksun maksamalla konepaikan kera.<br>
+        Osallistumismaksu (5 €) kattaa konepaikan, haalarimerkin, kahvia, snackseja sekä osallistumisoikeuden BYOC-turnauksiin.
+        Konepaikka koostuu pöytäpaikasta (n. 100x60cm) ja tuolista, <span class="text-decoration-underline fw-bold">yhdestä</span> sähköpistokkeesta sekä 1Gbps nettiyhteydestä.
+        Paikkoja on saatavilla rajoitetusti, joten varaa omasi ajoissa!
+        <br><br>
+        Lisätietoa viikonlopusta löydät lanien <a href="https://fragmentlan.fi">nettisivuilta</a> sekä viralliselta <a href="https://fragmentlan.fi/discord">Discord-palvelimelta</a>.<br>
+        Vinkkinä: muista ottaa mukaasi ainakin oma jatkojohto, sekä vähintään 10 metriä pitkä verkkokaapeli RJ45-liittimillä.
+        <br><br>
+        <span>Tapahtuma on päihteetön, ja suunnattu tieto- ja sähkötekniikan tiedekunnan tutkinto-opiskelijoille.</span><br><span class="fw-bold">Ilmoittautuminen on sitova.</span>
+    </p>
+{% endblock %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {% set p = form.get_required_participants()[0] %}
+        <h4>Konepaikan varaaminen</h4>
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
+        {{ macros.form_field(p.telegram) }}
+        {{ macros.form_field(p.allergies) }}
+
+        <div class="hackerman.exe">
+	        <label class="form-label" data-is-required="" for="required_participants-0-quota" label-required="">Kiintiö</label>
+            <input class="form-control" data-is-required="" id="required_participants-0-quota" name="required_participants-0-quota" value="Osallistuja" readonly>
+	    </div>
+
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
+        {{ macros.form_field(other.binding_registration_consent) }}
+    {%- endcall -%}
+{% endblock %}
