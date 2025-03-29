@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict, Any, Type
 
-from wtforms.validators import Email
+from wtforms.validators import Email, Length
 
 from app.form_lib.lib import BaseAttribute, StringAttribute, ATTRIBUTE_NAME_FIRSTNAME, ATTRIBUTE_NAME_LASTNAME, \
     ATTRIBUTE_NAME_EMAIL, ATTRIBUTE_NAME_PHONE_NUMBER, EnumAttribute, ATTRIBUTE_NAME_DEPARTURE_LOCATION, \
@@ -20,13 +20,16 @@ def make_attribute_lastname(**extra_args: Dict[str, Any]) -> BaseAttribute:
     return StringAttribute(ATTRIBUTE_NAME_LASTNAME, 'Sukunimi | Last name', 'Sukunimi', 50, **extra_args)
 
 def make_attribute_telegram(**extra_args: Dict[str, Any]) -> BaseAttribute:
+    extra_args.setdefault("validators")
+    extra_args["validators"] += [Length(max=32)]
+
     return StringAttribute(ATTRIBUTE_NAME_TELEGRAM, 'Telegram', 'Telegram', 50, **extra_args)
 
 def make_attribute_irc_name(**extra_args: Dict[str, Any]) -> BaseAttribute:
     return StringAttribute(ATTRIBUTE_NAME_IRC_NAME, 'IRC nimi', 'IRC nimi', 50, **extra_args)
 
 def make_attribute_email(**extra_args: Dict[str, Any]) -> BaseAttribute:
-    extra_args.setdefault('validators', [])
+    extra_args.setdefault('validators')
     extra_args['validators'] += [Email()]
 
     return StringAttribute(ATTRIBUTE_NAME_EMAIL, 'Sähköposti | Email', 'Sähköposti', 100, **extra_args)
