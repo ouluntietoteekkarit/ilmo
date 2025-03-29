@@ -1,11 +1,11 @@
- {%- extends "form.html" -%}
+{%- extends "form.html" -%}
 {%- import "macros.html" as macros -%}
 
 {%- block extra_styles -%}
     <style>
         body {
-            <!-- background-image: url("{{ url_for('static', filename='img/fragment_bg.webp') }}"); -->
-            background-size: cover;
+        <!-- background-image: url("{{ url_for('static', filename='img/fragment_bg.webp') }} ");
+        --> background-size: cover;
         }
 
         div.container {
@@ -24,22 +24,40 @@
 {%- endblock -%}
 
 {%- block event_info -%}
-    <img src="{{ url_for('static', filename='img/op_group.svg') }}" alt="logo" class="p-1 w-100" style="filter: drop-shadow(0.5rem 0.5rem 2px rgba(0, 0, 0, 0.125));)" />
+    <img src="{{ url_for('static', filename='img/op_group.svg') }}" alt="logo" class="p-1 w-100"
+         style="filter: drop-shadow(0.5rem 0.5rem 2px rgba(0, 0, 0, 0.125));)"/>
     <p class="text-center">
         <span class="fs-2 fw-bold">Osuuspankin yritysvierailu</span>
     </p>
     <p class="text-center">Tervetuloa Osuuspankin yritysvierailulle tiistaina 8.4. klo 16.30 alkaen!<br>
-        Vierailu järjestetään OP Ryhmän tuotekehitysyksikössä Kontinkankaan Technopoliksessa, osoittessa Kiviharjunlenkki 1D.<br><br>
-
+        Vierailu järjestetään OP Ryhmän tuotekehitysyksikössä Kontinkankaan Technopoliksessa, osoittessa
+        Kiviharjunlenkki 1D.
         <br><br>
-        <span class="fw-bold">Ilmoittautuminen on sitova.</span>
+        Yritysvierailulla pääset tutustumaan Suomen suurimman finanssiryhmän toimintaan ja näkemään, miten Osuuspankki
+        kehittää digitaalisia palveluitaan.
+        Vierailun aikana pääset myös tutustumaan OP:n työntekijöihin ja siihen, millaisia uramahdollisuuksia OP tarjoaa.
+        Illan aikana luvassa on syötävää ja juotavaa, verkostoitumista sekä mielenkiintoisia demoja, joten älä jätä tätä
+        erinomaista tilaisuutta käyttämättä!
+    </p>
+    <hr>
+    <p class="text-center">Welcome to the OP Financial Group office excursion on Tuesday, April 8th, starting at
+        16:30!<br>
+        The visit will take place at OP's product development unit in Technopolis Kontinkangas, at Kiviharjunlenkki 1D.
+        <br><br>
+        During the company visit, you will get to know the operations of Finland's largest financial group and see how
+        Osuuspankki develops its digital services.
+        You will also get to meet OP's employees and learn about the career opportunities OP offers.
+        The evening will include food and drinks, networking, and interesting demos, so don't miss this excellent
+        opportunity!
+        <br><br>
+        <span class="fw-bold">Ilmoittautuminen on sitova. Registration is binding.</span>
     </p>
 {% endblock %}
 
 {%- block registration_form -%}
     {%- call macros.registration_form_routine(form) -%}
         {% set p = form.get_required_participants()[0] %}
-        <h4>Konepaikan varaaminen</h4>
+        <h4>Ilmoittautuminen | Sign-up</h4>
         {{ macros.form_field(p.firstname) }}
         {{ macros.form_field(p.lastname) }}
         {{ macros.form_field(p.email) }}
@@ -47,9 +65,11 @@
         {{ macros.form_field(p.allergies) }}
 
         <div class="hackerman.exe">
-	        <label class="form-label" data-is-required="" for="required_participants-0-quota" label-required="">Kiintiö</label>
-            <input class="form-control" data-is-required="" id="required_participants-0-quota" name="required_participants-0-quota" value="Osallistuja" readonly>
-	    </div>
+            <label class="form-label" data-is-required="" for="required_participants-0-quota"
+                   label-required="">Kiintiö</label>
+            <input class="form-control" data-is-required="" id="required_participants-0-quota"
+                   name="required_participants-0-quota" value="Osallistuja" readonly>
+        </div>
 
         {% set other = form.get_other_attributes() %}
         {{ macros.form_field(other.show_name_consent) }}

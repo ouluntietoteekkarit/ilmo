@@ -31,8 +31,8 @@ _form_name = make_form_name(__file__)
 
 _event_name = "Osuuspankin yritysvierailu"
 _is_enabled = True
-_start_date = datetime(2025, 3, 24, 14, 00, 00)
-_end_date = datetime(2025, 3, 31, 23, 59, 59)
+_start_date = datetime(2025, 3, 24, 16, 00, 00)
+_end_date = datetime(2025, 4, 1, 12, 00, 00)
 
 
 class _Controller(FormController):
@@ -49,20 +49,48 @@ class _Controller(FormController):
                 f"Tervehdys, {firstname}!\n",
                 "Olet ilmoittautunut Osuuspankin yritysvierailulle 8.4.2025. Olet varasijalla.",
                 "Jos yritysvierailulle vapautuu paikkoja, sinuun voidaan olla yhteydessä sähköpostitse.",
-                "\n\nTähän sähköpostiin ei voi vastata."
-            ])
-        else:
-            result = ' '.join([
-                make_greet_line(recipient),
-                "\nOlet ilmoittautunut Osuuspankin yritysvierailulle 8.4.2025. Tässä vielä syöttämäsi tiedot: ",
-                "\n\nNimi: ", firstname, lastname,
+                "\n\nTässä vielä syöttämäsi tiedot: ",
+                "\nNimi: ", firstname, lastname,
                 "\nSähköposti: ", email,
                 "\nTelegram: ", telegram,
                 "\nAllergiat: ", allergies,
-                "\n\nJos sairastut tai olet muutoin estynyt osallistumasta vierailulle, ilmoitathan asiasta pikimmiten,",
+                "\n\nTähän sähköpostiin ei voi vastata.",
+                "\n-----",
+                "\nGreetings, ", firstname, "!\n",
+                "You have signed up for the OP Financial Group office excursion on April 8th, 2025. You are on the waiting list.",
+                "If spots become available, you may be contacted via email.",
+                "\n\nHere are the details you provided: ",
+                "\nName: ", firstname, lastname,
+                "\nEmail: ", email,
+                "\nTelegram: ", telegram,
+                "\nAllergies: ", allergies,
+                "\n\nYou cannot reply to this email."
+            ])
+        else:
+            result = ' '.join([
+                f"Tervehdys, {firstname}!\n",
+                "\nOlet ilmoittautunut Osuuspankin yritysvierailulle 8.4.2025. Tässä vielä syöttämäsi tiedot: ",
+                "\nNimi: ", firstname, lastname,
+                "\nSähköposti: ", email,
+                "\nTelegram: ", telegram,
+                "\nAllergiat: ", allergies,
+                "\n\nVierailu alkaa tiistaina heti klo 16.30, joten saavuthan ajoissa paikalle.",
+                "Jos sairastut tai olet muutoin estynyt osallistumasta vierailulle, ilmoitathan asiasta pikimmiten,",
                 "jotta paikkasi voidaan vapauttaa varasijalla olevalle."
-                "\nKysymyksistä tai poissaoloilmoituksista voit olla yhteydessä sähköpostitse taru@otit.fi tai Telegramissa @AKoponen."
-                "\n\nTähän sähköpostiin ei voi vastata."
+                "\nKysymyksistä tai poissaoloilmoituksista voit olla yhteydessä sähköpostitse ulkoministeri@otit.fi tai Telegramissa @AKoponen."
+                "\n\nTähän sähköpostiin ei voi vastata.",
+                "\n-----",
+                "\nGreetings, ", firstname, "!\n"
+                "\nYou have signed up for the OP Financial Group office excursion on Tuesday, April 8th, 2025. Here are the details you provided: ",
+                "\nName: ", firstname, lastname,
+                "\nEmail: ", email,
+                "\nTelegram: ", telegram,
+                "\nAllergies: ", allergies,
+                "\n\nThe visit starts promptly at 16:30 on Tuesday, so please arrive on time.",
+                "If you fall ill or are otherwise unable to attend, please inform us as soon as possible,",
+                "so your spot can be given to someone on the waiting list.",
+                "\nFor questions or absence notifications, you can contact us via email at ulkoministeri@otit.fi or on Telegram @AKoponen.",
+                "\n\nYou cannot reply to this email."
             ])
 
         return result
@@ -81,7 +109,7 @@ _QuotaEnum = choices_to_enum(_form_name,
                              get_quota_choices(_get_quotas()))
 
 participant_attributes = [
-    make_attribute_firstname(validators={"validators": [InputRequired(), Length(max=20)]}),
+    make_attribute_firstname(validators=[InputRequired(), Length(max=20)]),
     make_attribute_lastname(validators=[InputRequired(), Length(max=30)]),
     make_attribute_email(validators=[InputRequired()]),
     make_attribute_telegram(validators=[InputRequired()]),
