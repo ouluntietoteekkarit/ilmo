@@ -168,4 +168,4 @@ _event = Event('KotiMaanPitkä 2025 goes Titeenit',
                _get_quotas(),
                _types.asks_name_consent(), True)
 
-_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
+_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)

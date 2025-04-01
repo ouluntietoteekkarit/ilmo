@@ -26,7 +26,7 @@ def get_module_info() -> ModuleInfo:
 _form_name = make_form_name(__file__)
 
 _event_name = "Rugby trial session"
-_is_enabled = True
+_is_enabled = False
 _start_date = datetime(2025, 2, 17, 13, 37, 00)
 _end_date   = datetime(2025, 3, 5, 23, 59, 59)
 
