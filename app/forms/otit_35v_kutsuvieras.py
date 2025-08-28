@@ -158,7 +158,7 @@ def _get_quotas() -> List[Quota]:
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
 _ToastEnum = EnumAttribute('toast', 'Alkumalja | Toast', 'Alkumalja', make_enum_usual_sitsi_liquor(_form_name), validators=[InputRequired()])
-_WineEnum = EnumAttribute('wine', 'Viini | Wine', 'Viini', make_enum_usual_sitsi_wine(_form_name), validators=[InputRequired()])
+_WineEnum = EnumAttribute('wine', 'Viini | Wine', 'Viini', make_enum_usual_sitsi_liquor(_form_name), validators=[InputRequired()])
 _AvecDrinkEnum = EnumAttribute('avec_drink', 'Avec', 'Avec-juoma', make_enum_usual_avec_drink(_form_name), validators=[InputRequired()])
 _AvecBool = BoolAttribute("avec", "Minulla on avec | I'm bringing a plus one", 'Avec mukana')
 
