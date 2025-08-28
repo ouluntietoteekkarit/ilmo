@@ -43,7 +43,6 @@ class _Controller(FormController):
         toast = recipient.get_toast()
         wine = recipient.get_wine()
         avec_drink = recipient.get_avec_drink()
-        avec_bool = recipient.get_avec()
         seat_pref = recipient.get_seat()
         study_year = recipient.get_study_year()
         sillis_bool = recipient.get_sillis()
@@ -68,7 +67,6 @@ Allergiat: {allergies}
 
 Jätätkö tervehdyksen: {greeting}
 Edustamasi taho: {organization}
-Avec: {avec_bool}
 Pöytäseuratoive: {seat_pref}
 Opintojen aloitusvuosi: {study_year}
 Osallistutko sillikselle: {sillis_bool}
@@ -95,7 +93,6 @@ Allergies: {allergies}
 
 Greeting: {greeting}
 Organization/entity: {organization}
-Plus one: {avec_bool}
 Seating preference: {seat_pref}
 Start year of studies: {study_year}
 Sillis brunch (15 €): {sillis_bool}
@@ -120,7 +117,6 @@ Allergiat: {allergies}
 
 Jätätkö tervehdyksen: {greeting}
 Edustamasi taho: {organization}
-Avec: {avec_bool}
 Pöytäseuratoive: {seat_pref}
 Opintojen aloitusvuosi: {study_year}
 Osallistutko sillikselle: {sillis_bool}
@@ -148,7 +144,6 @@ Allergies: {allergies}
 
 Greeting: {greeting}
 Organization/entity: {organization}
-Plus one: {avec_bool}
 Seating preference: {seat_pref}
 Start year of studies: {study_year}
 Sillis brunch (15 €): {sillis_bool}
