@@ -19,9 +19,10 @@ class ModuleInfo:
     """
 
     def __init__(self, controller_type: Type[FormController], is_active: bool,
-                 form_name: str, event: Event, type_info: TypeInfo):
+                 form_name: str, event: Event, type_info: TypeInfo, is_hidden: bool=False):
         self._controller_type = controller_type
         self._is_active = is_active
+        self._is_hidden = is_hidden
         self._form_name = form_name
         self._type_info = type_info
         self._context = FormContext(event,
@@ -38,6 +39,9 @@ class ModuleInfo:
 
     def is_active(self) -> bool:
         return self._is_active
+
+    def is_hidden(self) -> bool:
+        return self._is_hidden
 
     def get_form_name(self) -> str:
         return self._form_name

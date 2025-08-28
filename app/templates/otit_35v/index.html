@@ -1,0 +1,91 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='img/OTiT_T_logo_white.svg') }}"), linear-gradient(135deg, #0d1b2a, #2b4161);
+            background-repeat: repeat, no-repeat;
+            background-size: 150px, cover;
+            background-position: 0 0, center;
+            {#background-blend-mode: overlay !important;#}
+        }
+
+        div.container {
+            max-width: 900px;
+            background-color: #2b2b2b;
+            opacity: 1;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+{#    <img src="{{ url_for('static', filename='img/titeenit_banner.png') }}" style="max-width: 100%" alt="banner">#}
+    <h1 class="text-center py-2 my-2">Ilmoittautuminen OTiT:n 37v vuosijuhliin</h1>
+    <p class="text-center my-2">
+        Tervetuloa juhlistamaan Oulun Tietoteekkarit ry:n 37-vuotista taivalta vuosijuhlien merkeissä!<br>
+        Vuosijuhlat järjestetään lauantaina 27.9.2025 kello 18.00 alkaen Alppimajalla, osoitteessa Tirolintie 7, 90530 Oulu.<br><br>
+        Pääjuhla alkaa tervetuliaismaljalla, jonka jälkeen nautimme kolmen ruokalajin illallisen sopivalla ohjelmalla höystettynä.<br>
+        Pääjuhla kestää n. klo 23.00 asti, minkä jälkeen iltaa jatketaan aamun pikkutunneille asti paikassa X.<br>Jatkopaikalle on bussikuljetus Alppimajalta.<br><br>
+
+        Illalliskortin hinta on yhdistyksen varsinaiselle jäsenelle <b>85 €</b> ja muille <b>99 €</b>.<br>Iltajuhlan pukukoodina toimii juhlapuku akateemisin kunniamerkein.<br>Huomaathan, että pääjuhlapaikka <b>ei ole</b> anniskelualuetta.<br><br>
+
+        Vuosijuhlat jatkuvat seuraavana päivänä (su 28.9.) silliaamiaisen merkeissä<br>Teekkaritalolla, osoitteessa Kalervontie 7, 90570 Oulu.<br>
+        Silliksen hinta on 15 €, ja sinne ilmoittaudutaan rastittamalla sopiva ruutu alla olevasta lomakkeesta.<br>Silliksen alkamisajankohta tiedotetaan myöhemmin.<br><br>
+    </p>
+
+    <hr>
+
+    <p class="text-center my-2">
+        Welcome to celebrate the 37th anniversary of Oulun Tietoteekkarit ry!<br>
+        The annual celebration will be held on Saturday, 27 September 2025,<br>starting at 18:00 at Alppimaja (Tirolintie 7, 90530 Oulu).<br><br>
+
+        The main celebration begins with a welcome toast,<br>after which we will enjoy a three-course dinner accompanied by appropriate programme.<br>
+        The main celebration lasts until approximately 23:00, after which the evening continues with an after party at location X.<br>A bus transfer will take guests from Alppimaja to the afterparty.<br><br>
+
+        The dinner card costs <b>85 €</b> for full members of the association and <b>100 €</b> for others.<br>The dress code is formal / white tie with academic decorations.<br>Please note that the main venue is <b>not</b> a licensed serving area, i.e. bringing your own drinks is permitted.<br><br>
+
+        The festivities continue the next day (Sun 28 Sept) with a traditional sillis brunch at Teekkaritalo (Kalervontie 7, 90570 Oulu).
+        The sillis costs 15 €, and you can register by ticking the appropriate box in the form below.<br>The starting time will be announced later.
+    </p>
+{% endblock %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {% set p = form.get_required_participants()[0] %}
+        <h4>Henkilötiedot | Personal information</h4>
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
+        {{ macros.form_field(p.phone_number) }}
+        <div class="purkkafix" style="display: none;">
+            <label class="form-label" data-is-required="" for="required_participants-0-quota" label-required="">Kiintiö</label>
+            <input class="form-control" data-is-required="" id="required_participants-0-quota" name="required_participants-0-quota" value="Osallistuja" readonly>
+        </div>
+        <hr>
+        {{ macros.form_field(p.toast) }}
+        {{ macros.form_field(p.wine) }}
+        {{ macros.form_field(p.avec_drink) }}
+        {{ macros.form_field(p.allergies) }}
+        <hr>
+        <p>Jos tuot mukanasi avecin, ilmoitathan hänen nimensä pöytäseuratoiveessa. Huomaa, että avecin täytyy ilmoittautua vuosijuhliin erikseen!<br>
+        If you are bringing a plus one, please indicate their name in your seating preference. Please note that your plus one must sign up separately!
+        </p>
+        {{ macros.form_field(p.avec) }}
+        <hr>
+        {{ macros.form_field(p.seat) }}
+        {{ macros.form_field(p.study_year) }}
+        {{ macros.form_field(p.sillis) }}
+
+        <hr>
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
+        {{ macros.form_field(other.binding_registration_consent) }}
+    {%- endcall -%}
+{% endblock %}

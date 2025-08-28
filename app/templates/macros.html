@@ -42,9 +42,11 @@
 {%- endmacro -%}
 
 {%- macro form_submit_button() -%}
-	<button class="btn btn-info">
-		<input class="btn btn-default" value="Ilmoittaudu" type="submit">
-	</button>
+    <div class="mt-4 text-center">
+        <button class="btn btn-info">
+            <input class="btn btn-default" value="Lähetä | Submit" type="submit">
+        </button>
+    </div>
 {%- endmacro -%}
 
 {% macro registration_begins(event) %}
