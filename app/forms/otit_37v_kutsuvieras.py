@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List
+from typing import List, Collection, Dict
 
 from wtforms.validators import InputRequired, Length, Email
 
@@ -33,6 +33,27 @@ _end_date   = datetime(2025, 9, 14, 23, 59, 59)
 
 
 class _Controller(FormController):
+
+    def _fetch_registration_info(self, event_quotas: Dict[str, Quota]) -> Collection[RegistrationModel]:
+        """Override to combine participants from both otit_37v_kutsuvieras and otit_37v forms"""
+        # Get participants from this form (otit_37v_kutsuvieras)
+        entries = list(self._context.get_model_type().query.all())
+
+        # Get participants from the regular form
+        try:
+            from app.forms.otit_37v import _types as regular_types
+            regular_entries = list(regular_types.get_model_type().query.all())
+            entries.extend(regular_entries)
+        except (ImportError, AttributeError):
+            # If regular form doesn't exist or isn't accessible, just use current entries
+            pass
+
+        # Sort all entries by registration time to show in proper chronological order
+        entries.sort(key=lambda x: x.create_time if x.create_time else datetime.min)
+
+        self._count_registration_quotas(event_quotas, entries)
+        self._calculate_reserve_statuses(entries, event_quotas)
+        return entries
 
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
         fn = recipient.get_firstname()
@@ -153,7 +174,7 @@ This is an automated message, please do not reply."""
 
 def _get_quotas() -> List[Quota]:
     return [
-        Quota("Osallistuja", 100, 100),
+        Quota("Osallistuja", 150, 100),
     ]
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
