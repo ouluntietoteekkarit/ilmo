@@ -30,6 +30,21 @@ def load_module(module_name: str) -> ModuleType:
     return importlib.import_module(module_name, package)
 
 
+from flask import redirect
+LEGACY_REDIRECTS = {
+    'otit_35v': 'otit_37v',
+    'otit_35v_kutsuvieras': 'otit_37v_kutsuvieras'
+}
+
+def register_legacy_redirects(server: Flask) -> None:
+    for old_name, new_name in LEGACY_REDIRECTS.items():
+        server.add_url_rule(
+            f'/{old_name}',
+            f'redirect_{old_name}',
+            (lambda target=new_name: redirect(f'/{target}', code=302))
+        )
+
+
 def register_module_route(server: Flask, module_info: ModuleInfo):
     if not module_info.is_active():
         return

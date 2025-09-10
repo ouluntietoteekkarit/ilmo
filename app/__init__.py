@@ -47,6 +47,7 @@ from . import routes, config
 form_modules = load_form_modules()
 routes.register_index_route(server, form_modules)
 register_form_module_routes(server, form_modules)
+routes.register_legacy_redirects(server)
 
 db.create_all()
 db.session.commit()
