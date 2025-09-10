@@ -37,11 +37,17 @@ LEGACY_REDIRECTS = {
 }
 
 def register_legacy_redirects(server: Flask) -> None:
+    def make_redirect(target, suffix=""):
+        def _handler():
+            root = request.script_root.rstrip('/')
+            return redirect(f'{root}/{target}{suffix}', code=302)
+        return _handler
+
     for old_name, new_name in LEGACY_REDIRECTS.items():
         server.add_url_rule(
             f'/{old_name}',
             f'redirect_{old_name}',
-            (lambda target=new_name: redirect(f'/{target}', code=302))
+            make_redirect(new_name)
         )
 
 
