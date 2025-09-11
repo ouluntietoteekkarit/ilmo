@@ -1,0 +1,82 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+        div.container {
+            max-width: 900px;
+            background-color: #2b2b2b;
+            opacity: 1;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <h1 class="text-center py-2 my-2">Fuksisitsit 2025</h1>
+    <p>
+        Lämpimän juhlalliset tervetulotoivotukset teille, arvon fuksit ja fuksinmieliset!
+        On jälleen tullut aika juhlistaa uuden vuosikurssin opiskelijoiden mahtavaa alavalintaa perinteisillä fuksisitseillä.
+        Sitsit ovat akateeminen pöytäjuhla, joilla on pitkä historia Teekkariperinteissä, ja fuksisitsit ovat mitä parhain tapa tutustua tähän perinteeseen.
+        Näillä sitseillä tulet oppimaan vanhoilta tekijöiltä, miten Oulussa sitsataan.<br><br>
+
+        Sitsit ovat juhlallinen tilaisuus, joten pukukoodina toimii cocktail. Onkin siis aika kaivaa yo-pukusi tai -mekkosi naftaliinista ja tulla sitsaamaan!
+        Jos sinulla ei ole cocktailasua, voit pukea päällesi esimerkiksi tummat farkut ja siistin yläosan.
+        Fuksisitsit ovat ilmaiset tämän vuoden fukseille sekä tuutoreille. Muille sitsaajille sitsit maksavat 25 euroa.
+        Maksuohjeet tulevat sähköpostissa ilmoittautumisvahvistuksen mukana.
+    </p>
+    <h4>TL;DR</h4>
+    <ul>
+        <li>Mitä: Fuksisitsit</li>
+        <li>Milloin: Maanantaina 15.9. klo 18.00</li>
+        <li>Missä: <a href="https://maps.app.goo.gl/SQxXmio3aFnVfivW6">Walhalla (Jaalakuja 1)</a></li>
+        <li>Pukukoodi: Cocktail + Teekkarilakki</li>
+    </ul>
+
+    <hr>
+
+    <p>
+        A warm and festive welcome to you, dear freshmen and freshman-minded friends!
+        Once again, it is time to celebrate the excellent choice of field made by the new class of students with the traditional freshman sitsit.
+        <a href="https://en.wikipedia.org/wiki/Sittning">Sitsit</a> are an academic dinner party with a long history in the Teekkari traditions, and the freshman sitsit are the best way to get acquainted with this tradition.
+        At these sitsit, you will learn from the experienced how sitsit are done in Oulu.<br><br>
+
+        Sitsit are a formal occasion, so the dress code is cocktail. It’s time to bring out your suit or dress and come enjoy the evening!
+        If you don’t have cocktail attire, you can wear, for example, dark jeans and a neat top.
+        The freshman sitsit are free for this year’s freshmen and tutors. For other participants, the sitsit cost 25 euros.
+        Payment instructions will be sent by email along with the registration confirmation.
+    </p>
+    <h4>TL;DR</h4>
+    <ul>
+        <li>What: Freshman sittning</li>
+        <li>When: Monday, September 15 at 18:00</li>
+        <li>Where: <a href="https://maps.app.goo.gl/SQxXmio3aFnVfivW6">Walhalla (Jaalakuja 1)</a></li>
+        <li>Dress code: Cocktail + Teekkari cap</li>
+    </ul>
+
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.quota) }}
+    {{ macros.form_field(form.drink) }}
+    {{ macros.form_field(form.liquor) }}
+    {{ macros.form_field(form.wine) }}
+    {{ macros.form_field(form.allergies) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+        {{ macros.form_field(form.get_other_attributes().binding_registration_consent) }}
+    {%- endcall -%}
+{%- endblock -%}

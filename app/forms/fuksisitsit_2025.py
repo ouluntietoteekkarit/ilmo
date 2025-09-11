@@ -5,7 +5,8 @@ from wtforms.validators import InputRequired
 
 from app.email import make_greet_line
 from app.form_lib.common_attributes import make_attribute_firstname, make_attribute_lastname, make_attribute_email, \
-    make_attribute_allergies, make_attribute_quota, make_attribute_name_consent, make_attribute_privacy_consent
+    make_attribute_allergies, make_attribute_quota, make_attribute_name_consent, make_attribute_privacy_consent, \
+    make_attribute_binding_registration_consent
 from app.form_lib.drinks import make_attribute_usual_sitsi_drink, make_attribute_usual_sitsi_wine, \
     make_attribute_usual_sitsi_liquor, make_enum_usual_sitsi_drink, make_enum_usual_sitsi_liquor, \
     make_enum_usual_sitsi_wine
@@ -24,7 +25,7 @@ def get_module_info() -> ModuleInfo:
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 _QUOTA_FUKSI = 'Fuksi'
-_QUOTA_PRO = 'Tutor'
+_QUOTA_TUTOR = 'Tutor'
 
 
 class OtherQuota(Quota):
@@ -42,23 +43,43 @@ class OtherQuota(Quota):
 class _Controller(FormController):
 
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
-        if recipient.get_quota() in [_QUOTA_FUKSI, _QUOTA_PRO]:
+        if recipient.get_quota() in [_QUOTA_FUKSI, _QUOTA_TUTOR]:
             return ' '.join([
                 make_greet_line(recipient),
-                """Olet ilmoittautunut OTiTin fuksisitseille. Sitsien pukukoodi on cocktail.
+                """Tervehdys! Olet ilmoittautunut OTiT:n fuksisitseille. 
+Sitsit järjestetään Walhallassa maanantaina 15.9. klo 18 alkaen. Tapahtuman pukukoodi on cocktail.
+Muistathan tulla ajoissa paikalle!
 
-Älä vastaa tähän sähköpostiin, vastaus ei mene mihinkään."""
+Älä vastaa tähän sähköpostiin, vastaus ei mene mihinkään.
+-----
+Greetings! You have registered for OTiT’s freshman sitsit.
+The sitsit will be held at Walhalla on Monday, September 15, starting at 18:00. The dress code for the event is cocktail.
+Please remember to arrive on time!
+
+Do not reply to this email, responses will not be received."""
             ])
 
         return ' '.join([
             make_greet_line(recipient),
-            """Olet ilmoittautunut OTiTin fuksisitseille. Sitsien pukukoodi on cocktail.
-Tässä vielä maksuohjeet:
-Sitsien hinta on 25€. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille FI03 4744 3020 0116 87.
-Kirjoita viestikenttään nimesi + fuksisitsit. Jos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä
-pepeministeri@otit.fi
+            """Tervehdys! Olet ilmoittautunut OTiT:n fuksisitseille.
+Sitsit järjestetään Walhallassa maanantaina 15.9. klo 18 alkaen. Tapahtuman pukukoodi on cocktail.
+Muistathan tulla ajoissa paikalle!
 
-Älä vastaa tähän sähköpostiin, vastaus ei mene mihinkään."""
+Maksuohjeet:
+Sitsien hinta on 25 €. Maksu tapahtuu tilisiirrolla Oulun Tietoteekkarit ry:n tilille FI03 4744 3020 0116 87.
+Kirjoita viestikenttään nimesi + fuksisitsit. Jos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä soteministeri@otit.fi.
+
+Älä vastaa tähän sähköpostiin, vastaus ei mene mihinkään.
+-----
+Greetings! You have registered for OTiT’s freshman sitsit.
+The sitsit will be held at Walhalla on Monday, September 15, starting at 18:00. The dress code for the event is cocktail.
+Please remember to arrive on time!
+
+Payment instructions:
+The price of the sitsit is 25 €. Payment is made by bank transfer to the account of Oulun Tietoteekkarit ry: FI03 4744 3020 0116 87.
+Write "your name + fuksisitsit" in the message field. If you have any questions, you can contact us via email at soteministeri@otit.fi.
+
+Do not reply to this email, responses will not be received."""
         ])
 
 
@@ -66,17 +87,17 @@ _form_name = make_form_name(__file__)
 
 
 def _get_quotas(registration_start: datetime, registration_end: datetime) -> List[Quota]:
-    fuksi_quota = Quota(_QUOTA_FUKSI, 115,  0,  registration_start, registration_end)
+    fuksi_quota = Quota(_QUOTA_FUKSI, 120,  0,  registration_start, registration_end)
     return [
         fuksi_quota,
-        Quota(_QUOTA_PRO,   17,    0,  registration_start, registration_end),
+        Quota(_QUOTA_TUTOR, 15, 0, registration_start, registration_end),
         Quota('Hallitus',   12,   0,  registration_start, registration_end),
         OtherQuota(fuksi_quota, 'Muu', 0, 20,  datetime(2023, 9, 8, 0, 0, 0),  registration_end)
     ]
 
 
-_registration_start = datetime(2024, 9, 4, 12, 0, 0)
-_registration_end = datetime(2024, 9, 9, 23, 59, 59)
+_registration_start = datetime(2025, 9, 11, 0, 0, 0)
+_registration_end = datetime(2025, 9, 14, 23, 59, 59)
 _quotas = _get_quotas(_registration_start, _registration_end)
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_quotas))
@@ -97,11 +118,12 @@ participant_attributes = [
 optional_participant_attributes = []
 other_attributes = [
     make_attribute_name_consent(),
-    make_attribute_privacy_consent("", validators=[InputRequired()])
+    make_attribute_privacy_consent("", validators=[InputRequired()]),
+    make_attribute_binding_registration_consent("", validators=[InputRequired()])
 ]
 
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
 
-_event = Event('Fuksisitsit', _registration_start, _registration_end, _quotas, _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
+_event = Event('Fuksisitsit 2025', _registration_start, _registration_end, _quotas, _types.asks_name_consent(), hide_title=True)
+_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
 
