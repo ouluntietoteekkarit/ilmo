@@ -43,25 +43,22 @@ class OtherQuota(Quota):
 class _Controller(FormController):
 
     def _get_email_msg(self, recipient: BaseParticipant, model: RegistrationModel, reserve: bool) -> str:
+        firstname = recipient.get_firstname()
+        lastname = recipient.get_lastname()
         if recipient.get_quota() in [_QUOTA_FUKSI, _QUOTA_TUTOR]:
-            return ' '.join([
-                make_greet_line(recipient),
-                """Tervehdys! Olet ilmoittautunut OTiT:n fuksisitseille. 
+            return f"""Tervehdys, {firstname} {lastname}! Olet ilmoittautunut OTiT:n fuksisitseille. 
 Sitsit järjestetään Walhallassa maanantaina 15.9. klo 18 alkaen. Tapahtuman pukukoodi on cocktail.
 Muistathan tulla ajoissa paikalle!
 
 Älä vastaa tähän sähköpostiin, vastaus ei mene mihinkään.
 -----
-Greetings! You have registered for OTiT’s freshman sitsit.
+Greetings, {firstname} {lastname}! You have registered for OTiT’s freshman sitsit.
 The sitsit will be held at Walhalla on Monday, September 15, starting at 18:00. The dress code for the event is cocktail.
 Please remember to arrive on time!
 
 Do not reply to this email, responses will not be received."""
-            ])
-
-        return ' '.join([
-            make_greet_line(recipient),
-            """Tervehdys! Olet ilmoittautunut OTiT:n fuksisitseille.
+        else:
+            return f"""Tervehdys, {firstname} {lastname}! Olet ilmoittautunut OTiT:n fuksisitseille.
 Sitsit järjestetään Walhallassa maanantaina 15.9. klo 18 alkaen. Tapahtuman pukukoodi on cocktail.
 Muistathan tulla ajoissa paikalle!
 
@@ -71,7 +68,7 @@ Kirjoita viestikenttään nimesi + fuksisitsit. Jos tulee kysyttävää, niin vo
 
 Älä vastaa tähän sähköpostiin, vastaus ei mene mihinkään.
 -----
-Greetings! You have registered for OTiT’s freshman sitsit.
+Greetings, {firstname} {lastname}! You have registered for OTiT’s freshman sitsit.
 The sitsit will be held at Walhalla on Monday, September 15, starting at 18:00. The dress code for the event is cocktail.
 Please remember to arrive on time!
 
@@ -80,7 +77,6 @@ The price of the sitsit is 25 €. Payment is made by bank transfer to the accou
 Write "your name + fuksisitsit" in the message field. If you have any questions, you can contact us via email at soteministeri@otit.fi.
 
 Do not reply to this email, responses will not be received."""
-        ])
 
 
 _form_name = make_form_name(__file__)
