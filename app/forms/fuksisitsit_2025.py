@@ -86,7 +86,7 @@ def _get_quotas(registration_start: datetime, registration_end: datetime) -> Lis
     fuksi_quota = Quota(_QUOTA_FUKSI, 120,  0,  registration_start, registration_end)
     return [
         fuksi_quota,
-        Quota(_QUOTA_TUTOR, 15, 0, registration_start, registration_end),
+        Quota(_QUOTA_TUTOR, 16, 0, registration_start, registration_end),
         Quota('Hallitus',   12,   0,  registration_start, registration_end),
         OtherQuota(fuksi_quota, 'Muu', 0, 20,  datetime(2023, 9, 8, 0, 0, 0),  registration_end)
     ]
