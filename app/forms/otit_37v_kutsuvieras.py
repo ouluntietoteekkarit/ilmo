@@ -29,7 +29,7 @@ _form_name = make_form_name(__file__)
 _event_name = "Oulun Tietoteekkarit ry 37 vuotta"
 _is_enabled = False
 _start_date = datetime(2025, 8, 24, 13, 37, 00)
-_end_date   = datetime(2025, 9, 14, 23, 59, 59)
+_end_date   = datetime(2025, 9, 15, 23, 59, 59)
 
 
 class _Controller(FormController):
