@@ -1,0 +1,61 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles -%}
+    <style>
+        body {
+            background-color: #121417 !important;
+            background-size: cover;
+        }
+
+        div.container {
+            max-width: 900px;
+            background-color: var(--bs-body-bg);
+            opacity: 0.975;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <img src="https://alppilabowling.fi/wp-content/uploads/keilailu1.webp" style="height: 300px; width: 100%; object-fit: cover" alt="banner">
+    <p class="text-center mt-3">
+        <span class="fs-2 fw-bold">Vuosijuhlaviikon keilausilta</span>
+    </p>
+
+    <p class="text-center">
+        Vuosijuhlaviikon tapahtumat jatkuvat tiistaina 23.9. keilailun merkeissä!<br>
+        Keilausilta järjestetään Alppila Bowlingissa (Tukkimiehentie 1) klo 17 alkaen. Kiltalaisten käyttöön on varattu muutamia keilaratoja, ja kilta tarjoaa osallistujille keilailun sekä kenkävuokran.<br>
+        Alppila Bowlingista löytyy keilailun lisäksi mm. biljardia, dartsia sekä juoma- ja ruokatarjoilua.<br><br>
+
+        Yhdelle radalle mahtuu neljä keilaajaa, ja paikat täytetään lähtökohtaisesti ilmoittautumisjärjestyksessä.<br>Paikkoja on rajoitetusti, joten toimi nopeasti!<br>
+        Mikäli olet ilmoittautunut muttet pääsekään paikalle, peruutathan osallistumisesi mahdollisimman pian, jotta voimme vapauttaa paikkasi seuraavalle osallistujalle.<br><br>
+        <b><u>Tapahtuma on ilmainen!</u></b><br>
+        Jos suosio yllättää, niin yritämme mahdollisuuksien mukaan järjestää lisää keilaratoja käyttöön.
+
+    </p>
+
+{% endblock %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {% set p = form.get_required_participants()[0] %}
+        <h4>Ilmoittautuminen</h4>
+        {{ macros.form_field(p.firstname) }}
+        {{ macros.form_field(p.lastname) }}
+        {{ macros.form_field(p.email) }}
+
+        <div class="hackerman.exe" hidden="hidden">
+	        <label class="form-label" data-is-required="" for="required_participants-0-quota" label-required="">Kiintiö</label>
+            <input class="form-control" data-is-required="" id="required_participants-0-quota" name="required_participants-0-quota" value="Osallistuja" readonly>
+	    </div>
+
+        {% set other = form.get_other_attributes() %}
+        {{ macros.form_field(other.show_name_consent) }}
+        {{ macros.form_field(other.privacy_consent) }}
+    {%- endcall -%}
+{% endblock %}
