@@ -118,7 +118,7 @@ def _get_quotas() -> List[Quota]:
     ]
 
 
-_registration_start = datetime(2025, 10, 20, 13, 37, 0)
+_registration_start = datetime(2025, 10, 21, 13, 37, 0)
 _registration_end = datetime(2025, 10, 26, 23, 59, 59)
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_get_quotas()))
