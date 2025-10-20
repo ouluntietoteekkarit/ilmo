@@ -1,0 +1,88 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+        div.container {
+            max-width: 900px;
+            background-color: #2b2b2b;
+            opacity: 1;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <h1 class="text-center py-2 my-2">Fuksiexcursio 2025</h1>
+    <p>
+        Fuksiexcursio on täällä taas, ja tällä kertaa reissun teemana on <b>side quest!</b>
+        Lähde siis matkaan tutustumaan toiseen kaupunkiin, ja suorita matkalla niin monta side questia, kuin vain pystyt.
+        Matkan hinta on fukseille 5€ ja muille 25€. Hintaan kuuluu bussimatka, saunatila ja ohjelmaa kohteessa.
+        Tämän halvempaa excursiota ei tule!<br><br>
+
+        Bussi lähtee yliopiston X-ovelta <b>aikaisin aamulla</b> perjantaina 31.10., ja pysähtyy sen jälkeen Tuirassa sekä linja-autoasemalla,
+        joista voi myös nousta kyytiin. Bussi palaa samaa reittiä takaisin Ouluun 1.11. aamulla/päivällä.<br>
+        Excursion kohteessa lämpiää sauna, joten OPMx2. Bussissa saa nauttia omia juomia, mutta bussissa oksentamisesta seuraa 50€ sakko
+        (mikäli ei osu pönttöön tai pussiin, tai pussi vuotaa). Nautitaan siis rauhassa, jotta kaikilla on kivempaa!<br><br>
+
+        Excursiolle on myönnetty Lakkilupa, joten muista ottaa lakkisi mukaan! Huomioi, että Lakkilupa alkaa vasta Oulun ulkopuolella,
+        joten Lakkia ei siis laiteta päähän Oulun alueella.
+    </p>
+    <h4>TL;DR</h4>
+    <ul>
+        <li>Mitä: Fuksiexcu</li>
+        <li>Milloin: Pe 31.10. - la 1.11.</li>
+        <li>Missä: Lähtee yliopiston X-ovelta</li>
+        <li>Mitä mukaan: Teekkari-/fuksilakki, OPMx2 ja reipasta mieltä</li>
+    </ul>
+
+    <hr>
+
+    <p>
+        The freshman excursion is here again, and this time the trip’s theme is <b>side quest!</b>
+        So, set off to explore another city and complete as many side quests along the way as you can.
+        The price of the trip is €5 for freshmen and €25 for others. The price includes the bus ride, a sauna venue, and activities at the destination.
+        You won’t find a cheaper excursion!<br><br>
+
+        The bus departs from the university’s X-entrance <b>early in the morning</b> on Friday 31.10., and then stops in Tuira and at the bus station,
+        where you can also board. The bus returns along the same route back to Oulu on 1.11. in the morning/early afternoon.<br>
+        There will be a sauna at the destination, so BYOB x2. You may enjoy your own drinks on the bus, but vomiting on the bus will result in a €50 fine
+        (if you miss the toilet or the bag, or the bag leaks). Let’s take it easy so everyone has a better time!<br><br>
+
+        A cap permit has been granted for the excursion, so remember to bring your cap! Please note that the cap permit only begins outside Oulu,
+        so the cap should not be worn within the Oulu area.
+    </p>
+    <h4>TL;DR</h4>
+    <ul>
+        <li>What: Freshman excursion</li>
+        <li>When: Fri, Oct 31st to Sat, Nov 1st</li>
+        <li>Where: From the University's X entrance</li>
+        <li>What do you need: Your Teekkari/freshman cap, BYOB + towel and good attitude</li>
+    </ul>
+
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.phone_number) }}
+    {{ macros.form_field(form.telegram) }}
+    {{ macros.form_field(form.departure_location) }}
+    {{ macros.form_field(form.quota) }}
+    {{ macros.form_field(form.allergies) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+        {{ macros.form_field(form.get_other_attributes().binding_registration_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
