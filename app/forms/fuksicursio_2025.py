@@ -33,8 +33,9 @@ class _Controller(FormController):
         departure_location = recipient.get_departure_location()
 
         if reserve:
-            return f"""Tervehdys, {firstname} {lastname}! Olet ilmoittautunut OTiT:n fuksiexcursiolle. 
-Olet varasijalla. Jos excursiolle jää peruutuksien myötä vapaita paikkoja, sinuun voidaan olla yhteydessä.
+            return f"""Tervehdys, {firstname} {lastname}! Olet ilmoittautunut OTiT:n fuksiexcursiolle.
+Olet varasijalla. Jos excursiolle jää vapaita paikkoja, sinuun voidaan olla yhteydessä.
+Huomaathan, että "Muu" -kiintiöön ilmoittautuneet ovat automaattisesti varasijalla.
 
 Tässä vielä ilmoittamasi tiedot:
 Nimi: {firstname} {lastname}
@@ -46,7 +47,9 @@ Lähtöpaikka: {departure_location}
 Älä vastaa tähän sähköpostiin, vastaus ei mene mihinkään.
 -----
 Greetings, {firstname} {lastname}! You have registered for OTiT’s freshman excursion.
-You are on the waiting list. If there are cancellations and free spots become available, you may be contacted.
+You are on the waiting list. If free spots become available, you may be contacted.
+Please note that those who registered under the "Other" quota are automatically on the waiting list.
+
 Here are the details you provided:
 Name: {firstname} {lastname}
 Email: {email}

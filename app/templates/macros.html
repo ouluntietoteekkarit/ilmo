@@ -79,7 +79,7 @@
 {%- macro participant_list(entries, event) -%}
 	{# TODO: See if the HTML could be made prettier #}
 	{%- call(entry, is_in_reserve) participant_list_routine(entries, event) -%}
-		<p>
+		<p style="overflow: auto">
 		{%- for participant in entry.get_required_participants() -%}
 			{{ participant.get_firstname() }} {{ participant.get_lastname() }}
 			{{ ", " if not loop.last }}
