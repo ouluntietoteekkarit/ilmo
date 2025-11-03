@@ -1,0 +1,103 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+        div.container {
+            max-width: 900px;
+            background-color: #2b2b2b;
+            opacity: 1;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <h1 class="text-center py-2 my-2">Megazone - Kaikki fuksit yhdessä 2025</h1>
+<p>
+  Tervetuloa osallistumaan yhteiseen Megazone iltapäivään perjantaina 28.11. klo 15.00 -
+  16.30. Kilta on varannut tuutoreita ja fukseja varten 3 pelikierrosta, ja jokaiseen
+  kierrokseen mahtuu 24 pelaajaa eli yhteensä 72 pelaajaa. Yksi kierros per osallistuja.<br><br>
+  
+  Kierrokset alkavat klo 15.00, 15.30 ja 16.00. Saavuthan paikalle noin 15 min ennen
+  oman kierroksen alkua. Rahaliikenne kulkee killan kautta ja osallistumismaksu 4,75€
+  maksetaan täten killalle. Paikan päällä pitää kuitenkin näyttää opiskelijakorttia, sillä
+  hintaan sisältyy opiskelija-alennus.<br><br>
+  
+  Voit ilmoittaa toivomuksen kellonajasta ja pyrimme parhaamme mukaan jakamaan
+  osallistujat sen mukaan ja ilmoitamme pelaajille Telegramin välityksellä peliajoista.
+  Pelit pelataan Pelibunkkeri.fi Meagazonessa osoitteessa Pakkahuoneenkatu 17.
+  Megazonen opastusvideo (5min 18sek):
+  https://youtu.be/JzoU7FQMuy0?si=_TTV5kYkxpr-EdHS Opastusvideo näytetään myös
+  paikan päällä ennen jokaista peliä.<br><br>
+
+  <b>Huom!</b> Paikat täytetään ensisijaisesti tuutoreista ja fukseista mikäli 72 hlö kiintiö ei täyty
+  otamme pelaajia varasijoilta ilmoittautumisjärjestyksessä. Muu -kiintiöön voi ilmoittautua
+  OTiTin teekkarit. Varapelaajille ilmoitetaan pääsystä Telegrammin kautta.
+    </p>
+    <h4>TL;DR</h4>
+    <ul>
+        <li>Mitä? Megazone: Kaikki fuksit yhdessä ohjauskerta</li>
+        <li>Missä? Pelibunkkeri ja Megazone Arena, Pakkahuoneenkatu 17, 90100 Oulu</li>
+        <li>Milloin? pe 28.11. klo 15.00 - 16.30</li>
+        <li>Mitä maksaa? vain 4,75 € (maksetaan killalle)</li>
+        <li>Miksi? Vietetään yhdessä aikaa ennen fuksisyksyn päättymistä</li>
+    </ul>
+
+    <hr>
+<p>
+  Welcome to a shared Megazone afternoon on Friday, 28.11. at 15.00 - 16.30. The guild
+  has reserved 3 game rounds for tutors and freshmen, with 24 players per round, a total
+  of 72 players. One round per participant.<br><br>
+  
+  The rounds start at 15.00, 15.30, and 16.00. Please arrive about 15 minutes before your
+  round begins. Payments are handled through the guild, and the participation fee of
+  4,75€ is paid to the guild. However, you must show your student card on site, as the
+  price includes a student discount.<br><br>
+  
+  You can indicate your preferred game time, and we will do our best to assign players
+  accordingly. Game times will be communicated to participants via Telegram.<br><br>
+  
+  The games will be played at Pelibunkkeri.fi Megazone, located at Pakkahuoneenkatu
+  17. Megazone instruction video in Finnish (5 min 18 sec):
+  https://youtu.be/JzoU7FQMuy0?si=_TTV5kYkxpr-EdHS The instruction video will also
+  be shown on site before each game.<br><br>
+  
+  <b>Note!</b> Spots are primarily reserved for tutors and freshmen. If the 72-player quota is not
+  filled, players from the waiting list will be accepted in order of registration. Other OTiT
+  guild members may register for the “Other” category. Substitute players will be informed
+  about available spots via Telegram.<br><br>
+  
+    </p>
+    <h4>TL;DR</h4>
+    <ul>
+        <li>What? Megazone: All Freshmen Together session</li>
+        <li>Where? Pelibunkkeri & Megazone Arena, Pakkahuoneenkatu 17, 90100 Oulu</li>
+        <li> When? Fri 28.11. at 15.00 - 16.30</li>
+        <li>How much? Only 4,75€ (paid to the guild)</li>
+        <li>Why? Let’s spend time together before the freshman autumn comes to an end</li>
+    </ul>
+
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.telegram) }}
+    {{ macros.form_field(form.preferred_time) }}
+    {{ macros.form_field(form.quota) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+    {%- endcall -%}
+{%- endblock -%}

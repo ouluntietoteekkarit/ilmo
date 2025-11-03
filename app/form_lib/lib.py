@@ -22,7 +22,7 @@ ATTRIBUTE_NAME_OTHER_ATTRIBUTES = 'other_attributes'
 ATTRIBUTE_NAME_PRIVACY_CONSENT = 'privacy_consent'
 ATTRIBUTE_NAME_NAME_CONSENT = 'show_name_consent'
 ATTRIBUTE_NAME_BINDING_REGISTRATION_CONSENT = 'binding_registration_consent'
-
+ATTRIBUTE_NAME_PREFERRED_TIME = 'preferred_time'
 
 # MEMO: Must not have metaclass.
 class BaseFormComponent:
