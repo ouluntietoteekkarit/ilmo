@@ -1,0 +1,339 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles -%}
+
+<style>
+    div.container {
+        max-width: 900px;
+        background-color: #2b2b2b;
+        opacity: 1;
+    }
+
+    blockquote {
+        font-style: italic;
+        padding: 10px 15px;
+        margin: 15px 0;
+        border-radius: 5px;
+    }
+
+    div.form-check {
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+    }
+
+    .sub-section {
+        margin-top: 2em;
+        background-color: #3a3a3a;
+        padding: 1em;
+        border-radius: 8px;
+    }
+
+    .dlc-item {
+        margin-bottom: 0.5em;
+    }
+
+    .dlc-description {
+        margin-left: 1.5em;
+    }
+
+    .dlc-price {
+        position: relative;
+        display: inline-block;
+        padding: 0.3em 0.3em;
+        border-radius: 9999px;
+        font-weight: 700;
+        color: white;
+        background: transparent;
+        z-index: 1;
+        text-shadow: 0 0 4px black; 
+    }
+
+    .dlc-price::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: conic-gradient(
+            from 0deg,
+            #ff004d,
+            #ff8a00,
+            #ffee00,
+            #00c853,
+            #00b0ff,
+            #6a00ff,
+            #ff00b3,
+            #ff004d
+        );
+        filter: blur(6px); 
+        opacity: 0.8;
+        animation: rainbow-spin 6s linear infinite;
+        z-index: -1;
+    }
+
+    @keyframes rainbow-spin {
+        0% {
+            transform: rotate(0deg) scale(0.95);
+        }
+        25% {
+            transform: rotate(180deg) scale(1.25);
+        }
+        50% {
+            transform: rotate(360deg) scale(0.95);
+        }
+        75% {
+            transform: rotate(540eg) scale(1.25);
+        }
+        100% {
+            transform: rotate(720deg) scale(0.95);
+        }
+    }
+    .image-container {
+        overflow: hidden;
+        text-align: center;
+    }
+    .image-container img {
+        width: 50%;
+        height: 50%;
+        object-fit: cover; /* fills the div and crops excess */
+    }
+</style>
+
+{%- endblock -%}
+
+{%- block event_info -%}
+
+<h1 class="text-center py-2 my-2">DLC-Sitsit</h1>
+
+<div class="image-container">
+<img src={{ url_for('static', filename='img/dlc-sitsit.jpg') }} alt="DLC-sitsit">
+</div>
+
+<br>
+
+<p><b>Oletko odottanut killan omia sitsejä?</b> Onko viime kerrasta monta vuotta tai kenties kirsikka vielä puhkaisematta? Ei huolta, nimittäin vanhat patut ovat ottaneet homman omille harteilleen ja saaneet siunauksen järjestää vihdoin ja viimein killan omat sitsit.<br><br>
+
+<b>Sitsit ovat DLC teemaiset. </b>Rakenna itsellesi omanlaisesi kokemus ja immersoidu ainutlaatuiseen sitsielämykseen <b>lauantaina 13.12. Teekkaritalolla.</b><br><br>
+
+<b>Limited Edition DLC -valintoja on tarjolla vain rajallinen määrä, joten kannattaa ostaa nopee.</b><br><br>
+
+<b>Laulutoiveet toimivat polettien avulla.</b> Osallistumalla sitseille saat 0 polettia. Pre-order bonuksena: +1 jos ilmoittaudut ensimmäisen 24h aikana. +1 jos käytät vähintään 18€ sitseihin. Eli voit maksimissaan saada 2 polettia.<br><br>
+
+Sitsien osallistusmaksu on <b>10 + n €</b>. Voit kohentaa kokemusta allaolevista valinnoista.
+</p>
+
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    <div class="sub-section">
+        <h2> Perustiedot: </h2>
+        {{ macros.form_field(form.firstname) }}
+        {{ macros.form_field(form.lastname) }}
+        {{ macros.form_field(form.email) }}
+        {{ macros.form_field(form.poytaseura) }}
+
+        {% if form.quota.choices|length > 1 %}
+            {{ macros.form_field(form.quota) }}
+        {% else %}
+            {{ form.quota(hidden=true) }}
+        {% endif %}
+    </div>
+
+    <div class="sub-section">
+      <h2>Gourmet Expansion Pack: </h2>
+      <p> Lisää eläämää peliisi! Avaa täysin uusi makumaailma: </p>
+      <blockquote>"Syö, tai kuole nälkään" - kriitikot 10/10</blockquote>
+      {{ macros.form_field(form.ruoka) }}
+      <hr>
+      {{ macros.form_field(form.jalkiruoka) }}
+      <hr>
+      {{ macros.form_field(form.kahviavec) }}
+      <hr>
+      {{ macros.form_field(form.allergies) }}
+      <hr>
+      <h2>Liquid Courage Pack: </h2>
+      <p> Laajenna nestetasapainosi yli peruspelin rajojen! </p>
+      <blockquote>"Tämä DLC nostaa sitsauskokemuksen uudelle tasolle. Ensimmäinen hörppy ja immersio on täydellinnen" - Helsingin Sanomat</blockquote>
+      {{ macros.form_field(form.miedot) }}
+      {{ macros.form_field(form.mietotoive) }}
+      <p> *Toive: holiton, holillinen, yms. </p>
+      <hr>
+      {{ macros.form_field(form.kaadot) }}
+      <hr>
+      {{ macros.form_field(form.ruokajuoma) }}
+      {{ macros.form_field(form.ruokajuomatoive) }}
+      <p> *Toive: holiton, holillinen, yms. </p>
+      <hr>
+      <h2>Sitsit OST: </h2>
+      <blockquote>"Niin hyvää musiikkia, että tekee mieli laulaa mukana" - Ilkka Vainio 6/7</blockquote>
+      {{ macros.form_field(form.lasy) }}
+    </div>
+
+    <div class="sub-section">
+        <h2>Limited Edition Valinnat: </h2>
+
+        {% set ns = namespace(
+            ruusu_count=0,
+            valkokangas_count=0,
+            pukukoodi_count=0,
+            raffle_count=0,
+            titanic_count=0,
+            pukukoodi2_count=0,
+            ruusu_count_max=1,
+            valkokangas_count_max=1,
+            pukukoodi_count_max=1,
+            raffle_count_max=5*64,
+            titanic_count_max=1,
+            pukukoodi2_count_max=1
+        ) %}
+
+        {%- for entry in registrations.get_entries() -%}
+            {%- for participant in entry.get_required_participants() -%}
+                {% if participant.get_ruusuDLC() == "Kyllä" %} {% set ns.ruusu_count = ns.ruusu_count + 1 %} {% endif %}
+                {% if participant.get_valkokangasDLC() == "Kyllä" %} {% set ns.valkokangas_count = ns.valkokangas_count + 1 %} {% endif %}
+                {% if participant.get_pukukoodiDLC() == "Kyllä" %} {% set ns.pukukoodi_count = ns.pukukoodi_count + 1 %} {% endif %}
+                {% if participant.get_raffleDLC() %} {% set ns.raffle_count = ns.raffle_count + participant.get_raffleDLC() %} {% endif %}
+                {% if participant.get_titanicDLC() == "Kyllä" %} {% set ns.titanic_count = ns.titanic_count + 1 %} {% endif %}
+                {% if participant.get_pukukoodi2DLC() == "Kyllä" %} {% set ns.pukukoodi2_count = ns.pukukoodi2_count + 1 %} {% endif %}
+            {%- endfor -%}
+        {%- endfor -%}
+
+        <hr>
+
+        {# Ruusu-DLC #}
+        <h2>Vessel of Ruusu:</h2>
+        <blockquote>"Tuska viiltää rintaa." - Pulkkinen</blockquote>
+        {% if ns.ruusu_count >= ns.ruusu_count_max %}
+        <div class="dlc-item">
+          <p>DLC on loppuunmyyty.</p>
+          {% set _ = form.ruusuDLC.process_data("Ei") %}
+          {{ form.ruusuDLC(hidden=true) }}
+        </div>
+        {% else %}
+            <div class="dlc-item">
+                {{ macros.form_field(form.ruusuDLC) }}
+                <span class="dlc-price">50€</span>
+                <span class="dlc-description">Valitse 6 hengen ryhmä ja pelaa sitsikansan säestämänä.</span>
+            </div>
+        {% endif %}
+        <p> Jäljellä: {{ns.ruusu_count_max - ns.ruusu_count}} kpl </p>
+
+        <hr>
+
+        {# Valkokangas-DLC #}
+        <h2>Screen of Wonders:</h2>
+        <blockquote>"Ei ääntä, mutta kuva kertoo enemmän kuin tuhat sanaa." - Fuksi</blockquote>
+        {% if ns.valkokangas_count >= ns.valkokangas_count_max %}
+            <div class="dlc-item">
+                <p>Valkokangas DLC on loppuunmyyty.</p>
+                {% set _ = form.valkokangasDLC.process_data("Ei") %}
+                {{ form.valkokangasDLC(hidden=true) }}
+            </div>
+        {% else %}
+            <div class="dlc-item">
+                {{ macros.form_field(form.valkokangasDLC) }}
+                <span class="dlc-price">10€</span>
+                <span class="dlc-description">Valitse hyvän maun rajoissa, mitä valkokankaalla näkyy sitsien ajan (ei ääntä). </span>
+            </div>
+        {% endif %}
+        <p> Jäljellä: {{ns.valkokangas_count_max - ns.valkokangas_count}} kpl </p>
+        
+        <hr>
+
+        {# Pukukoodi-DLC #}
+        <h2>Sitsi Armor Pack:</h2>
+        {% if ns.pukukoodi_count >= ns.pukukoodi_count_max %}
+            <div class="dlc-item">
+                <p>Pukukoodi-DLC on loppuunmyyty.</p>
+                {% set _ = form.pukukoodiDLC.process_data("Ei") %}
+                {% set _ = form.pukukoodi.process_data("") %}
+                {{ form.pukukoodiDLC(hidden=true) }}
+                {{ form.pukukoodi(hidden=true) }}
+            </div>
+        {% else %}
+            <div class="dlc-item">
+              {{ macros.form_field(form.pukukoodiDLC) }}
+              {{ macros.form_field(form.pukukoodi) }}
+              <span class="dlc-price">20€</span>
+              <span class="dlc-description">Päätä pukukoodi sitseille hyvän maun rajoissa.</span>
+            </div>
+        {% endif %}
+        <p> Jäljellä: {{ns.pukukoodi_count_max - ns.pukukoodi_count}} kpl </p>
+        
+        <hr>
+
+        {# Raffle-DLC #}
+        <h2>Loot Box:</h2>
+        <blockquote>"Gold gold gold" - ohnePixel</blockquote>
+        {% if ns.raffle_count >= ns.raffle_count_max %}
+            <div class="dlc-item">
+                <p>DLC on loppuunmyyty.</p>
+                {% set _ = form.raffleDLC.process_data("Ei") %}
+                {{ form.raffleDLC(hidden=true) }}
+            </div>
+        {% else %}
+            <div class="dlc-item">
+                {{ macros.form_field(form.raffleDLC) }}
+                <span class="dlc-price">1€</span>
+                <span class="dlc-description">Osallistu pöytäpullon arvontaan</span>
+            </div>
+        {% endif %}
+        <p> Jäljellä: {{ns.raffle_count_max - ns.raffle_count}} kpl </p>
+
+        <hr>
+
+        {# Titanikki-DLC #}
+        <h2>Ultimate Thirst Edition:</h2>
+        <blockquote>"The Chug Jug can be consumed while moving" - Fortnite</blockquote>
+        {% if ns.titanic_count >= ns.titanic_count_max %}
+            <div class="dlc-item">
+                <p>DLC on loppuunmyyty.</p>
+                {% set _ = form.titanicDLC.process_data("Ei") %}
+                {{ form.titanicDLC(hidden=true) }}
+            </div>
+        {% else %}
+            <div class="dlc-item">
+                {{ macros.form_field(form.titanicDLC) }}
+                <span class="dlc-price">50€</span>
+                <span class="dlc-description">6 artesaaniolutta Alkosta, puukorista tarjoiltuna</span>
+            </div>
+        {% endif %}
+        <p> Jäljellä: {{ns.titanic_count_max - ns.titanic_count}} kpl </p>
+
+        <hr>
+
+        {# Työvoiman pukukoodi-DLC #}
+        <h2>Workhorse Armor Pack:</h2>
+        <blockquote>"People Will Buy Anything" - Todd Howard</blockquote>
+        <blockquote>"There are no refunds for this item" - Bethesda</blockquote>
+        {% if ns.pukukoodi2_count >= ns.pukukoodi2_count_max %}
+            <div class="dlc-item">
+                <p>DLC on loppuunmyyty.</p>
+                {% set _ = form.pukukoodi2DLC.process_data("Ei") %}
+                {% set _ = form.pukukoodi2.process_data("") %}
+                {{ form.pukukoodi2DLC(hidden=true) }}
+                {{ form.pukukoodi2(hidden=true) }}
+            </div>
+        {% else %}
+            <div class="dlc-item">
+              {{ macros.form_field(form.pukukoodi2DLC) }}
+              {{ macros.form_field(form.pukukoodi2) }}
+              <span class="dlc-price">10€</span>
+              <span class="dlc-description">Päätä työvoimalle helposti toteutettava pukukoodi hyvän maun rajoissa.</span>
+            </div>
+        {% endif %}
+        <p> Jäljellä: {{ns.pukukoodi2_count_max - ns.pukukoodi2_count}} kpl </p>
+
+    </div>
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+    {{ participant_form(form.required_participants[0]) }}
+    <div class ="sub-section">
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+        {{ macros.form_field(form.get_other_attributes().binding_registration_consent) }}
+    </div>
+    {%- endcall -%}
+{%- endblock -%}

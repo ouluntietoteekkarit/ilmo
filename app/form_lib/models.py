@@ -150,6 +150,11 @@ class _DbAttributeFactory(AttributeFactory):
                                      self._make_enum_getter(params),
                                      params.get_enum_type())
 
+    def make_radio_button_attribute(self, params: RadioButtonAttribute) -> BaseAttachableAttribute:
+        return _AttachableEnumColumn(params.get_attribute(),
+                                     self._make_enum_getter(params),
+                                     params.get_enum_type())
+        
     def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
         list_type = params.get_list_type()
         return _AttachableRelationshipColumn(*self._params_to_args(params), list_type, True)

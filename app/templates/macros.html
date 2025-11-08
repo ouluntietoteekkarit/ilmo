@@ -100,7 +100,10 @@
 {%- macro participant_count(registrations, event) -%}
 	<h2>Osallistujat | Participants</h2>
 	{%- for quotaName, quotaCounts in registrations.get_event_quotas().items() -%}
-		<span style="padding-right: 10px;"><b>{{ quotaName }}</b>{{ ' ' ~ quotaCounts.get_registrations() ~ ' / ' ~ quotaCounts.get_quota() }}</span>
+    {%- if registrations.get_event_quotas().items()|length > 1 -%}
+	<span style="padding-right: 10px;"><b>{{ quotaName }}
+    {% endif %}
+      </b>{{ ' ' ~ quotaCounts.get_registrations() ~ ' / ' ~ quotaCounts.get_quota() }}</span>
 	{%- endfor -%}
 {%- endmacro -%}
 

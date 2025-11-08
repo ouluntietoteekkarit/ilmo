@@ -9,7 +9,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SelectField, FormField, Form, FieldList, Field, RadioField, \
     IntegerField, DateTimeField
 from wtforms.validators import InputRequired, Optional
-from wtforms.widgets import Select
+from wtforms.widgets import Select, NumberInput
 
 from .widgets import CustomTextInput, CustomCheckboxInput, CustomSelect
 from app.form_lib.lib import BaseAttachableAttribute, BaseRegistration, BaseOtherAttributes, \
@@ -119,6 +119,10 @@ class _FormAttributeFactory(AttributeFactory):
         enum_type = params.get_enum_type()
         return _AttachableEnumField(*self._params_to_args(params), enum_type)
 
+    def make_radio_button_attribute(self, params: RadioButtonAttribute) -> BaseAttachableAttribute:
+        enum_type = params.get_enum_type()
+        return _AttachableRadioButtonField(*self._params_to_args(params), enum_type, params._default)
+
     def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
         list_type = params.get_list_type()
         return _AttachableFieldListField(params.get_attribute(),
@@ -193,7 +197,7 @@ class _AttachableField(BaseAttachableAttribute, ABC):
 class _AttachableIntField(_AttachableField):
 
     def _make_field_value(self) -> Any:
-        return IntegerField(self._label, validators=self._validators, widget=CustomTextInput())
+        return IntegerField(self._label, validators=self._validators, widget=NumberInput())
 
 
 class _AttachableStringField(_AttachableField):
@@ -221,7 +225,6 @@ class _AttachableDatetimeField(_AttachableField):
     def _make_field_value(self) -> Any:
         return DateTimeField(self._label, validators=self._validators, format=self._format, widget=CustomTextInput())
 
-
 class _AttachableEnumField(_AttachableField):
     def __init__(self,
                  attribute: str,
@@ -244,14 +247,39 @@ class _AttachableEnumField(_AttachableField):
         length = len(choices)
         if length == 0:
             raise Exception("Empty enumeration is not allowed.")
-        elif length > 4:
+        elif length > 1:
             choices.insert(0, ('', 'Valitse'))
             return SelectField(self._label, choices=choices, validators=self._validators, widget=CustomSelect())
         else:
-            choices.insert(0, ('', 'Valitse'))
             return SelectField(self._label, choices=choices, validators=self._validators, widget=CustomSelect())
-            return RadioField(self._label, choices=choices, validators=self._validators, widget=CustomListWidget(prefix_label=False))
 
+class _AttachableRadioButtonField(_AttachableField):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 validators: Iterable,
+                 getter: Union[Callable[[Any], Any], None],
+                 enum_type: Type[Enum],
+                 default: str):
+        super().__init__(attribute, label, validators, getter)
+        self._enum_type = enum_type
+        self._default = default
+
+    def _make_choices(self, enum_type: Type[Enum]):
+        choices = []
+        for member in enum_type:
+            choices.append((member.value, member.name))
+
+        return choices
+
+    def _make_field_value(self) -> Any:
+        choices = self._make_choices(self._enum_type)
+        length = len(choices)
+
+        if length == 0:
+            raise Exception("Empty enumeration is not allowed.")
+        else:
+            return RadioField(self._label, choices=choices, default=self._default, validators=self._validators)
 
 class _AttachableFieldListField(_AttachableField):
     def __init__(self,

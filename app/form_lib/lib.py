@@ -45,30 +45,6 @@ class BaseParticipant(BaseFormComponent):
     def is_filled(self) -> bool:
         return bool(self.get_firstname() and self.get_lastname())
 
-"""
-    I don't think we actually need these
-    def get_firstname(self) -> str:
-        raise Exception("Not implemented")
-
-    def get_lastname(self) -> str:
-        raise Exception("Not implemented")
-
-    def get_email(self) -> str:
-        return ''
-
-    def get_quota(self) -> str:
-        return Quota.default_quota_name()
-
-    def get_phone_number(self) -> str:
-        raise Exception("Not implemented. Form likely does not ask for this attribute.")
-
-    def get_departure_location(self) -> str:
-        raise Exception("Not implemented. Form likely does not ask for this attribute.")
-
-    def get_allergies(self) -> str:
-        raise Exception("Not implemented. Form likely does not ask for this attribute.")
-
-"""
 
 class BaseOtherAttributes(BaseFormComponent):
     """Interface-like/mixin class for form's attribute models."""
@@ -217,6 +193,10 @@ class AttributeFactory(ABC):
     def make_enum_attribute(self, params: EnumAttribute) -> BaseAttachableAttribute:
         pass
 
+    @abstractmethod
+    def make_radio_button_attribute(self, params: EnumAttribute) -> BaseAttachableAttribute:
+        pass
+    
     @abstractmethod
     def make_list_attribute(self, params: ListAttribute) -> BaseAttachableAttribute:
         pass
@@ -393,7 +373,21 @@ class EnumAttribute(BaseAttribute):
     def get_enum_type(self):
         return self._enum_type
 
+class RadioButtonAttribute(BaseAttribute):
+    def __init__(self,
+                 attribute: str,
+                 label: str,
+                 short_label: str,
+                 enum_type: Type[Enum],
+                 default_idx: int,
+                 **extra: Dict[str, Any]):
+        super().__init__(attribute, label, short_label, **extra)
+        self._enum_type = enum_type
+        self._default = list(enum_type.__members__.items())[default_idx][0]
 
+    def get_enum_type(self):
+        return self._enum_type
+    
 class ListAttribute(BaseAttribute):
     def __init__(self,
                  attribute: str,
@@ -444,5 +438,7 @@ def attributes_to_fields(factory: AttributeFactory,
             yield factory.make_object_attribute(attribute)
         elif isinstance(attribute, EnumAttribute):
             yield factory.make_enum_attribute(attribute)
+        elif isinstance(attribute, RadioButtonAttribute):
+            yield factory.make_radio_button_attribute(attribute)
         else:
             raise Exception("Invalid attribute parameter type. " + str(type(attribute)))
