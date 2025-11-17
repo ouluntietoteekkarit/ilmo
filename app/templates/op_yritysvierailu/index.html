@@ -65,13 +65,7 @@
         {{ macros.form_field(p.email) }}
         {{ macros.form_field(p.telegram) }}
         {{ macros.form_field(p.allergies) }}
-
-        <div class="hackerman.exe">
-            <label class="form-label" data-is-required="" for="required_participants-0-quota"
-                   label-required="">Kiintiö</label>
-            <input class="form-control" data-is-required="" id="required_participants-0-quota"
-                   name="required_participants-0-quota" value="Osallistuja" readonly>
-        </div>
+        {{ p.quota(hidden=true) }}
 
         {% set other = form.get_other_attributes() %}
         {{ macros.form_field(other.show_name_consent) }}
