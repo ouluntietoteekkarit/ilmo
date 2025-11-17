@@ -29,10 +29,10 @@ def get_module_info() -> ModuleInfo:
 
 _form_name = make_form_name(__file__)
 
-_event_name = "Osuuspankin yritysvierailu"
+_event_name = "Goforen yritysvierailu"
 _is_enabled = True
-_start_date = datetime(2025, 11, 18, 12, 00, 00)
-_end_date = datetime(2025, 11, 25, 11, 59, 59)
+_start_date = datetime(2025, 11, 17, 18, 00, 00)
+_end_date = datetime(2025, 11, 21, 11, 59, 59)
 
 
 class _Controller(FormController):
@@ -47,7 +47,7 @@ class _Controller(FormController):
         if reserve:
             result = ' '.join([
                 f"Tervehdys, {firstname}!\n",
-                "Olet ilmoittautunut Osuuspankin yritysvierailulle 3.12.2025. Olet varasijalla.",
+                "Olet ilmoittautunut Goforen toimistoexcursiolle 27.11.2025. Olet varasijalla.",
                 "Jos yritysvierailulle vapautuu paikkoja, sinuun voidaan olla yhteydessä sähköpostitse.",
                 "\n\nTässä vielä syöttämäsi tiedot: ",
                 "\nNimi: ", firstname, lastname,
@@ -57,7 +57,7 @@ class _Controller(FormController):
                 "\n\nTähän sähköpostiin ei voi vastata.",
                 "\n-----",
                 "\nGreetings, ", firstname, "!\n",
-                "You have signed up for the OP Financial Group office excursion on December 3rd, 2025. You are on the waiting list.",
+                "You have signed up for the Gofore office excursion on November 27th, 2025. You are on the waiting list.",
                 "If spots become available, you may be contacted via email.",
                 "\n\nHere are the details you provided: ",
                 "\nName: ", firstname, lastname,
@@ -69,24 +69,26 @@ class _Controller(FormController):
         else:
             result = ' '.join([
                 f"Tervehdys, {firstname}!\n",
-                "\nOlet ilmoittautunut Osuuspankin yritysvierailulle keskiviikkona 3.12.2025. Tässä vielä syöttämäsi tiedot: ",
+                "\nOlet ilmoittautunut Goforen toimistoexcursiolle torstaina 27.11.2025. Tässä vielä syöttämäsi tiedot: ",
                 "\nNimi: ", firstname, lastname,
                 "\nSähköposti: ", email,
                 "\nTelegram: ", telegram,
                 "\nAllergiat: ", allergies,
-                "\n\nVierailu alkaa keskiviikkona heti klo 16.30, joten saavuthan ajoissa paikalle.",
+                "\n\nVierailu alkaa torstaina heti klo 17.00, joten saavuthan ajoissa paikalle. Toimisto sijaitsee vanhalla paloasemalla, osoitteessa Kauppurienkatu 24.",
+                "\nSisäänkäynti on Kauppurienkadun puolella."
                 "Jos sairastut tai olet muutoin estynyt osallistumasta vierailulle, ilmoitathan asiasta pikimmiten,",
                 "jotta paikkasi voidaan vapauttaa varasijalla olevalle."
                 "\nKysymyksistä tai poissaoloilmoituksista voit olla yhteydessä sähköpostitse ulkoministeri@otit.fi tai Telegramissa @AKoponen."
                 "\n\nTähän sähköpostiin ei voi vastata.",
                 "\n-----",
                 "\nGreetings, ", firstname, "!\n"
-                "\nYou have signed up for the OP Financial Group office excursion on Wednesday, December 3rd, 2025. Here are the details you provided: ",
+                "\nYou have signed up for the OP Financial Group office excursion on Thursday, November 27th, 2025. Here are the details you provided: ",
                 "\nName: ", firstname, lastname,
                 "\nEmail: ", email,
                 "\nTelegram: ", telegram,
                 "\nAllergies: ", allergies,
-                "\n\nThe visit starts promptly at 16:30 on Wednesday, so please arrive on time.",
+                "\n\nThe visit starts promptly at 17:00 on Thursday, so please arrive on time. The office is located at the old fire station, at Kauppurienkatu 24.",
+                "\nThe entrance is on the Kauppurienkatu side."
                 "If you fall ill or are otherwise unable to attend, please inform us as soon as possible,",
                 "so your spot can be given to someone on the waiting list.",
                 "\nFor questions or absence notifications, you can contact us via email at ulkoministeri@otit.fi or on Telegram @AKoponen.",
