@@ -76,20 +76,20 @@ class _Controller(FormController):
                 "\nAllergiat: ", allergies,
                 "\n\nVierailu alkaa torstaina heti klo 17.00, joten saavuthan ajoissa paikalle. Toimisto sijaitsee vanhalla paloasemalla, osoitteessa Kauppurienkatu 24.",
                 "\nSisäänkäynti on Kauppurienkadun puolella."
-                "Jos sairastut tai olet muutoin estynyt osallistumasta vierailulle, ilmoitathan asiasta pikimmiten,",
+                "\n\nJos sairastut tai olet muutoin estynyt osallistumasta vierailulle, ilmoitathan asiasta pikimmiten,",
                 "jotta paikkasi voidaan vapauttaa varasijalla olevalle."
                 "\nKysymyksistä tai poissaoloilmoituksista voit olla yhteydessä sähköpostitse ulkoministeri@otit.fi tai Telegramissa @AKoponen."
                 "\n\nTähän sähköpostiin ei voi vastata.",
                 "\n-----",
-                "\nGreetings, ", firstname, "!\n"
-                "\nYou have signed up for the OP Financial Group office excursion on Thursday, November 27th, 2025. Here are the details you provided: ",
+                f"\nGreetings, {firstname}!\n"
+                "\nYou have signed up for the Gofore office excursion on Thursday, November 27th, 2025. Here are the details you provided: ",
                 "\nName: ", firstname, lastname,
                 "\nEmail: ", email,
                 "\nTelegram: ", telegram,
                 "\nAllergies: ", allergies,
                 "\n\nThe visit starts promptly at 17:00 on Thursday, so please arrive on time. The office is located at the old fire station, at Kauppurienkatu 24.",
                 "\nThe entrance is on the Kauppurienkatu side."
-                "If you fall ill or are otherwise unable to attend, please inform us as soon as possible,",
+                "\n\nIf you fall ill or are otherwise unable to attend, please inform us as soon as possible,",
                 "so your spot can be given to someone on the waiting list.",
                 "\nFor questions or absence notifications, you can contact us via email at ulkoministeri@otit.fi or on Telegram @AKoponen.",
                 "\n\nYou cannot reply to this email."
