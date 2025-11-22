@@ -28,7 +28,7 @@ _form_name = make_form_name(__file__)
 
 _event_name = "Snooker tournament"
 _is_enabled = True
-_start_date = datetime(2025, 11, 21, 13, 37, 00)
+_start_date = datetime(2025, 11, 24, 13, 37, 00)
 _end_date   = datetime(2025, 12, 4, 12, 00, 00)
 
 class _Controller(FormController):
