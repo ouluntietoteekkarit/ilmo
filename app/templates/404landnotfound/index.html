@@ -1,0 +1,87 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+        div.container {
+            max-width: 900px;
+            background-color: var(--bs-body-bg);
+            opacity: 1;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <img src="{{ url_for('static', filename='img/404landnotfound_banner.jpg') }}" style="max-width: 100%; max-height: 50%" alt="banner">
+    <h1 class="text-center py-2 my-2">404: Land Not Found -risteilyn yhteiskuljetus</h1>
+    <p class="text-center">
+        Exculle jälleen!<br>
+        OTiT järjestää yhteiskyydin Algo ry kanssa TTY:n 404: Land Not Found -risteilylle!<br>
+        Mieletön mahdollisuus lähteä jakamaan excuperinteitä sisarkillan kanssa ja etkoilla risteilyä hyvässä porukassa!<br>
+        Lisätietoa sekä liput risteilylle löydät täältä: <a href="https://www.matkapojat.fi/landnotfound">https://www.matkapojat.fi/landnotfound</a>.
+        <br><br>
+        Lähdemme perjantaina 9.1. hyvissä ajoin aamulla (aikataulu tarkentuu lähempänä) niin, että ehdimme ottaa ystävämme Jyväskylästä kyytiin ja pitää tarvittavat tauot.
+        Laiva lähtee klo 18:35. Laiva palaa satamaan lauantaina 10.1. klo 16, josta matka alkaa jälleen Jyväskylän kautta takaisin Ouluun.
+        <br><br>
+        Yhteiskyydin hinta on 36€/hlö, ja sisältää kuljetuksen välillä Oulu-Helsinki (Länsiterminaali)-Oulu.
+        <br><br>
+        <b>HUOM: Risteilyn liput ostetaan erikseen yllä olevasta linkistä - tämä lomake koskee vain excursiota!</b>
+    </p>
+    <h4>TL;DR</h4>
+    <ul>
+        <li>Mitä? 404: Land Not Found -risteilyn yhteiskuljetus</li>
+        <li>Milloin? pe 9.1. - la 10.1.2026</li>
+        <li>Mitä maksaa? 36€/hlö</li>
+        <li>Miksi? Koska risselle pitää päästä ja bussissa on kivaa!</li>
+    </ul>
+
+    <hr>
+    <p class="text-center">
+        Off to an excursion again!<br>
+        OTiT is organizing shared transportation together with Algo ry to TTY's 404: Land Not Found cruise!<br>
+        A great opportunity to share excursion traditions with our sister guild and pre-party for the cruise in good company!<br>
+        You can find more information and tickets for the cruise here: <a href="https://www.matkapojat.fi/landnotfound">https://www.matkapojat.fi/landnotfound</a>.
+        <br><br>
+        We will depart on Friday 9.1. early in the morning (the schedule will be specified closer to the date), so that we have time to pick up our friends from Jyväskylä and take the necessary breaks.
+        The ship departs at 18:35. The ship returns to port on Saturday 10.1. at 16:00, from where the journey back to Oulu starts again via Jyväskylä.
+        <br><br>
+        The price of the shared transportation is 36€/person and includes transport between Oulu-Helsinki (West Terminal)-Oulu.
+        <br><br>
+        <b>NOTE: Cruise tickets are purchased separately from the link above - this form concerns only the excursion!</b>
+    </p>
+
+    <h4>TL;DR</h4>
+    <ul>
+        <li>What? Shared transportation for the 404: Land Not Found cruise</li>
+        <li>When? Fri 9.1. - Sat 10.1.2026</li>
+        <li>How much? 36€/person</li>
+        <li>Why? Because you have to get on the cruise and it's fun on the bus!</li>
+    </ul>
+
+
+{%- endblock -%}
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.phone_number) }}
+    {{ macros.form_field(form.telegram) }}
+    {{ macros.form_field(form.allergies) }}
+    {{ macros.form_field(form.quota) }}
+{% endmacro %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+        {{ macros.form_field(form.get_other_attributes().binding_registration_consent) }}
+    {%- endcall -%}
+{%- endblock -%}
