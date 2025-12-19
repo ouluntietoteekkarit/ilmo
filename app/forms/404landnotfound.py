@@ -30,7 +30,7 @@ _form_name = make_form_name(__file__)
 _event_name = "404: Land Not Found -risteilyn yhteiskuljetus"
 _is_enabled = True
 _start_date = datetime(2025, 11, 24, 12, 00, 00)
-_end_date = datetime(2025, 12, 6, 23, 59, 59)
+_end_date = datetime(2026, 1, 5, 23, 59, 59)
 
 
 class _Controller(FormController):
@@ -107,7 +107,7 @@ def hide_title():
 def _get_quotas() -> List[Quota]:
     return [
         Quota('Matkanjohtaja', 1, 0),
-        Quota('Osallistuja', 28, 100),]
+        Quota('Osallistuja', 54, 100),]
 
 _QuotaEnum = choices_to_enum(_form_name,
                              'quota',
