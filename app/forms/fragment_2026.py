@@ -28,10 +28,10 @@ def get_module_info() -> ModuleInfo:
 
 _form_name = make_form_name(__file__)
 
-_event_name = "Fragment LAN 2024"
-_is_enabled = False
-_start_date = datetime(2024, 11, 2, 13, 37, 00)
-_end_date = datetime(2024, 11, 10, 23, 59, 59)
+_event_name = "Fragment LAN 2026"
+_is_enabled = True
+_start_date = datetime(2026, 1, 8, 15, 00, 00)
+_end_date = datetime(2026, 1, 16, 11, 59, 59)
 
 
 class _Controller(FormController):
@@ -41,12 +41,12 @@ class _Controller(FormController):
         lastname = recipient.get_lastname()
         email = recipient.get_email()
 
-        result = ""
         if reserve:
             result = ' '.join([
                 make_greet_line(recipient),
-                "\nOlet ilmoittautunut Fragment LAN -tapahtumaan. Konepaikkavarauksesi on varasijalla. ",
+                "\nOlet ilmoittautunut Fragment LAN -verkkopelitapahtumaan! Konepaikkavarauksesi on varasijalla. ",
                 "Ylimääräisten konepaikkojen vapautuessa sinuun voidaan olla yhteydessä sähköpostitse. ",
+                "\nJos sinulla tulee kysyttävää, voit olla meihin yhteydessä joko tapahtuman Discord-palvelimella (fragmentlan.fi/discord), sähköpostitse antti@fragmentlan.fi tai Telegramissa @AKoponen.",
                 "\n\nTähän sähköpostiin ei voi vastata."
             ])
         else:
@@ -55,8 +55,8 @@ class _Controller(FormController):
                 "\nOlet varannut konepaikan Fragment LAN -tapahtumaan. Tässä vielä syöttämäsi tiedot: ",
                 "\n\nNimi: ", firstname, lastname,
                 "\nSähköposti: ", email,
-                "\n\nMuista seurata tapahtuman nettisivuja (fragmentlan.fi) sekä liittyä tapahtuman viralliselle Discord-palvelimelle (fragmentlan.fi/discord)."
-                "\nJos tulee kysyttävää, voit olla yhteydessä Discord-palvelimella, sähköpostitse taru@otit.fi tai Telegramissa @AKoponen."
+                "\n\nMuistathan liittyä tapahtuman viralliselle Discord-palvelimelle (fragmentlan.fi/discord) tiedotusta varten!",
+                "\nJos tulee kysyttävää, voit olla yhteydessä Discord-palvelimella, sähköpostitse antti@fragmentlan.fi tai Telegramissa @AKoponen.",
                 "\n\nTähän sähköpostiin ei voi vastata."
             ])
 
@@ -64,7 +64,7 @@ class _Controller(FormController):
 
 def _get_quotas() -> List[Quota]:
     return [
-        Quota('Konepaikka', 60, 100),
+        Quota('Konepaikka', 74, 100),
     ]
 
 
