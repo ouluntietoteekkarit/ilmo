@@ -64,7 +64,7 @@ class _Controller(FormController):
 
 def _get_quotas() -> List[Quota]:
     return [
-        Quota('Konepaikka', 74, 100),
+        Quota('Konepaikka', 65, 100),
     ]
 
 
