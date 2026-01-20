@@ -29,7 +29,7 @@ def get_module_info() -> ModuleInfo:
 _form_name = make_form_name(__file__)
 
 _event_name = "Fragment LAN 2026"
-_is_enabled = True
+_is_enabled = False
 _start_date = datetime(2026, 1, 8, 15, 00, 00)
 _end_date = datetime(2026, 1, 16, 11, 59, 59)
 

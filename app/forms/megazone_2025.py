@@ -30,7 +30,7 @@ def get_module_info() -> ModuleInfo:
 _form_name = make_form_name(__file__)
 
 _event_name = "Megazone"
-_is_enabled = True
+_is_enabled = False
 _start_date = datetime(2025, 10, 5, 13, 37, 00)
 _end_date = datetime(2025, 11, 26, 23, 59, 59)
 

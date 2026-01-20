@@ -28,7 +28,7 @@ def get_module_info() -> ModuleInfo:
 _form_name = make_form_name(__file__)
 
 _event_name = "404: Land Not Found -risteilyn yhteiskuljetus"
-_is_enabled = True
+_is_enabled = False
 _start_date = datetime(2025, 11, 24, 12, 00, 00)
 _end_date = datetime(2026, 1, 5, 23, 59, 59)
 
