@@ -1,0 +1,107 @@
+{%- extends "form.html" -%}
+{%- import "macros.html" as macros -%}
+
+{%- block extra_styles-%}
+    <style>
+        body {
+            background-color: #0f0e1b !important;
+        }
+
+        div.container {
+            max-width: 900px;
+            background-color: var(--bs-body-bg);
+            opacity: 0.975;
+        }
+
+        div.form-check {
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+    </style>
+{%- endblock -%}
+
+{%- block event_info -%}
+    <img src="{{ url_for('static', filename='img/titeenit_26_banner.png') }}" style="max-width: 100%" alt="banner">
+    <h1 class="text-center py-2 my-2">KotiMaanPitkä 2026 goes Titeenit</h1>
+<p>
+  Tjenare! (English version beneath) <br/>
+  Titeenit ovat jo nurkan takana, joten täräytetääs Titeeni-ilmo pystyyn. On siis aika lähteä puolustamaan Oulun Tietoteekkareiden kunniaa tässä vuosittain järjestettävässä koko Suomen kovimmissa taistoissa! Näihin taistoihin osallistuu kaikki Suomen tietotekniikan killat mittelöimään Titeenikirveestä ja Tietoteekkarien herruudesta. Tänä vuonna taistot järjestetään etelän rannoilla Espoon Otaniemessä. Lähdetään siis näyttämään mistä pohjoisen Tietoteekkarit on tehty!
+
+  <br/><br/>
+  
+  Taistot alkavat siis perjantaina ja kestävät sunnuntaihin asti 13.-15.3. Lähtö alkaa Oulun yliopistolta klo 7.00, jonka jälkeen poimitaan kyytiläisiä myös Tuirasta ja linja-autoaseman raunioilta. Koko reissulle hintaa tulee 90€/taistelija. Hintaan sisältyy tapahtumalippu, matkat Otaniemeen ja takaisin, sekä kirsikkana kakun päällä: hostellimajoitus! <b>Hostellissa meille on varattu kahden sekä neljän hengen huoneita</b>, joten kokoa voitonhaluisimmat kaverisi mukaan (täytä seuratoiveet muu-kohtaan). Lippuja on tosiaan myynnissä vain se 50kpl, joten ole nopea! Matkaan voi lähteä myös 30€ hintaa, johon kuulu pelkkä meno-paluu Otaniemeen.
+
+  <br/><br/>
+  
+  <b>Titeenien Taistojen nettisivut:</b> https://titeen.it <br/>
+  <b>Titeenien Taistojen telegram:</b> https://t.me/titeenientaistot <br/>
+  <b>Oulun taistelijoiden telegram:</b> https://t.me/+u9vicgScm_JjZDM8  <br/>
+
+  <h3>TLDR</h3>
+  <ul>
+    <li>Mitä: Titeenien Taistot</li>
+    <li>Missä: Espoon Otaniemessä</li>
+    <li>Milloin: 13.3 klo 7.00 - 15.3</li>
+    <li>Mitä mukaan: Kaikki mitä kolmen päivän taistoissa tarvitset</li>
+    <li>Mitä maksaa: 90€ (tai 30€ muu kiintiö)</li>
+  </ul>
+  <h3>Maksuohjeet:</h3>
+  <b>Maksuohjeet ilmoitetaan myöhemmin, kun killan pankinvaihto saadaan päätökseen.</b>
+
+   <hr/>
+</p>
+<p>
+  Hey!<br/>
+  Titeenit is just around the corner, so it’s time to launch the Titeeni signup. It’s time to defend the honor of the Oulu Computer Engineering students in the annual Titeenien Taistot, the toughest battle in all of Finland! All of the computer science guilds from across the country gather to compete for the Titeeni Axe and the ultimate Computer Engineering glory. This year the battles will be held on the southern shores in Otaniemi, Espoo. So let’s head south and show what the northern Computer Engineering students are made of!
+
+  <br/>
+
+  The battle begins on Friday and last until Sunday, March 13–15. Departure is from University of Oulu at 7:00 AM, from Tuira at 7:15 and from Oulu Bus Station 7:30. The total price for the trip is 90€ per warrior. The price includes the event ticket, transportation to Otaniemi and back, and the cherry on top: hostel accommodation! <b>We have reserved both two-person and four-person rooms at the hostel</b>, so gather your most victory-hungry friends and join in. There are only 50 tickets available, so be quick! There are also other-quota tickets availabe for 30€, which only include the trip to Otaniemi and back.
+
+  <br/><br/>
+  
+  <b>Titeenien Taistojen website:</b> https://titeen.it <br/>
+  <b>Titeenien Taistojen telegram:</b> https://t.me/titeenientaistot <br/>
+  <b>Oulu warriors telegram:</b> https://t.me/+u9vicgScm_JjZDM8  <br/>
+
+  <h3>TLDR</h3>
+  <ul>
+    <li>What: Titeenien Taistot</li>
+    <li>Where: Otaniemi, Espoo</li>
+    <li>When: 13.3 klo 7.00 - 15.3</li>
+    <li>What to bring: Everything you need for three days of battle</li>
+    <li>Price: 90€ (or 30€ from other quota)</li>
+  </ul>
+  <h3>Payment instructions:</h3>
+  <b>Payments instructions will be announced later, when the Guild's bank change is completed.</b>
+  
+   <hr/>
+</p>
+
+{% endblock %}
+
+{%- block registration_form -%}
+    {%- call macros.registration_form_routine(form) -%}
+{% set p = form.get_required_participants()[0] %}
+
+<h4>Henkilötiedot | Personal information</h4>
+<p> <b>Ilmoita koko nimesi majoitusta varten | Input your whole name for the accomodation: </b></p>
+{{ macros.form_field(p.firstname) }}
+{{ macros.form_field(p.lastname) }}
+{{ macros.form_field(p.email) }}
+{{ macros.form_field(p.phone_number) }}
+{{ macros.form_field(p.telegram) }}
+{{ macros.form_field(p.quota) }}
+{{ macros.form_field(p.departure_location) }}
+{{ macros.form_field(p.allergies) }}
+<p><b>Holillinen / holiton juoma, shotti, fuksivuosi, huoneseuratoiveet | Alcoholic / non-alcoholic, shotti, freshmen year, accomodation request: </b></p>
+
+{{ macros.form_field(p.other) }}
+
+<hr/>
+{% set other = form.get_other_attributes() %}
+{{ macros.form_field(other.show_name_consent) }}
+{{ macros.form_field(other.privacy_consent) }}
+{{ macros.form_field(other.binding_registration_consent) }}
+{%- endcall -%}
+{% endblock %}

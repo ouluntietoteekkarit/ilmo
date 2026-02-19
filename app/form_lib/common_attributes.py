@@ -16,6 +16,9 @@ from app.form_lib.lib import BaseAttribute, StringAttribute, ATTRIBUTE_NAME_FIRS
 def make_attribute_firstname(**extra_args: Dict[str, Any]) -> BaseAttribute:
     return StringAttribute(ATTRIBUTE_NAME_FIRSTNAME, 'Etunimi | First name', 'Etunimi', 50, **extra_args)
 
+def make_attribute_firstnames(**extra_args: Dict[str, Any]) -> BaseAttribute:
+    return StringAttribute(ATTRIBUTE_NAME_FIRSTNAME, 'Etunime(t) | First name(s)', 'Etunimi', 50, **extra_args)
+
 def make_attribute_lastname(**extra_args: Dict[str, Any]) -> BaseAttribute:
     return StringAttribute(ATTRIBUTE_NAME_LASTNAME, 'Sukunimi | Last name', 'Sukunimi', 50, **extra_args)
 
