@@ -251,6 +251,7 @@ class _AttachableEnumField(_AttachableField):
             choices.insert(0, ('', 'Valitse'))
             return SelectField(self._label, choices=choices, validators=self._validators, widget=CustomSelect())
         else:
+            choices.insert(0, ('', 'Valitse'))
             return SelectField(self._label, choices=choices, validators=self._validators, widget=CustomSelect())
 
 class _AttachableRadioButtonField(_AttachableField):

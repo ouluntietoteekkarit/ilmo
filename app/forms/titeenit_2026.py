@@ -25,7 +25,7 @@ def get_module_info() -> ModuleInfo:
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
 _event_name = "Titeenit 2026"
-_is_enabled = True
+_is_enabled = False
 _start_date = datetime(2026, 2, 20, 13, 37, 00)
 _end_date   = datetime(2026, 3, 9, 23, 59, 00)
 _form_name = make_form_name(__file__)
