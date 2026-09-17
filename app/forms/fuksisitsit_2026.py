@@ -24,6 +24,8 @@ def get_module_info() -> ModuleInfo:
     return _module_info
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
+_is_enabled = False
+
 _QUOTA_FUKSI = 'Fuksi'
 _QUOTA_TUTOR = 'Tutor'
 
@@ -87,13 +89,13 @@ def _get_quotas(registration_start: datetime, registration_end: datetime) -> Lis
     return [
         fuksi_quota,
         Quota(_QUOTA_TUTOR, 16, 0, registration_start, registration_end),
-        Quota('Hallitus',   12,   0,  registration_start, registration_end),
+        Quota('Hallitus',   11,   0,  registration_start, registration_end),
         OtherQuota(fuksi_quota, 'Muu', 0, 20,  datetime(2023, 9, 8, 0, 0, 0),  registration_end)
     ]
 
 
-_registration_start = datetime(2026, 9, 11, 0, 0, 0)
-_registration_end = datetime(2026, 9, 14, 23, 59, 59)
+_registration_start = datetime(2026, 9, 18, 0, 0, 0)
+_registration_end = datetime(2026, 9, 22, 23, 59, 59)
 _quotas = _get_quotas(_registration_start, _registration_end)
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_quotas))
@@ -121,5 +123,4 @@ other_attributes = [
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
 
 _event = Event('Fuksisitsit 2026', _registration_start, _registration_end, _quotas, _types.asks_name_consent(), hide_title=True)
-_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
-
+_module_info = ModuleInfo(_Controller, _is_enabled, _form_name, _event, _types)
