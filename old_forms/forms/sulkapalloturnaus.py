@@ -27,9 +27,9 @@ def get_module_info() -> ModuleInfo:
 _form_name = make_form_name(__file__)
 
 _event_name = "Sulkapalloturnaus"
-_is_enabled = False
-_start_date = datetime(2024, 3, 27, 12, 00, 00)
-_end_date   = datetime(2025, 4, 3, 23, 59, 00)
+_is_enabled = True
+_start_date = datetime(2026, 4, 21, 12, 00, 00)
+_end_date   = datetime(2026, 4, 30, 23, 59, 00)
 
 class _Controller(FormController):
 
@@ -55,7 +55,7 @@ class _Controller(FormController):
 
 def _get_quotas() -> List[Quota]:
     return [
-        Quota(GUILD_OTIT, 18, 100),
+        Quota(GUILD_OTIT, 16, 100),
     ]
 
 _QuotaEnum = choices_to_enum(_form_name,
@@ -70,14 +70,12 @@ participant_attributes = [
     make_attribute_quota(_QuotaEnum, validators=[InputRequired()]),
 ]
 
-avec_attributes = participant_attributes
-
 other_attributes = [
     make_attribute_name_consent(),
     make_attribute_privacy_consent(validators=[InputRequired()])
 ]
 
-_types = make_types(participant_attributes, avec_attributes, other_attributes, 1, 1, _form_name)
+_types = make_types(participant_attributes, participant_attributes, other_attributes, 1, 1, _form_name)
 
 _event = Event(_event_name,
                _start_date,

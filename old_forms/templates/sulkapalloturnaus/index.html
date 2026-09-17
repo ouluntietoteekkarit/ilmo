@@ -8,50 +8,56 @@
       background-repeat: no-repeat;
       background-size: 100%;
   }
-
   div.container {
       max-width: 900px;
-      background-color: white;
-      opacity: 0.9;
+      background-color: var(--bs-body-bg);
+      opacity: 0.975;
   }
 </style>
 {%- endblock -%}
 
 {%- block event_info -%}
-<p>Killan historiallinen sulkapalloturnaus:
-Oulun normaalikoulu, Koskela (Tullimiehentie 8)
-8.4.2024 klo. 17->
-Lähtökohtaisesti pelataan nelinpelejä, mutta jos ilmoittautuminen on vähäistä, voidaan muuttaa pari peleihin.
-  Mukaan ei tarvitse muuta kuin sisäpelikengät (ja liikunta vaatteet tietty). Jos maila löytyy, on se todennäköisesti parempi kuin koululta lainattu, mutta koulun mailat ovat myös käytössä.</p>
-</br>
-<p> Jos tulee kysyttävää, voit olla yhteydessä urheiluministeri@otit.fi tai tg:ssä @jukeboxxxi</p>
+<p> Killan sulkapalloturnaus tulee taas. Paikkana toimii Linnanmaan liikuntakeskus, Virkakuja 1. </p>
+<p>Turnaus järjestetään 02.05.2026 klo 17:00-20:00 välisenä aikana. Voit ilmoittautua yksin tai parin kanssa. Mukaan sisäpelikengät ja urheiluvaatteet. </p>
+ <p> Jos tulee kysyttävää, voit olla yhteydessä urheiluministeri@otit.fi tai tg:ssä @Kor1pallo</p>
 {% endblock %}
+
+
+{% macro participant_form(form) %}
+    {{ macros.form_field(form.firstname) }}
+    {{ macros.form_field(form.lastname) }}
+    {{ macros.form_field(form.email) }}
+    {{ macros.form_field(form.quota) }}
+    {{ macros.form_field(form.irc_name) }}
+{% endmacro %}
 
 {%- block registration_form -%}
-{%- call macros.registration_form_routine(form) -%}
-{% set p = form.get_required_participants()[0] %}
-<h4>Henkilötiedot</h4>
-{{ macros.form_field(p.firstname) }}
-{{ macros.form_field(p.lastname) }}
-{{ macros.form_field(p.irc_name) }}
-{{ macros.form_field(p.email) }}
-{{ macros.form_field(p.quota) }}
+    {%- call macros.registration_form_routine(form) -%}
+    {{ participant_form(form.required_participants[0]) }}
+    <br />
+    {%- call macros.registration_optional_participant() -%}
+    <legend>Parin tiedot</legend>
+    {{ participant_form(form.get_optional_participants()[0]) }}
+    {%- endcall -%}
 
+    <br />
+    {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+    {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+    {%- endcall -%}
+    {%- endblock -%}
+{%- block participant_list -%}
+    {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
+        <p>
+        {%- set participant = entry.get_required_participants()[0] -%}
+        {{ participant.firstname }} {{ participant.lastname }}
+        {%- set avec = entry.get_optional_participants()[0] if entry.get_optional_participants()|length > 0 -%}
+        {%- if avec and avec.firstname and avec.lastname %}
+            & {{ avec.firstname }} {{ avec.lastname }}
+        {%- endif -%}
 
-{%- call macros.registration_optional_participant() -%}
-<legend>Parin tiedot</legend>
-{% set p = form.get_optional_participants()[0] %}
-{{ macros.form_field(p.firstname) }}
-{{ macros.form_field(p.lastname) }}
-{{ macros.form_field(p.irc_name) }}
-{{ macros.form_field(p.email) }}
-{{ macros.form_field(p.quota) }}
-{%- endcall -%}
-
-{% set other = form.get_other_attributes() %}
-{{ macros.form_field(other.show_name_consent) }}
-{{ macros.form_field(other.privacy_consent) }}
-{%- endcall -%}
-{% endblock %}
-
-
+        {% if is_in_reserve %}
+            {{ " (Varasijalla)" }}
+        {% endif %}
+        </p>
+    {%- endcall -%}
+{%- endblock -%}
