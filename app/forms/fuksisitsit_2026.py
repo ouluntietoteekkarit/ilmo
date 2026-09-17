@@ -24,7 +24,7 @@ def get_module_info() -> ModuleInfo:
     return _module_info
 # P U B L I C   M O D U L E   I N T E R F A C E   E N D
 
-_is_enabled = False
+_is_enabled = True
 
 _QUOTA_FUKSI = 'Fuksi'
 _QUOTA_TUTOR = 'Tutor'
@@ -85,16 +85,16 @@ _form_name = make_form_name(__file__)
 
 
 def _get_quotas(registration_start: datetime, registration_end: datetime) -> List[Quota]:
-    fuksi_quota = Quota(_QUOTA_FUKSI, 120,  0,  registration_start, registration_end)
+    fuksi_quota = Quota(_QUOTA_FUKSI, 100,  0,  registration_start, registration_end)
     return [
         fuksi_quota,
-        Quota(_QUOTA_TUTOR, 16, 0, registration_start, registration_end),
+        Quota(_QUOTA_TUTOR, 15, 0, registration_start, registration_end),
         Quota('Hallitus',   11,   0,  registration_start, registration_end),
-        OtherQuota(fuksi_quota, 'Muu', 0, 20,  datetime(2023, 9, 8, 0, 0, 0),  registration_end)
+        OtherQuota(fuksi_quota, 'Muu', 0, 100,  registration_start,  registration_end)
     ]
 
 
-_registration_start = datetime(2026, 9, 18, 0, 0, 0)
+_registration_start = datetime(2026, 9, 17, 0, 0, 0)
 _registration_end = datetime(2026, 9, 22, 23, 59, 59)
 _quotas = _get_quotas(_registration_start, _registration_end)
 
