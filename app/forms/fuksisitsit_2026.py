@@ -95,7 +95,7 @@ def _get_quotas(registration_start: datetime, registration_end: datetime) -> Lis
 
 
 _registration_start = datetime(2026, 9, 17, 0, 0, 0)
-_registration_end = datetime(2026, 9, 22, 23, 59, 59)
+_registration_end = datetime(2026, 9, 23, 23, 59, 59)
 _quotas = _get_quotas(_registration_start, _registration_end)
 
 _QuotaEnum = choices_to_enum(_form_name, 'quota', get_quota_choices(_quotas))
