@@ -64,7 +64,7 @@ _DEPARTURE_BUS_STOP_UNI = 'Yliopisto'
 _DEPARTURE_BUS_STOP_TUIRA = 'Tuira'
 _DEPARTURE_BUS_STATION = 'Linja-autoasema'
 
-_registration_start = datetime(2025, 10, 12, 13, 37, 0)
+_registration_start = datetime(2025, 10, 13, 13, 37, 0)
 _registration_end = datetime(2026, 10, 25, 23, 59, 59)
 
 def _get_departure_stops() -> List[str]:
