@@ -108,5 +108,5 @@ other_attributes = [
 
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
 
-_event = Event('OTiTin Fuksicursio 2026',  _registration_start, _registration_end, _get_quotas(), _types.asks_name_consent())
+_event = Event('OTiTin fuksiexcursio 2026',  _registration_start, _registration_end, _get_quotas(), _types.asks_name_consent())
 _module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
