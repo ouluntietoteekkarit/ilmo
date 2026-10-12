@@ -36,9 +36,13 @@ class _Controller(FormController):
             return ' '.join([
                 make_greet_line(recipient),
                 "\nOlet ilmoittautunut OTiTin fuksiexcursiolle. Olet varasijalla.",
-                "Jos fuculle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
+                "Jos fuculle jää vapaita paikkoja, niin sinuun voidaan olla yhteydessä. Tässä vielä syöttämäsi tiedot: ",
+                "\n\nNimi: ", firstname, " ", lastname,
+                "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
+                "\nLähtöpaikka: ", departure_location, "\nKiintiö: ", quota,
+                "\nTelegram: ", telegram, "\n",
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-                "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @esari2"
+                "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @jykamias"
             ])
         else:
             return ' '.join([
@@ -49,7 +53,7 @@ class _Controller(FormController):
                 "\nLähtöpaikka: ", departure_location, "\nKiintiö: ", quota,
                 "\nTelegram: ", telegram, "\n",
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
-                "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @esari2"
+                "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @jykamias"
             ])
 
 
@@ -64,7 +68,7 @@ _DEPARTURE_BUS_STOP_UNI = 'Yliopisto'
 _DEPARTURE_BUS_STOP_TUIRA = 'Tuira'
 _DEPARTURE_BUS_STATION = 'Linja-autoasema'
 
-_registration_start = datetime(2025, 10, 13, 13, 37, 0)
+_registration_start = datetime(2026, 10, 12, 13, 37, 0)
 _registration_end = datetime(2026, 10, 25, 23, 59, 59)
 
 def _get_departure_stops() -> List[str]:
