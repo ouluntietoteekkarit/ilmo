@@ -35,7 +35,7 @@ class _Controller(FormController):
         if reserve:
             return ' '.join([
                 make_greet_line(recipient),
-                "\nOlet ilmoittautunut OTiTin Fuksicursiolle. Olet varasijalla.",
+                "\nOlet ilmoittautunut OTiTin fuksiexcursiolle. Olet varasijalla.",
                 "Jos fuculle jää peruutuksien myötä vapaita paikkoja, niin sinuun voidaan olla yhteydessä. ",
                 "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
                 "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @esari2"
@@ -43,7 +43,7 @@ class _Controller(FormController):
         else:
             return ' '.join([
                 make_greet_line(recipient),
-                "\nOlet ilmoittautunut OTiTin Fuksicursiolle. Tässä vielä syöttämäsi tiedot: ",
+                "\nOlet ilmoittautunut OTiTin fuksiexcursiolle. Tässä vielä syöttämäsi tiedot: ",
                 "\n\nNimi: ", firstname, " ", lastname,
                 "\nSähköposti: ", email, "\nPuhelinnumero: ", phone_number,
                 "\nLähtöpaikka: ", departure_location, "\nKiintiö: ", quota,
@@ -57,33 +57,29 @@ _form_name = make_form_name(__file__)
 
 _PARTICIPANT_FUKSI = 'Fuksi'
 _PARTICIPANT_TUTOR = 'Tutor'
-_PARTICIPANT_BOARD_MEMBER = 'Hallitus'
-_PARTICIPANT_KULTTUURISIHTEERI = 'Kulttuurisihteeri'
-_PARTICIPANT_FUKSIAPURI = 'Fuksiasiainsihteeri'
+_PARTICIPANT_TRAVEL_AGENT = 'Matkanjohtaja'
 _PARTICIPANT_OTHER = 'Muu'
 
 _DEPARTURE_BUS_STOP_UNI = 'Yliopisto'
-_DEPARTURE_BUS_STOP_MERIKOSKI = 'Merikoskenkatu (tuiran bussipysäkki)'
+_DEPARTURE_BUS_STOP_TUIRA = 'Tuira'
 _DEPARTURE_BUS_STATION = 'Linja-autoasema'
 
-_registration_start = datetime(2023, 10, 6, 13, 37, 0)
-_registration_end = datetime(2024, 10, 13, 23, 59, 59)
+_registration_start = datetime(2025, 10, 12, 13, 37, 0)
+_registration_end = datetime(2026, 10, 25, 23, 59, 59)
 
 def _get_departure_stops() -> List[str]:
     return [
         _DEPARTURE_BUS_STOP_UNI,
-        _DEPARTURE_BUS_STOP_MERIKOSKI,
+        _DEPARTURE_BUS_STOP_TUIRA,
         _DEPARTURE_BUS_STATION
     ]
 
 
 def _get_quotas() -> List[Quota]:
     return [
-        Quota(_PARTICIPANT_FUKSI, 120, 20),
-        Quota(_PARTICIPANT_TUTOR, 18, 0),
-        Quota(_PARTICIPANT_BOARD_MEMBER, 13, 0),
-        Quota(_PARTICIPANT_KULTTUURISIHTEERI, 1, 0),
-        Quota(_PARTICIPANT_FUKSIAPURI, 1, 0),
+        Quota(_PARTICIPANT_FUKSI, 81, 0),
+        Quota(_PARTICIPANT_TUTOR, 15, 0),
+        Quota(_PARTICIPANT_TRAVEL_AGENT, 4, 0),
         Quota(_PARTICIPANT_OTHER, 0, 100)
     ]
 
@@ -108,9 +104,5 @@ other_attributes = [
 
 _types = make_types(participant_attributes, [], other_attributes, 1, 0, _form_name)
 
-_event = Event('OTiTin Fuksicursio 2024',  _registration_start, _registration_end, _get_quotas(), _types.asks_name_consent())
-_module_info = ModuleInfo(_Controller, False, _form_name, _event, _types)
-
-
-
-
+_event = Event('OTiTin Fuksicursio 2026',  _registration_start, _registration_end, _get_quotas(), _types.asks_name_consent())
+_module_info = ModuleInfo(_Controller, True, _form_name, _event, _types)
