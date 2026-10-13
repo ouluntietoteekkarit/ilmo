@@ -45,6 +45,9 @@ class _Controller(FormController):
                 "\nLähtöpaikka: ", departure_location,
                 "\nKiintiö: ", quota,
                 "\n",
+                "\n Vaikka paikkasi ei ole varmistunut, niin voit silti liittyä Telegram-ryhmään: https://t.me/+n2dc33GO7fIzMmE0
+                "\n Ryhmässä voit hypettää ja nostattaa excumeininkiä!",
+                "\n",
                 "\nÄlä vastaa tähän sähköpostiin, vastaus ei mene silloin mihinkään."
                 "\nJos tulee kysyttävää, niin voit olla sähköpostitse yhteydessä kulttuuriministeri@otit.fi tai telegramissa @jykamias"
             ])
@@ -60,6 +63,10 @@ class _Controller(FormController):
                 "\nTelegram: ", telegram,
                 "\nLähtöpaikka: ", departure_location,
                 "\nKiintiö: ", quota,
+                "\n",
+                "\nLiity Telegram-ryhmään, siellä on paljon hyödyllistä tietoa: https://t.me/+n2dc33GO7fIzMmE0",
+                "\n",
+                "\nMuistathan maksaa excun osallistumismaksun viimeistään 27.10.2026 mennessä, jotta paikkasi exculla varmistuu!",
                 "\n",
                 "\nMaksutiedot",
                 "\n",
