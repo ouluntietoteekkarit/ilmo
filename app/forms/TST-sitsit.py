@@ -64,8 +64,8 @@ class _Controller(FormController):
                     "\nOlet ilmoittautunut TST-sitseille varasijalle.",
                     "Jos paikkoja vapautuu, sinuun voidaan olla yhteydessä.",
                     (
-                        "\n\nÄlä vastaa tähän sähköpostiin. Se ei mene minnekkään. "
-                        "Jos tulee kysyttävää, voit olla yhteydessä pepeministeri@otit.fi."
+                        "\n\nJos tulee kysyttävää, voit olla yhteydessä pepeministeri@otit.fi."
+                        "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene mihinkään."
                     ),
                 ]
             )
@@ -74,10 +74,7 @@ class _Controller(FormController):
                 greeting,
                 "\nOlet ilmoittautunut TST-sitseille.",
                 "\n\nJos tulee kysyttävää, voit olla yhteydessä pepeministeri@otit.fi.",
-                (
-                    "\n\nÄlä vastaa tähän sähköpostiin. Se ei mene minnekkään. "
-                    "Jos tulee kysyttävää, voit olla yhteydessä pepeministeri@otit.fi."
-                ),
+                "\n\nÄlä vastaa tähän sähköpostiin, vastaus ei mene mihinkään.",
             ]
         )
 
@@ -132,4 +129,3 @@ _event = Event(
 )
 
 _module_info = ModuleInfo(_Controller, _is_enabled, _form_name, _event, _types)
-
