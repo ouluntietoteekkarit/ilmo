@@ -7,27 +7,67 @@
         div.container {
             opacity: 0.9;
         }
-    </Style>
+    </style>
 {%- endblock -%}
 
+{%- block event_info -%}
+    <p>
+        Hellurei ja hellät tunteet. Vuoden suosituimpien bileiden, TST:n suurten talobileiden,
+        rinnalle pamahtaa nyt TST-sitsit! TST-sitsejä vietetään 2.12. klo 18 alkaen
+        Teekkaritalolla Smurffi-teemalla yhdessä SIK:in, OLTO:n, OTiT:in sekä Blankon
+        opiskelijoiden kesken.
+    </p>
 
-    {%- block event_info -%}
+    <p>
+        Sitsit päättyvät noin klo 22, jolloin sauna lämpenee ja pääsemme jatkoilemaan
+        Teekkaritalolla klo 02 saakka. Jatkot ovat avoimet kaikille TST:n opiskelijoille.
+    </p>
 
-    <p>Helmikuu lähestyy, mikä tarkoittaa perinteikkään jengin kokoamista kasaan: Communica, Prose ja OTiT järjestävät jälleen yhteiset Humanööri-sitsit. 🤩🎉 Sitsikansa päästetään irti Walhallassa maanantaina 9.2. klo. 18.</p>
+    <p>
+        Lipunmyynti alkaa 16.11. klo 12 ilmoittautumislomakkeen kautta. Ilmoittautuminen
+        sulkeutuu 22.11. klo 14.00. Lippu kustantaa 21 €.
+    </p>
 
-    <p>Suomen pimeän talven keskellä monen illat kuluvat varmasti elokuvia katsomalla🎥🎬 Nykyisestä suoratoistopalveluiden valtamerestä jokainen on löytänyt sen koskettavimman, hauskimman, pelottavimman tai mieleenpainuvimman elokuvan. Jos elokuvat eivät kuulu kaveriporukkasi jokapäiväisiin keskusteluaiheisiin, nyt on hyvä hetki tuoda myös tämä puoli itsestäsi esille!<br>
-    Eikä haittaa, vaikket olisi elämäsi aikana yhden yhtä elokuvaa katsonut, voit ilmaantua paikalle vaikka popcornina🍿 Pukeudu siis sinua eniten puhuttelevaan elokuvateemaiseen asuun🎞️</p>
-
-    <p>Sitsien jälkeen lämpenee sauna, joten otathan OPM x2🍾<br>
-    <strong>Saunassa on alaosapakko</strong></p>
-
-    <h3>Maksuohjeet:</h3>
+    <h4>TLDR</h4>
     <ul>
-        <li>Tilinumero: FI90 1107 3000 4170 18</li>
-        <li>Saaja: Oulun yliopiston Prosessikilta ry</li>
-        <li>Summa: 23 €</li>
-        <li>Viesti: Oma nimi + Humanöörit</li>
-        <li>Eräpäivä: 7.2.2026</li>
+        <li><strong>Mitä:</strong> TST-sitsit</li>
+        <li><strong>Milloin:</strong> 2.12. klo 18 alkaen</li>
+        <li><strong>Missä:</strong> Teekkaritalolla (Kalervontie 7)</li>
+        <li><strong>Mitä maksaa:</strong> 21 €</li>
+        <li><strong>Mitä päälle:</strong> haalarit + smurffi-teemainen asu</li>
+        <li><strong>Mitä mukaan:</strong> halutessasi OPM x 2</li>
+        <li><strong>Miksi:</strong> koska sitsaaminen on mukavaa</li>
+    </ul>
+
+    <hr>
+
+    <p>
+        Hellurei ja hellät tunteet. Alongside the year’s most popular party, the TST house
+        party, we are now bringing you TST Sitsit! The TST sitsit will be held on December
+        2nd at 6 PM at Teekkaritalo with a Smurf-themed evening together with SIK, OLTO,
+        OTiT, and Blanko.
+    </p>
+
+    <p>
+        The sitsit will end at approximately 10 PM, after which the sauna will be heated
+        and the afterparty will continue at Teekkaritalo until 2 AM. The afterparty is open
+        to all TST students.
+    </p>
+
+    <p>
+        Ticket sales begin on November 16th at 12:00 noon via the registration form.
+        Registration closes on November 22nd at 2 PM. The ticket costs 21 €.
+    </p>
+
+    <h4>TLDR</h4>
+    <ul>
+        <li><strong>What:</strong> TST-sitsit</li>
+        <li><strong>When:</strong> December 2nd at 6 PM (18:00)</li>
+        <li><strong>Where:</strong> Teekkaritalo (Kalervontie 7)</li>
+        <li><strong>What does it cost:</strong> 21 €</li>
+        <li><strong>What to wear:</strong> overalls + Smurf-themed outfit</li>
+        <li><strong>What to bring:</strong> BYOB + sauna gear</li>
+        <li><strong>Why:</strong> because sitsit are fun</li>
     </ul>
 {%- endblock -%}
 
@@ -45,31 +85,23 @@
 
 {%- block registration_form -%}
     {%- call macros.registration_form_routine(form) -%}
-    {{ participant_form(form.required_participants[0]) }}
-    <br />
-    {%- call macros.registration_optional_participant() -%}
-    <legend>Avec</legend>
-    {{ participant_form(form.get_optional_participants()[0]) }}
+        {{ participant_form(form.required_participants[0]) }}
+        <br />
+        {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
+        {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
+        {{ macros.form_field(form.get_other_attributes().binding_registration_consent) }}
     {%- endcall -%}
+{%- endblock -%}
 
-    <br />
-    {{ macros.form_field(form.get_other_attributes().show_name_consent) }}
-    {{ macros.form_field(form.get_other_attributes().privacy_consent) }}
-    {%- endcall -%}
-    {%- endblock -%}
 {%- block participant_list -%}
     {%- call(entry, is_in_reserve) macros.participant_list_routine(registrations.get_entries(), event) -%}
         <p>
-        {%- set participant = entry.get_required_participants()[0] -%}
-        {{ participant.firstname }} {{ participant.lastname }}
-        {%- set avec = entry.get_optional_participants()[0] if entry.get_optional_participants()|length > 0 -%}
-        {%- if avec and avec.firstname and avec.lastname %}
-            & {{ avec.firstname }} {{ avec.lastname }}
-        {%- endif -%}
+            {%- set participant = entry.get_required_participants()[0] -%}
+            {{ participant.firstname }} {{ participant.lastname }}
 
-        {% if is_in_reserve %}
-            {{ " (Varasijalla)" }}
-        {% endif %}
+            {% if is_in_reserve %}
+                {{ " (Varasijalla)" }}
+            {% endif %}
         </p>
     {%- endcall -%}
 {%- endblock -%}
