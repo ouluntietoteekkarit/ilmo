@@ -86,7 +86,7 @@ def _get_quotas() -> List[Quota]:
         Quota('OTiT', 20, 10),
         Quota('Blanko', 20, 10),
         Quota('Proffa', 3, 10),
-        Quota('Sere', 1, 0)
+        Quota('Sere', 3, 0)
     ]
 
 
