@@ -1,0 +1,15 @@
+**
+!Dockerfile
+!requirements.txt
+!config.py
+!wsgi.py
+!routes.conf.sample
+!app/
+!app/**
+**/__pycache__/
+**/*.py[cod]
+**/.*
+**/*.conf
+**/*.db*
+**/*.sqlite*
+**/*.csv

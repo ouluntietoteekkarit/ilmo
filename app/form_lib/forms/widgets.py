@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from wtforms.widgets import Input, TextArea, Select, ListWidget
+from wtforms.widgets import CheckboxInput, FileInput, Input, ListWidget, Select, TextArea, TextInput
 
 # MEMO: Bunch of custom widgets to fix some errors in WTForms rendering.
 
@@ -15,6 +15,8 @@ class CustomInput(Input):
     to provide the ``value=`` HTML attribute.
     """
 
+    validation_attrs = ()
+
     def __call__(self, field, **kwargs):
         if 'required' not in kwargs and 'required' in getattr(field, 'flags', []):
             kwargs.setdefault('data_is_required', True)
@@ -27,6 +29,7 @@ class CustomTextInput(CustomInput):
     Render a single-line text input.
     """
     input_type = 'text'
+    validation_attrs = TextInput.validation_attrs
 
 
 class CustomCheckboxInput(CustomInput):
@@ -36,6 +39,7 @@ class CustomCheckboxInput(CustomInput):
     The ``checked`` HTML attribute is set if the field's data is a non-false value.
     """
     input_type = 'checkbox'
+    validation_attrs = CheckboxInput.validation_attrs
 
     def __call__(self, field, **kwargs):
         if getattr(field, 'checked', field.data):
@@ -50,6 +54,7 @@ class CustomFileInput(CustomInput):
     """
 
     input_type = 'file'
+    validation_attrs = FileInput.validation_attrs
 
     def __init__(self, multiple=False):
         super(CustomFileInput, self).__init__()

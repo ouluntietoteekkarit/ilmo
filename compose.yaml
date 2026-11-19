@@ -1,0 +1,39 @@
+services:
+  app:
+    image: ilmo:local
+    build: .
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 256m
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777
+    ports:
+      - "127.0.0.1:${ILMO_PORT:-62733}:62733"
+    volumes:
+      - data:/var/lib/ilmo
+    environment:
+      ILMO_SMTP_HOST: ${ILMO_SMTP_HOST:-}
+      ILMO_SMTP_PORT: ${ILMO_SMTP_PORT:-25}
+    secrets:
+      - flask_secret
+      - auth_config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  data:
+
+secrets:
+  flask_secret:
+    file: ${ILMO_SECRET_KEY_PATH:-./flask-secret.conf}
+  auth_config:
+    file: ${ILMO_AUTH_PATH:-./auth.conf}

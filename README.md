@@ -1,6 +1,36 @@
 # otit_ilmo
 Event registration forms for Oulun Tietoteekkarit ry
 
+## Run with Docker Compose
+
+1. Generate the Flask signing key once and keep it across deployments.
+
+   ```shell
+   python -c "from pathlib import Path; from secrets import token_hex; Path('flask-secret.conf').open('x').write(token_hex(32))"
+   ```
+
+2. Create `auth.conf` with one `username,password_hash,role` row per account. Generate each password hash with Werkzeug using the command below. Use `admin` for access to all event data or the form name for access to one event. An empty file disables authenticated access.
+
+   ```shell
+   python -c "from getpass import getpass; from werkzeug.security import generate_password_hash; print(generate_password_hash(getpass()))"
+   ```
+
+   Restrict access to both files on the host. With native Linux Docker, grant read access to container UID or GID `10001`. Override the source paths with `ILMO_SECRET_KEY_PATH` and `ILMO_AUTH_PATH` if needed.
+
+3. Build and start the service.
+
+   ```shell
+   docker compose up --build --wait
+   ```
+
+If an earlier start created an empty directory named `auth.conf` or `flask-secret.conf`, remove the empty directory before creating the corresponding file. In PowerShell, `[IO.Directory]::Delete((Join-Path $PWD 'auth.conf'))` removes the directory only if it is empty. Use the same command with `flask-secret.conf` if needed.
+
+Open http://127.0.0.1:62733. Set `ILMO_PORT` to change the host port. For public deployment, terminate HTTPS at a reverse proxy that can reach this loopback listener.
+
+SQLite stores registrations in the `data` named volume at `/var/lib/ilmo/app.db`. Back up that database before upgrading. To migrate an existing SQLite database, stop the old app and copy a consistent backup into the volume before first start. The file must be writable by UID `10001`. Removing the volume deletes the registrations.
+
+For confirmation emails, set `ILMO_SMTP_HOST` and optionally `ILMO_SMTP_PORT` (default `25`) to a trusted relay that accepts submissions from the app and supports STARTTLS with a valid certificate. With no relay configured, registrations still work and the app logs that it skipped the confirmation email.
+
 ## Run development server
 ```shell
 python3 -m venv env

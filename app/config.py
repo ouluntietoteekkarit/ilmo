@@ -6,15 +6,16 @@ from typing import Tuple, Dict
 def load_auth_config() -> Tuple[Dict[str, str], Dict[str, str]]:
     users = {}
     roles = {}
+    auth_file = os.environ.get("ILMO_AUTH_FILE")
     try:
-        file = open("auth.conf", "r")
-        for line in file.readlines():
-            new_user = line.split(",", 6)
-            users[new_user[0]] = new_user[1]
-            roles[new_user[0]] = new_user[2:6]
-
-        file.close()
+        with open(auth_file or "auth.conf", encoding="utf-8") as file:
+            for line in file:
+                new_user = line.rstrip("\r\n").split(",", 6)
+                users[new_user[0]] = new_user[1]
+                roles[new_user[0]] = new_user[2:6]
     except FileNotFoundError as e:
+        if auth_file:
+            raise
         password = os.urandom(64).hex()
         users['admin'] = generate_password_hash(password)
         roles['admin'] = 'admin'
